@@ -1,0 +1,38 @@
+# HUD Package Definition - nspr 4.37
+# Based on BLFS 12.4 documentation
+# Note: Required dependency for NSS
+
+Package: nspr
+Version: 4.37
+Architecture: x86_64
+Section: security
+Depends:
+Description: Netscape Portable Runtime - platform abstraction library for NSS
+Source: https://archive.mozilla.org/pub/nspr/releases/v4.37/src/nspr-4.37.tar.gz
+
+[configure]
+cd nspr &&
+sed -ri '/^RELEASE/s/^/#/' pr/src/misc/Makefile.in &&
+sed -i 's#$(LIBRARY) ##'   config/rules.mk         &&
+./configure --prefix=/opt/hud \
+            --with-mozilla \
+            --with-pthreads \
+            $([ $(uname -m) = x86_64 ] && echo --enable-64bit)
+
+[build]
+cd nspr &&
+make -j$(nproc)
+
+[install]
+cd nspr &&
+make install DESTDIR=$DESTDIR
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "nspr 4.37 installed to /opt/hud"
+
+[prerm]
+# No services to stop
+
+[postrm]
+ldconfig 2>/dev/null || true

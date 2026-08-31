@@ -1,0 +1,22 @@
+# HUD Package Definition - pixman 0.44.2
+# Low-level pixel manipulation library
+Package: pixman
+Version: 0.44.2
+Architecture: x86_64
+Section: graphics
+Depends:
+Description: Low-level pixel manipulation library
+Source: https://www.cairographics.org/releases/pixman-0.44.2.tar.gz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ pixman 0.44.2 installed to /opt/hud"
+/sbin/ldconfig

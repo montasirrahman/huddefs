@@ -1,0 +1,27 @@
+# HUD Package Definition - nspr 4.36
+# Netscape Portable Runtime
+
+Package: nspr
+Version: 4.36
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Netscape Portable Runtime
+Source: https://archive.mozilla.org/pub/nspr/releases/v4.36/src/nspr-4.36.tar.gz
+
+[configure]
+cd nspr && ./configure \
+    --prefix=/opt/hud \
+    --with-mozilla \
+    --with-pthreads \
+    --enable-64bit
+
+[build]
+cd nspr && make -j$(nproc)
+
+[install]
+cd nspr && make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ nspr 4.36 installed to /opt/hud"

@@ -1,0 +1,30 @@
+# HUD Package Definition - perl 5.40.0
+# Practical Extraction and Report Language
+
+Package: perl
+Version: 5.40.0
+Architecture: x86_64
+Section: development
+Depends: zlib
+Description: The Perl programming language
+Source: https://www.cpan.org/src/5.0/perl-5.40.0.tar.gz
+
+[configure]
+sh Configure -des \
+    -Dprefix=/opt/hud \
+    -Dvendorprefix=/opt/hud \
+    -Dman1dir=/opt/hud/share/man/man1 \
+    -Dman3dir=/opt/hud/share/man/man3 \
+    -Dpager="/usr/bin/less -isR" \
+    -Duseshrplib \
+    -Dusethreads
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "✓ perl 5.40.0 installed to /opt/hud"
+/opt/hud/bin/perl -v 2>/dev/null | head -2 || true

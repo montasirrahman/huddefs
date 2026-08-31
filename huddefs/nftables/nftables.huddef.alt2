@@ -1,0 +1,46 @@
+# HUD Package Definition - nftables 1.1.1
+# Netfilter tables userspace tools with Python bindings
+# Required by firewalld
+
+Package: nftables
+Version: 1.1.1
+Architecture: x86_64
+Section: network
+Depends: libmnl, libnftnl, libedit, gmp, python3, jansson
+Description: Netfilter tables userspace tools and Python bindings
+Source: https://netfilter.org/projects/nftables/files/nftables-1.1.1.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+export PYTHON=/usr/bin/python3
+./configure --prefix=/opt/hud           \
+            --sysconfdir=/etc           \
+            --with-python-bin=/usr/bin/python3 \
+            --enable-python             \
+            --with-json                 \
+            --disable-man-doc
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make
+
+[install]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+DESTDIR=$DESTDIR make install
+cd py
+/usr/bin/python3 setup.py build
+/usr/bin/python3 setup.py install --prefix=/opt/hud --root=$DESTDIR
+
+[postinst]
+ldconfig
+ln -sf /opt/hud/sbin/nft /usr/sbin/nft 2>/dev/null || true
+echo "nftables 1.1.1 installed"
+echo "Commands: nft"
+echo "Test Python: PYTHONPATH=/opt/hud/lib/python3.13/site-packages python3 -c \"from nftables import Nftables; print('OK')\""

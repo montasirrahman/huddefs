@@ -1,0 +1,18 @@
+# HUD Package Definition - pcre2 10.45
+# Perl Compatible Regular Expressions
+Package: pcre2
+Version: 10.45
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Perl Compatible Regular Expressions library version 2
+Source: https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.45/pcre2-10.45.tar.bz2
+[configure]
+./configure --prefix=/opt/hud --enable-unicode --enable-jit --enable-pcre2-16 --enable-pcre2-32 --enable-pcre2grep-libz --enable-pcre2grep-libbz2 --enable-pcre2test-libreadline --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ pcre2 10.45 installed to /opt/hud"
+/sbin/ldconfig

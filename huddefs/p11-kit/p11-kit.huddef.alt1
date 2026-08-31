@@ -1,0 +1,43 @@
+# HUD Package Definition - p11-kit 0.25.5
+# PKCS#11 Module Manager
+# Library and tools for managing PKCS#11 modules
+
+Package: p11-kit
+Version: 0.25.5
+Architecture: x86_64
+Section: security
+Depends: libtasn1, libffi
+Description: Library dealing with loading and enumerating PKCS#11 modules and trust policy
+Source: https://github.com/p11-glue/p11-kit/releases/download/0.25.5/p11-kit-0.25.5.tar.xz
+
+[configure]
+# Create link for trust store
+ln -sf /etc/pki/tls/certs/ca-bundle.crt /etc/ssl/certs/ca-certificates.crt 2>/dev/null || true
+
+mkdir -p build
+cd build
+
+meson setup ..                        \
+    --prefix=/opt/hud                 \
+    --buildtype=release               \
+    -D trust_paths=/etc/pki/anchors
+
+[build]
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+# Create necessary symlinks
+ln -sfv /opt/hud/libexec/p11-kit/trust-extract-compat \
+        $DESTDIR/opt/hud/bin/update-ca-certificates 2>/dev/null || true
+
+[postinst]
+# Link p11-kit trust for ca-certificates compatibility
+ln -sfv /opt/hud/libexec/p11-kit/trust-extract-compat \
+        /opt/hud/bin/update-ca-certificates 2>/dev/null || true
+
+ldconfig 2>/dev/null || true
+echo "✓ p11-kit 0.25.5 installed to /opt/hud"

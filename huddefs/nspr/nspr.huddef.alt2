@@ -1,0 +1,29 @@
+# HUD Package Definition - nspr 4.37
+# Auto-generated for oVirt infrastructure
+
+Package: nspr
+Version: 4.37
+Architecture: x86_64
+Section: libraries
+Depends: 
+Description: NSPR-4.37
+Source: https://archive.mozilla.org/pub/nspr/releases/v4.37/src/nspr-4.37.tar.gz
+
+[configure]
+cd nspr && ./configure --prefix=/opt/hud --enable-64bit
+
+[build]
+cd nspr && make
+
+[install]
+cd nspr && make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "nspr 4.37 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

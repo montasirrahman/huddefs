@@ -1,0 +1,32 @@
+# HUD Package Definition - polkit 125
+# Auto-generated for oVirt infrastructure
+
+Package: polkit
+Version: 125
+Architecture: x86_64
+Section: security
+Depends: glib2,expat,linux-pam,duktape,gobject-introspection
+Description: PolicyKit Authorization Framework
+Source: https://gitlab.freedesktop.org/polkit/polkit/-/archive/125/polkit-125.tar.gz
+Service: polkit
+
+[configure]
+meson setup build --prefix=/opt/hud -Dsession_tracking=libelogind -Dsystemdsystemunitdir=/opt/hud/lib/systemd/system
+
+[build]
+ninja -C build
+
+[install]
+DESTDIR=$DESTDIR ninja -C build install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "polkit 125 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-polkit 2>/dev/null || true
+systemctl disable hud-polkit 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

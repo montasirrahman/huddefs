@@ -1,0 +1,70 @@
+# HUD Package Definition - NetworkManager 1.54.0
+# Network connection manager and user applications
+
+Package: networkmanager
+Version: 1.54.0
+Architecture: x86_64
+Section: network
+Depends: glib2,libndp,curl,nss,dbus,libpsl,polkit,elogind,jansson,libgudev,newt,iptables
+Description: Network connection manager and user applications
+Source: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/releases/1.54.0/downloads/NetworkManager-1.54.0.tar.xz
+
+[configure]
+mkdir -p build && cd build && meson setup .. \
+    --prefix=/opt/hud \
+    --sysconfdir=/opt/hud/etc \
+    --localstatedir=/opt/hud/var \
+    -Dlibaudit=no \
+    -Dlibpsl=true \
+    -Dnmtui=true \
+    -Dovs=false \
+    -Dppp=false \
+    -Dselinux=false \
+    -Dsession_tracking_consolekit=false \
+    -Dsession_tracking=elogind \
+    -Dmodem_manager=false \
+    -Dsystemdsystemunitdir=/opt/hud/lib/systemd/system \
+    -Dsystemd_journal=false \
+    -Dqt=false \
+    -Ddocs=false \
+    -Dtests=no \
+    -Dcrypto=nss \
+    -Dconfig_plugins_default=keyfile
+
+[build]
+cd build && ninja -j$(nproc)
+
+[install]
+cd build && DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig 2>/dev/null || true
+# Create necessary directories
+mkdir -p /opt/hud/etc/NetworkManager/conf.d 2>/dev/null || true
+mkdir -p /opt/hud/etc/NetworkManager/system-connections 2>/dev/null || true
+mkdir -p /opt/hud/var/lib/NetworkManager 2>/dev/null || true
+mkdir -p /opt/hud/var/run/NetworkManager 2>/dev/null || true
+chmod 700 /opt/hud/etc/NetworkManager/system-connections 2>/dev/null || true
+# Create basic config if not exists
+if [ ! -f /opt/hud/etc/NetworkManager/NetworkManager.conf ]; then
+    cat > /opt/hud/etc/NetworkManager/NetworkManager.conf << 'NMCONF'
+[main]
+plugins=keyfile
+[keyfile]
+unmanaged-devices=none
+NMCONF
+fi
+echo "✓ NetworkManager 1.54.0 installed to /opt/hud"
+echo "  To start: systemctl start hud-networkmanager"
+echo "  CLI tool: /opt/hud/bin/nmcli"
+echo "  TUI tool: /opt/hud/bin/nmtui"
+
+[prerm]
+systemctl stop hud-networkmanager 2>/dev/null || true
+systemctl disable hud-networkmanager 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true
+
+[service]
+networkmanager

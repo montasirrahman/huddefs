@@ -1,0 +1,53 @@
+# HUD Package Definition - polkit 126
+# Authorization framework
+
+Package: polkit
+Version: 126
+Architecture: x86_64
+Section: security
+Depends: glib2,expat,linux-pam,duktape,elogind
+Description: Application-level authorization toolkit
+Source: https://gitlab.freedesktop.org/polkit/polkit/-/archive/126/polkit-126.tar.gz
+
+[configure]
+mkdir -p build && cd build && meson setup .. \
+    --prefix=/opt/hud \
+    --sysconfdir=/opt/hud/etc \
+    -Dman=false \
+    -Dexamples=false \
+    -Dgtk_doc=false \
+    -Dintrospection=false \
+    -Dtests=false \
+    -Dsession_tracking=libelogind \
+    -Djs_engine=duktape \
+    -Dsystemdsystemunitdir=/opt/hud/lib/systemd/system
+
+[build]
+cd build && ninja -j$(nproc)
+
+[install]
+cd build && DESTDIR=$DESTDIR ninja install
+# Create polkitd user setup script
+mkdir -p $DESTDIR/opt/hud/share/hud/setup
+cat > $DESTDIR/opt/hud/share/hud/setup/polkit-setup.sh << 'POLKITSETUP'
+#!/bin/bash
+getent group polkitd >/dev/null || groupadd -r polkitd
+getent passwd polkitd >/dev/null || useradd -r -g polkitd -d / -s /sbin/nologin -c "PolicyKit Daemon" polkitd
+POLKITSETUP
+chmod +x $DESTDIR/opt/hud/share/hud/setup/polkit-setup.sh
+
+[postinst]
+ldconfig 2>/dev/null || true
+if [ -x /opt/hud/share/hud/setup/polkit-setup.sh ]; then
+    /opt/hud/share/hud/setup/polkit-setup.sh 2>/dev/null || true
+fi
+echo "✓ polkit 126 installed to /opt/hud"
+
+[prerm]
+systemctl stop hud-polkit 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true
+
+[service]
+polkit

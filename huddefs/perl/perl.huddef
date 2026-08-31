@@ -1,0 +1,30 @@
+# HUD Package Definition - perl 5.42.0
+# Practical Extraction and Report Language
+Package: perl
+Version: 5.42.0
+Architecture: x86_64
+Section: development
+Depends: zlib
+Description: Practical Extraction and Report Language - programming language
+Source: https://www.cpan.org/src/5.0/perl-5.42.0.tar.xz
+[configure]
+sh Configure -des \
+             -D prefix=/opt/hud \
+             -D vendorprefix=/opt/hud \
+             -D useshrplib \
+             -D privlib=/opt/hud/lib/perl5/5.42/core_perl \
+             -D archlib=/opt/hud/lib/perl5/5.42/core_perl \
+             -D sitelib=/opt/hud/lib/perl5/5.42/site_perl \
+             -D sitearch=/opt/hud/lib/perl5/5.42/site_perl \
+             -D vendorlib=/opt/hud/lib/perl5/5.42/vendor_perl \
+             -D vendorarch=/opt/hud/lib/perl5/5.42/vendor_perl \
+             -D man1dir=/opt/hud/share/man/man1 \
+             -D man3dir=/opt/hud/share/man/man3 \
+             -D pager="/usr/bin/less -isR"
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ perl 5.42.0 installed to /opt/hud"
+/opt/hud/bin/perl -v 2>/dev/null | head -2 || true

@@ -1,0 +1,80 @@
+# HUD Package Definition - OpenJDK 24.0.2 (Source Build)
+# Java Development Kit (Source)
+# Fixed: Use OpenJDK's --with-extra-cflags/ldflags for /opt/hud paths
+
+Package: openjdk
+Version: 24.0.2
+Architecture: x86_64
+Section: development
+Depends: java-bin, alsa-lib, cups, cpio, libarchive, which, zip, glib, giflib, harfbuzz, lcms2, libjpeg-turbo, libpng, make-ca
+Description: Open-source Java Development Kit built from source
+Source: https://github.com/openjdk/jdk24u/archive/jdk-24.0.2-ga.tar.gz
+
+[configure]
+# Add /opt/hud paths for tools
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+# Fix build failure with glibc-2.42+
+find src -name *.*pp -exec sed -i 's/uabs(/g_uabs(/' {} \;
+
+# Save and clear MAKEFLAGS
+export MAKEFLAGS_HOLD=$MAKEFLAGS
+unset JAVA_HOME
+unset CLASSPATH
+unset MAKEFLAGS
+
+# Set JAVA_HOME for bootstrap JDK
+export JAVA_HOME=/opt/jdk
+export PATH="${JAVA_HOME}/bin:${PATH}"
+
+bash configure --enable-unlimited-crypto    \
+               --disable-warnings-as-errors \
+               --with-stdc++lib=dynamic     \
+               --with-giflib=system         \
+               --with-harfbuzz=system       \
+               --with-lcms=system           \
+               --with-libjpeg=system        \
+               --with-libpng=system         \
+               --with-zlib=system           \
+               --with-version-build="12"    \
+               --with-version-pre=""        \
+               --with-version-opt=""        \
+               --with-jobs=$(nproc)         \
+               --with-cacerts-file=/etc/pki/tls/java/cacerts \
+               --with-extra-cflags="-I/opt/hud/include" \
+               --with-extra-cxxflags="-I/opt/hud/include" \
+               --with-extra-ldflags="-L/opt/hud/lib -L/opt/hud/lib64"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:/opt/jdk/bin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make images
+
+[install]
+install -vdm755 $DESTDIR/opt/jdk-24.0.2+12
+cp -Rv build/*/images/jdk/* $DESTDIR/opt/jdk-24.0.2+12/
+
+for s in 16 24 32 48; do
+  install -vDm644 src/java.desktop/unix/classes/sun/awt/X11/java-icon${s}.png \
+                  $DESTDIR/usr/share/icons/hicolor/${s}x${s}/apps/java.png 2>/dev/null || true
+done
+
+[postinst]
+chown -R root:root /opt/jdk-24.0.2+12
+ln -sfv jdk-24.0.2+12 /opt/jdk
+
+cat > /etc/profile.d/openjdk.sh << "EOF"
+JAVA_HOME=/opt/jdk
+case ":$PATH:" in
+    *":$JAVA_HOME/bin:"*) ;;
+    *) PATH="$JAVA_HOME/bin:$PATH" ;;
+esac
+export JAVA_HOME PATH
+_JAVA_OPTIONS="-XX:-UsePerfData"
+export _JAVA_OPTIONS
+EOF
+
+ln -sfv /etc/pki/tls/java/cacerts /opt/jdk/lib/security/cacerts 2>/dev/null || true
+echo "✓ OpenJDK 24.0.2 installed to /opt/jdk-24.0.2+12"

@@ -1,0 +1,114 @@
+# HUD Package Definition - OpenLDAP 2.6.10
+# Lightweight Directory Access Protocol
+# Fixed: Properly locate Cyrus SASL in /opt/hud
+
+Package: openldap
+Version: 2.6.10
+Architecture: x86_64
+Section: server
+Depends: cyrus-sasl, openssl
+Description: Open source implementation of Lightweight Directory Access Protocol
+Source: https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.10.tgz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export CFLAGS="${CFLAGS} -I/opt/hud/include -I/opt/hud/include/sasl"
+export CPPFLAGS="${CPPFLAGS} -I/opt/hud/include -I/opt/hud/include/sasl"
+export LDFLAGS="${LDFLAGS} -L/opt/hud/lib -L/opt/hud/lib64 -Wl,-rpath,/opt/hud/lib"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+# Regenerate configure
+autoreconf -fiv 2>/dev/null || autoconf 2>/dev/null || true
+
+./configure --prefix=/opt/hud              \
+            --sysconfdir=/opt/hud/etc      \
+            --localstatedir=/var           \
+            --libexecdir=/opt/hud/lib      \
+            --disable-static               \
+            --disable-debug                \
+            --with-tls=openssl             \
+            --with-cyrus-sasl              \
+            --without-systemd              \
+            --enable-dynamic               \
+            --enable-crypt                 \
+            --enable-spasswd               \
+            --enable-slapd                 \
+            --enable-modules               \
+            --enable-rlookups              \
+            --enable-backends=mod          \
+            --disable-sql                  \
+            --disable-wt                   \
+            --enable-overlays=mod          \
+            CPPFLAGS="-I/opt/hud/include -I/opt/hud/include/sasl" \
+            LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make depend
+make
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# Fix .la files to use .so
+sed -e "s/\.la/.so/" -i $DESTDIR/opt/hud/etc/openldap/slapd.conf 2>/dev/null || true
+sed -e "s/\.la/.so/" -i $DESTDIR/opt/hud/etc/openldap/slapd.ldif 2>/dev/null || true
+
+# Create required directories
+install -vdm700 $DESTDIR/var/lib/openldap
+install -vdm700 $DESTDIR/opt/hud/etc/openldap/slapd.d
+
+# Install documentation
+install -vdm755 $DESTDIR/opt/hud/share/doc/openldap-2.6.10
+cp -vfr doc/{drafts,rfc,guide} $DESTDIR/opt/hud/share/doc/openldap-2.6.10/ 2>/dev/null || true
+
+# Install systemd service
+install -vdm755 $DESTDIR/etc/systemd/system
+cat > $DESTDIR/etc/systemd/system/slapd.service << 'SVCEOF'
+[Unit]
+Description=OpenLDAP Server Daemon
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/slapd/slapd.pid
+Environment="SLAPD_URLS=ldap:/// ldapi:///"
+Environment="SLAPD_OPTIONS=-F /opt/hud/etc/openldap/slapd.d"
+ExecStartPre=/bin/mkdir -p /run/slapd
+ExecStartPre=/bin/chown ldap:ldap /run/slapd
+ExecStart=/opt/hud/lib/slapd -u ldap -g ldap -h "${SLAPD_URLS}" $SLAPD_OPTIONS
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+[postinst]
+ldconfig
+
+# Create ldap user/group if they don't exist
+getent group ldap >/dev/null || groupadd -g 83 ldap
+getent passwd ldap >/dev/null || useradd -c "OpenLDAP Daemon Owner" \
+    -d /var/lib/openldap -u 83 -g ldap -s /bin/false ldap
+
+# Set proper ownership
+install -vdm700 -o ldap -g ldap /var/lib/openldap 2>/dev/null || true
+install -vdm700 -o ldap -g ldap /opt/hud/etc/openldap/slapd.d 2>/dev/null || true
+chmod 640 /opt/hud/etc/openldap/slapd.conf 2>/dev/null || true
+chmod 640 /opt/hud/etc/openldap/slapd.ldif 2>/dev/null || true
+chown root:ldap /opt/hud/etc/openldap/slapd.conf 2>/dev/null || true
+chown root:ldap /opt/hud/etc/openldap/slapd.ldif 2>/dev/null || true
+
+# Reload systemd
+systemctl daemon-reload 2>/dev/null || true
+
+echo "✓ OpenLDAP 2.6.10 installed to /opt/hud"
+echo ""
+echo "To start slapd:"
+echo "  systemctl enable --now slapd"
+echo ""
+echo "Configuration files:"
+echo "  Client: /opt/hud/etc/openldap/ldap.conf"
+echo "  Server: /opt/hud/etc/openldap/slapd.conf"

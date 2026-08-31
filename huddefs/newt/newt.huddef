@@ -1,0 +1,43 @@
+# HUD Package Definition - Newt 0.52.25
+# Text-mode widget library for user interfaces
+# Required by NetworkManager for nmtui
+
+Package: newt
+Version: 0.52.25
+Architecture: x86_64
+Section: libraries
+Depends: popt, slang, gpm, python
+Description: Text-mode widget-based user interface library
+Source: https://releases.pagure.org/newt/newt-0.52.25.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+# Disable static library installation
+sed -e '/install -m 644 $(LIBNEWT)/ s/^/#/' \
+    -e '/$(LIBNEWT):/,/rv/ s/^/#/'          \
+    -e 's/$(LIBNEWT)/$(LIBNEWTSH)/g'        \
+    -i Makefile.in
+
+# Detect Python version
+PYTHON_VER=$(python3 --version 2>&1 | sed 's/Python //' | cut -d. -f1,2)
+
+./configure --prefix=/opt/hud \
+            --with-gpm-support \
+            --with-python=python${PYTHON_VER}
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig
+echo "✓ Newt 0.52.25 installed to /opt/hud"

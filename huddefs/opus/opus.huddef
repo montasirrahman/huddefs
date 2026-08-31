@@ -1,0 +1,29 @@
+# HUD Package Definition - opus 1.5.2
+# Auto-generated for oVirt infrastructure
+
+Package: opus
+Version: 1.5.2
+Architecture: x86_64
+Section: misc
+Depends: 
+Description: Opus-1.5.2
+Source: https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "opus 1.5.2 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

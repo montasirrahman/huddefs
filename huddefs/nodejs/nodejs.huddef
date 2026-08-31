@@ -1,0 +1,30 @@
+# HUD Package Definition - nodejs 22.18.0
+# Auto-generated for oVirt infrastructure
+
+Package: nodejs
+Version: 22.18.0
+Architecture: x86_64
+Section: development
+Depends: libuv,nghttp2,icu,make-ca,brotli,which
+Description: Node.js-22.18.0
+Source: https://nodejs.org/dist/v22.18.0/node-v22.18.0.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --shared-openssl --shared-zlib
+
+[build]
+make -j$(nproc)
+
+[install]
+make install &&
+ln -sf node /usr/share/doc/node-22.18.0
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "nodejs 22.18.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

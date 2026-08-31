@@ -1,0 +1,36 @@
+# HUD Package Definition - Popt 1.19
+# Command-line option parsing library
+# Foundational dependency for newt and other packages
+
+Package: popt
+Version: 1.19
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Library for parsing command-line options
+Source: https://ftp.osuosl.org/pub/rpm/popt/releases/popt-1.x/popt-1.19.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+./configure --prefix=/opt/hud \
+            --disable-static
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make -j$(nproc)
+
+[check]
+make check
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig
+echo "✓ Popt 1.19 installed to /opt/hud"

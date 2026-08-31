@@ -1,0 +1,29 @@
+# HUD Package Definition - pixman 0.46.4
+# Auto-generated for oVirt infrastructure
+
+Package: pixman
+Version: 0.46.4
+Architecture: x86_64
+Section: graphics
+Depends: 
+Description: Pixman-0.46.4
+Source: https://www.cairographics.org/releases/pixman-0.46.4.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "pixman 0.46.4 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,38 @@
+# HUD Package Definition - openldap 2.6.10
+# Auto-generated for oVirt infrastructure
+
+Package: openldap
+Version: 2.6.10
+Architecture: x86_64
+Section: security
+Depends: mariadb,gnutls,cyrus-sasl,bootscripts
+Description: OpenLDAP-2.6.10
+Source: https://anduin.linuxfromscratch.org/BLFS/bdb/db-5.3.28.tar.gz
+Service: slapd
+
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc --enable-dynamic --enable-slapd --enable-modules
+
+[build]
+make -j$(nproc)
+
+[install]
+make install &&
+
+sed -e "s/\.la/.so/" -i /etc/openldap/slapd.{conf,ldif}{,.default} &&
+
+install -v -dm700 -o ldap -g ldap /var/lib/openldap     &&
+
+install -v -dm700 -o ldap -g ldap /etc/openldap/slap
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "openldap 2.6.10 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-slapd 2>/dev/null || true
+systemctl disable hud-slapd 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

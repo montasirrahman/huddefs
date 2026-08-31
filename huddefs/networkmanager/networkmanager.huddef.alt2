@@ -1,0 +1,187 @@
+# HUD Package Definition - NetworkManager 1.54.0
+# Network connection manager daemon - WITH INTROSPECTION
+# Requires: GLib rebuilt with introspection (provides Gio-2.0.gir, GLib-2.0.gir, GObject-2.0.gir)
+
+Package: networkmanager
+Version: 1.54.0
+Architecture: x86_64
+Section: networking
+Depends: libndp, curl, dhcpcd, glib, iptables, libpsl, newt, polkit, vala, dbus, systemd, gnutls, gobject-introspection, libnl
+Recommends: wpa_supplicant
+Description: Network configuration and management daemon (with introspection/Python bindings)
+Source: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/releases/1.54.0/downloads/NetworkManager-1.54.0.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include -Wno-error=array-bounds"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+# Critical: Set paths for GIR files
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share:${XDG_DATA_DIRS}"
+export GI_TYPELIB_PATH="/opt/hud/lib/girepository-1.0:/usr/lib/girepository-1.0:/usr/lib/x86_64-linux-gnu/girepository-1.0"
+
+# Verify required GIR files exist
+echo "Checking for required GIR files..."
+MISSING_GIR=0
+
+for gir in Gio-2.0.gir GLib-2.0.gir GObject-2.0.gir; do
+    if [ -f "/opt/hud/share/gir-1.0/$gir" ]; then
+        echo "  ✓ Found /opt/hud/share/gir-1.0/$gir"
+    elif [ -f "/usr/share/gir-1.0/$gir" ]; then
+        echo "  ✓ Found /usr/share/gir-1.0/$gir (system)"
+        # Copy to /opt/hud for consistency
+        mkdir -p /opt/hud/share/gir-1.0
+        cp -v "/usr/share/gir-1.0/$gir" /opt/hud/share/gir-1.0/
+    else
+        echo "  ✗ MISSING: $gir"
+        MISSING_GIR=1
+    fi
+done
+
+if [ "$MISSING_GIR" = "1" ]; then
+    echo ""
+    echo "ERROR: Required GIR files are missing!"
+    echo ""
+    echo "You must first rebuild GLib with introspection support:"
+    echo "  1. hud-build gobject-introspection-1.84.0.huddef"
+    echo "  2. hud-repo-manager add /var/hud-build/output/gobject-introspection-1.84.0-x86_64.hud"
+    echo "  3. hud update && hud install gobject-introspection -y"
+    echo "  4. hud-build glib-2.84.4-introspection.huddef"
+    echo "  5. hud-repo-manager add /var/hud-build/output/glib-2.84.4-x86_64.hud"
+    echo "  6. hud update && hud upgrade glib -y"
+    echo ""
+    echo "Then retry building NetworkManager."
+    exit 1
+fi
+
+echo ""
+echo "All required GIR files found. Proceeding with build..."
+
+# Fix python scripts for Python 3
+grep -rl '^#!.*python$' | xargs sed -i '1s/python/&3/' 2>/dev/null || true
+
+mkdir -p build
+cd build
+
+meson setup ..                         \
+      --prefix=/opt/hud                \
+      --sysconfdir=/etc                \
+      --localstatedir=/var             \
+      --buildtype=release              \
+      -D werror=false                  \
+      -D crypto=gnutls                 \
+      -D libaudit=no                   \
+      -D nmtui=true                    \
+      -D ovs=false                     \
+      -D ppp=false                     \
+      -D nbft=false                    \
+      -D selinux=false                 \
+      -D qt=false                      \
+      -D session_tracking=systemd      \
+      -D nm_cloud_setup=false          \
+      -D modem_manager=false           \
+      -D introspection=true            \
+      -D vapi=true                     \
+      -D tests=no
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share:${XDG_DATA_DIRS}"
+export GI_TYPELIB_PATH="/opt/hud/lib/girepository-1.0:/usr/lib/girepository-1.0"
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+# Rename doc directory
+mv -v $DESTDIR/opt/hud/share/doc/NetworkManager{,-1.54.0} 2>/dev/null || true
+
+# Install man pages if docs weren't built
+if [ ! -f $DESTDIR/opt/hud/share/man/man1/nmcli.1 ]; then
+    for file in $(echo ../man/*.[1578]); do
+        section=${file##*.}
+        install -vdm755 $DESTDIR/opt/hud/share/man/man$section
+        install -vm644 $file $DESTDIR/opt/hud/share/man/man$section/
+    done
+fi
+
+# Verify GIR output was created
+echo ""
+echo "Checking for generated NetworkManager GIR files..."
+ls -la $DESTDIR/opt/hud/share/gir-1.0/NM-1.0.gir 2>/dev/null && echo "✓ NM-1.0.gir created" || echo "WARNING: NM-1.0.gir not found"
+ls -la $DESTDIR/opt/hud/lib/girepository-1.0/NM-1.0.typelib 2>/dev/null && echo "✓ NM-1.0.typelib created" || echo "WARNING: NM-1.0.typelib not found"
+
+[postinst]
+ldconfig
+
+# Create minimal configuration
+install -vdm755 /etc/NetworkManager/conf.d
+
+if [ ! -f /etc/NetworkManager/NetworkManager.conf ]; then
+    cat >> /etc/NetworkManager/NetworkManager.conf << "EOF"
+[main]
+plugins=keyfile
+EOF
+fi
+
+# Enable polkit authorization
+cat > /etc/NetworkManager/conf.d/polkit.conf << "EOF"
+[main]
+auth-polkit=true
+EOF
+
+# Use dhcpcd as DHCP client
+cat > /etc/NetworkManager/conf.d/dhcp.conf << "EOF"
+[main]
+dhcp=dhcpcd
+EOF
+
+# Create netdev group for user network management
+groupadd -fg 86 netdev 2>/dev/null || true
+
+# Create polkit rule for netdev group
+install -vdm755 /usr/share/polkit-1/rules.d
+cat > /usr/share/polkit-1/rules.d/org.freedesktop.NetworkManager.rules << "EOF"
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("netdev")) {
+        return polkit.Result.YES;
+    }
+});
+EOF
+
+# Create symlinks for system access
+ln -sf /opt/hud/bin/nmcli /usr/bin/nmcli 2>/dev/null || true
+ln -sf /opt/hud/bin/nmtui /usr/bin/nmtui 2>/dev/null || true
+ln -sf /opt/hud/sbin/NetworkManager /usr/sbin/NetworkManager 2>/dev/null || true
+
+# Install systemd service (copy to system location)
+if [ -f /opt/hud/lib/systemd/system/NetworkManager.service ]; then
+    cp -f /opt/hud/lib/systemd/system/NetworkManager*.service /usr/lib/systemd/system/
+fi
+
+systemctl daemon-reload 2>/dev/null || true
+
+echo ""
+echo "✓ NetworkManager 1.54.0 installed to /opt/hud (WITH INTROSPECTION)"
+echo ""
+echo "Introspection files:"
+ls -la /opt/hud/share/gir-1.0/NM-1.0.gir 2>/dev/null || echo "  NM-1.0.gir: not found"
+ls -la /opt/hud/lib/girepository-1.0/NM-1.0.typelib 2>/dev/null || echo "  NM-1.0.typelib: not found"
+echo ""
+echo "Python usage example:"
+echo "  import gi"
+echo "  gi.require_version('NM', '1.0')"
+echo "  from gi.repository import NM"
+echo ""
+echo "To enable NetworkManager:"
+echo "  1. Disable systemd-networkd if in use: systemctl disable systemd-networkd"
+echo "  2. Enable NetworkManager: systemctl enable NetworkManager"
+echo "  3. Start NetworkManager: systemctl start NetworkManager"
+echo ""
+echo "To allow users to manage networks, add them to the netdev group:"
+echo "  usermod -a -G netdev <username>"

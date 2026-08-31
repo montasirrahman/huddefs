@@ -1,0 +1,32 @@
+# HUD Package Definition - postgresql 17.6
+# Auto-generated for oVirt infrastructure
+
+Package: postgresql
+Version: 17.6
+Architecture: x86_64
+Section: databases
+Depends: 
+Description: PostgreSQL-17.6
+Source: https://ftp.postgresql.org/pub/source/v17.6/postgresql-17.6.tar.bz2
+Service: postgresql
+
+[configure]
+./configure --prefix=/opt/hud --with-openssl --with-libxml --enable-thread-safety
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "postgresql 17.6 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-postgresql 2>/dev/null || true
+systemctl disable hud-postgresql 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

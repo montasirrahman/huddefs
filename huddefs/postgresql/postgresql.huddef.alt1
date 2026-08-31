@@ -1,0 +1,143 @@
+# HUD Package Definition - PostgreSQL 17.6
+# Advanced Object-Relational Database Management System
+# Full-featured build with systemd service
+
+Package: postgresql
+Version: 17.6
+Architecture: x86_64
+Section: databases
+Depends: openssl, icu, libxml2, libxslt
+Description: Advanced open source object-relational database system
+Source: https://ftp.postgresql.org/pub/source/v17.6/postgresql-17.6.tar.bz2
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export CFLAGS="${CFLAGS} -I/opt/hud/include"
+export CPPFLAGS="${CPPFLAGS} -I/opt/hud/include"
+export LDFLAGS="${LDFLAGS} -L/opt/hud/lib -L/opt/hud/lib64 -Wl,-rpath,/opt/hud/lib"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+# Change default socket directory from /tmp to /run/postgresql
+sed -i '/DEFAULT_PGSOCKET_DIR/s@/tmp@/run/postgresql@' src/include/pg_config_manual.h
+
+./configure --prefix=/opt/hud                          \
+            --sysconfdir=/opt/hud/etc                  \
+            --docdir=/opt/hud/share/doc/postgresql-17.6 \
+            --with-openssl                             \
+            --with-icu                                 \
+            --with-libxml                              \
+            --with-libxslt                             \
+            --with-system-tzdata=/usr/share/zoneinfo  \
+            --enable-thread-safety
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make
+
+# Build contrib modules (optional but recommended)
+make -C contrib
+
+[install]
+make DESTDIR=$DESTDIR install
+make DESTDIR=$DESTDIR install-docs
+
+# Install contrib modules
+make -C contrib DESTDIR=$DESTDIR install
+
+# Create directories for data and runtime
+install -vdm700 $DESTDIR/srv/pgsql/data
+install -vdm755 $DESTDIR/run/postgresql
+
+# Install systemd service
+install -vdm755 $DESTDIR/etc/systemd/system
+cat > $DESTDIR/etc/systemd/system/postgresql.service << 'SVCEOF'
+[Unit]
+Description=PostgreSQL database server
+Documentation=man:postgres(1)
+After=network.target
+
+[Service]
+Type=notify
+User=postgres
+Group=postgres
+
+# Data directory
+Environment=PGDATA=/srv/pgsql/data
+
+# Runtime directory
+RuntimeDirectory=postgresql
+RuntimeDirectoryMode=0755
+
+# Paths
+Environment=PATH=/opt/hud/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=LD_LIBRARY_PATH=/opt/hud/lib
+
+# Pre-start: create runtime directory
+ExecStartPre=/bin/mkdir -p /run/postgresql
+ExecStartPre=/bin/chown postgres:postgres /run/postgresql
+
+# Start PostgreSQL
+ExecStart=/opt/hud/bin/postgres -D ${PGDATA}
+
+# Reload configuration
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Stop PostgreSQL (smart shutdown)
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutSec=infinity
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+# Install environment profile
+install -vdm755 $DESTDIR/etc/profile.d
+cat > $DESTDIR/etc/profile.d/postgresql.sh << 'ENVEOF'
+# PostgreSQL environment
+PGSQL_HOME=/opt/hud
+export PATH="${PGSQL_HOME}/bin:${PATH}"
+export LD_LIBRARY_PATH="${PGSQL_HOME}/lib:${LD_LIBRARY_PATH}"
+export PGDATA=/srv/pgsql/data
+ENVEOF
+
+[postinst]
+ldconfig
+
+# Create postgres user/group if they don't exist
+getent group postgres >/dev/null || groupadd -g 41 postgres
+getent passwd postgres >/dev/null || useradd -c "PostgreSQL Server" \
+    -g postgres -d /srv/pgsql/data -u 41 -s /bin/bash postgres
+
+# Set proper ownership
+install -vdm700 -o postgres -g postgres /srv/pgsql/data 2>/dev/null || true
+install -vdm755 -o postgres -g postgres /run/postgresql 2>/dev/null || true
+chown -Rv postgres:postgres /srv/pgsql 2>/dev/null || true
+
+# Reload systemd
+systemctl daemon-reload 2>/dev/null || true
+
+echo "✓ PostgreSQL 17.6 installed to /opt/hud"
+echo ""
+echo "=== Quick Start Guide ==="
+echo ""
+echo "1. Initialize the database cluster:"
+echo "   su - postgres -c '/opt/hud/bin/initdb -D /srv/pgsql/data'"
+echo ""
+echo "2. Start PostgreSQL using systemd:"
+echo "   systemctl enable --now postgresql"
+echo ""
+echo "   Or manually:"
+echo "   su - postgres -c '/opt/hud/bin/pg_ctl -D /srv/pgsql/data -l /srv/pgsql/data/logfile start'"
+echo ""
+echo "3. Create a database:"
+echo "   su - postgres -c '/opt/hud/bin/createdb mydb'"
+echo ""
+echo "4. Connect with psql:"
+echo "   su - postgres -c '/opt/hud/bin/psql mydb'"
+echo ""
+echo "5. Stop PostgreSQL:"
+echo "   systemctl stop postgresql"
+echo "   # Or: su - postgres -c '/opt/hud/bin/pg_ctl -D /srv/pgsql/data stop'"

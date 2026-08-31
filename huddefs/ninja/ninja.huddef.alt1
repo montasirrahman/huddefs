@@ -1,0 +1,20 @@
+# HUD Package Definition - ninja 1.13.1
+# Small build system with a focus on speed
+Package: ninja
+Version: 1.13.1
+Architecture: x86_64
+Section: build
+Depends: python3
+Description: Small build system with a focus on speed
+Source: https://github.com/ninja-build/ninja/archive/v1.13.1/ninja-1.13.1.tar.gz
+[configure]
+sed -i '/int Guess/a int j = 0;' src/ninja.cc
+python3 configure.py --bootstrap
+[build]
+echo "Build completed during configure"
+[install]
+install -vDm755 ninja $DESTDIR/opt/hud/bin/ninja
+install -vDm644 misc/bash-completion $DESTDIR/opt/hud/share/bash-completion/completions/ninja
+install -vDm644 misc/zsh-completion $DESTDIR/opt/hud/share/zsh/site-functions/_ninja
+[postinst]
+echo "✓ ninja 1.13.1 installed to /opt/hud"

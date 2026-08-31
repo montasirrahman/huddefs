@@ -1,0 +1,87 @@
+# HUD Package Definition - Polkit 126
+# Authorization Toolkit
+# Defines and handles authorizations for unprivileged processes
+# Fixed: Disabled gobject-introspection (optional dependency)
+
+Package: polkit
+Version: 126
+Architecture: x86_64
+Section: security
+Depends: duktape, glib, systemd, dbus, libxslt
+Description: Toolkit for defining and handling authorizations between unprivileged and privileged processes
+Source: https://github.com/polkit-org/polkit/archive/126/polkit-126.tar.gz
+
+[configure]
+mkdir -p build
+cd build
+
+# Set up environment for finding libraries in /opt/hud
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LIBRARY_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include ${CFLAGS}"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64 ${LDFLAGS}"
+
+# Determine auth framework: PAM if available, otherwise shadow
+AUTH_FW="shadow"
+if pkg-config --exists pam 2>/dev/null; then
+    AUTH_FW="pam"
+elif [ -f /opt/hud/lib/libpam.so ] || [ -f /usr/lib/libpam.so ]; then
+    # PAM exists but no pkg-config file - create one
+    if [ -f /opt/hud/lib/libpam.so ] && [ ! -f /opt/hud/lib/pkgconfig/pam.pc ]; then
+        mkdir -p /opt/hud/lib/pkgconfig
+        cat > /opt/hud/lib/pkgconfig/pam.pc << 'PAMPC'
+prefix=/opt/hud
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: pam
+Description: Linux PAM (Pluggable Authentication Modules)
+Version: 1.7.1
+Libs: -L${libdir} -lpam
+Cflags: -I${includedir}
+PAMPC
+        AUTH_FW="pam"
+    fi
+fi
+
+echo "Using authentication framework: ${AUTH_FW}"
+
+meson setup ..                     \
+    --prefix=/opt/hud              \
+    --buildtype=release            \
+    --pkg-config-path=/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig \
+    -D man=false                   \
+    -D session_tracking=logind     \
+    -D tests=false                 \
+    -D gtk_doc=false               \
+    -D introspection=false         \
+    -D examples=false              \
+    -D authfw=${AUTH_FW}
+
+[build]
+cd build
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+[postinst]
+# Create polkitd user and group for daemon ownership
+getent group polkitd >/dev/null || groupadd -fg 27 polkitd
+getent passwd polkitd >/dev/null || useradd -c "PolicyKit Daemon Owner" \
+    -d /etc/polkit-1 -u 27 -g polkitd -s /bin/false polkitd
+
+# Set proper ownership on polkit directories
+chown -R polkitd:polkitd /opt/hud/lib/polkit-1 2>/dev/null || true
+
+# Create polkit rules directory
+mkdir -p /etc/polkit-1/rules.d
+
+ldconfig 2>/dev/null || true
+echo "✓ Polkit 126 installed to /opt/hud"
+echo "  Note: Requires systemd-logind at runtime for session tracking"
+echo "  Note: Install a polkit authentication agent for graphical environments"

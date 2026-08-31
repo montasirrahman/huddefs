@@ -1,0 +1,53 @@
+# HUD Package Definition - p11-kit 0.25.5
+# Based on BLFS 12.4 documentation
+
+Package: p11-kit
+Version: 0.25.5
+Architecture: x86_64
+Section: security
+Depends: libtasn1
+Description: Library to load and enumerate PKCS#11 modules for cryptographic token interface
+Source: https://github.com/p11-glue/p11-kit/releases/download/0.25.5/p11-kit-0.25.5.tar.xz
+
+[configure]
+# Prepare the distribution specific anchor hook
+sed '20,$ d' -i trust/trust-extract-compat &&
+cat >> trust/trust-extract-compat << "EOF"
+# Copy existing anchor modifications to /etc/ssl/local
+/usr/libexec/make-ca/copy-trust-modifications
+
+# Update trust stores
+/usr/sbin/make-ca -r
+EOF
+
+# Create build directory and run meson
+mkdir -p p11-build &&
+cd p11-build &&
+meson setup ..            \
+      --prefix=/opt/hud   \
+      --buildtype=release \
+      -D trust_paths=/etc/pki/anchors
+
+[build]
+cd p11-build &&
+ninja
+
+[install]
+cd p11-build &&
+DESTDIR=$DESTDIR ninja install &&
+ln -sfv /opt/hud/libexec/p11-kit/trust-extract-compat \
+        $DESTDIR/opt/hud/bin/update-ca-certificates
+
+[postinst]
+ldconfig 2>/dev/null || true
+# Create symlink for NSS compatibility if NSS is installed
+if [ -d /usr/lib/pkcs11 ]; then
+    ln -sfv ./pkcs11/p11-kit-trust.so /usr/lib/libnssckbi.so 2>/dev/null || true
+fi
+echo "p11-kit 0.25.5 installed to /opt/hud"
+
+[prerm]
+# No services to stop
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,29 @@
+# HUD Package Definition - nghttp2 1.66.0
+# Auto-generated for oVirt infrastructure
+
+Package: nghttp2
+Version: 1.66.0
+Architecture: x86_64
+Section: misc
+Depends: libxml2,jansson,c-ares,sphinx
+Description: nghttp2-1.66.0
+Source: https://github.com/nghttp2/nghttp2/releases/download/v1.66.0/nghttp2-1.66.0.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "nghttp2 1.66.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

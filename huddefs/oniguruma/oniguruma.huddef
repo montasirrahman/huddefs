@@ -1,0 +1,23 @@
+# HUD Package Definition - Oniguruma 6.9.10
+# Regular expression library
+
+Package: oniguruma
+Version: 6.9.10
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Regular expression library for multibyte character encodings
+Source: https://github.com/kkos/oniguruma/releases/download/v6.9.10/onig-6.9.10.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ Oniguruma 6.9.10 installed to /opt/hud"

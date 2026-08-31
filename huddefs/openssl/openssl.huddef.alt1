@@ -1,0 +1,41 @@
+# HUD Package Definition - openssl 3.4.0
+# Cryptography and SSL/TLS toolkit
+
+Package: openssl
+Version: 3.4.0
+Architecture: x86_64
+Section: security
+Depends: zlib,perl
+Description: Cryptography and SSL/TLS toolkit
+Source: https://github.com/openssl/openssl/releases/download/openssl-3.4.0/openssl-3.4.0.tar.gz
+
+[configure]
+./Configure \
+    --prefix=/opt/hud \
+    --openssldir=/opt/hud/etc/ssl \
+    --libdir=lib \
+    shared \
+    zlib-dynamic \
+    enable-ec_nistp_64_gcc_128 \
+    linux-x86_64
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install_sw install_ssldirs
+
+[postinst]
+ldconfig 2>/dev/null || true
+# Create CA certificates directory structure
+mkdir -p /opt/hud/etc/ssl/certs 2>/dev/null || true
+mkdir -p /opt/hud/etc/ssl/private 2>/dev/null || true
+chmod 700 /opt/hud/etc/ssl/private 2>/dev/null || true
+# Link system CA bundle if available
+if [ -f /etc/pki/tls/certs/ca-bundle.crt ]; then
+    ln -sf /etc/pki/tls/certs/ca-bundle.crt /opt/hud/etc/ssl/cert.pem 2>/dev/null || true
+elif [ -f /etc/ssl/certs/ca-certificates.crt ]; then
+    ln -sf /etc/ssl/certs/ca-certificates.crt /opt/hud/etc/ssl/cert.pem 2>/dev/null || true
+fi
+echo "✓ openssl 3.4.0 installed to /opt/hud"
+/opt/hud/bin/openssl version 2>/dev/null || true

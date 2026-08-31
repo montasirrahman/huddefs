@@ -1,0 +1,28 @@
+# HUD Package Definition - newt 0.52.25
+# Text mode interface library
+
+Package: newt
+Version: 0.52.25
+Architecture: x86_64
+Section: libraries
+Depends: slang,popt
+Description: Text mode interface library (for nmtui)
+Source: https://releases.pagure.org/newt/newt-0.52.25.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --with-gpm-support \
+    --without-tcl \
+    LDFLAGS="-L/opt/hud/lib -Wl,-rpath,/opt/hud/lib" \
+    CPPFLAGS="-I/opt/hud/include"
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ newt 0.52.25 installed to /opt/hud"

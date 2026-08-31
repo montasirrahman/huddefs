@@ -1,0 +1,29 @@
+# HUD Package Definition - p11-kit 0.25.5
+# Auto-generated for oVirt infrastructure
+
+Package: p11-kit
+Version: 0.25.5
+Architecture: x86_64
+Section: misc
+Depends: gtk-doc,libtasn1,make-ca,nss
+Description: p11-kit-0.25.5
+Source: https://github.com/p11-glue/p11-kit/releases/download/0.25.5/p11-kit-0.25.5.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "p11-kit 0.25.5 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

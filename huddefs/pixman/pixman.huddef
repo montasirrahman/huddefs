@@ -1,0 +1,28 @@
+# HUD Package Definition - Pixman 0.46.4
+# Low-level pixel manipulation library (required for QEMU)
+# Updates installed 0.44.2 to required 0.46.4
+Package: pixman
+Version: 0.46.4
+Architecture: x86_64
+Section: graphics
+Depends: glib
+Description: Low-level pixel manipulation library providing image compositing and trapezoid rasterization
+Source: https://www.cairographics.org/releases/pixman-0.46.4.tar.gz
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+ldconfig
+echo "✓ Pixman 0.46.4 installed to /opt/hud"

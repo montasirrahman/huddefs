@@ -1,0 +1,29 @@
+# HUD Package Definition - openjdk 24.0.2
+# Auto-generated for oVirt infrastructure
+
+Package: openjdk
+Version: 24.0.2
+Architecture: x86_64
+Section: development
+Depends: alsa-lib,java,git,graphviz,ojdk-conf,mercurial,cups,make-ca,harfbuzz,libarchive,zip,libjpeg,xorg7-lib,libpng,which
+Description: OpenJDK-24.0.2
+Source: https://github.com/openjdk/jdk24u/archive/jdk-24.0.2-ga.tar.gz
+
+[configure]
+bash configure --prefix=/opt/hud --with-boot-jdk=/usr/lib/jvm/java-21-openjdk --disable-warnings-as-errors
+
+[build]
+make images
+
+[install]
+mkdir -p $DESTDIR/opt/hud/lib/jvm && cp -a build/*/images/jdk/* $DESTDIR/opt/hud/lib/jvm/
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "openjdk 24.0.2 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

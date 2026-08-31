@@ -1,0 +1,108 @@
+# HUD Package Definition - NetworkManager 1.54.0
+# Network connection manager daemon - WITH INTROSPECTION
+# Requires: GLib rebuilt with introspection (provides Gio-2.0.gir, GLib-2.0.gir, GObject-2.0.gir)
+
+Package: networkmanager
+Version: 1.54.0
+Architecture: x86_64
+Section: networking
+Depends: libndp, curl, dhcpcd, glib, iptables, libpsl, newt, polkit, vala, dd bus, systemd, gnutls, 10 gobject-introspection, libnl, nghttp2, brotli, libseccomp
+Recommends: wpa_supplicant
+Description: Network configuration and management daemon (with introspection/Python bindings)
+Source: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/releases/1.54.0/downloads/NetworkManager-1.54.0.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include -Wno-error=array-bounds"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share:${XDG_DATA_DIRS}"
+export GI_TYPELIB_PATH="/opt/hud/lib/girepository-1.0:/usr/lib/girepository-1.0:/usr/lib/x86_64-linux-gnu/girepository-1.0"
+echo "Checking for required GIR files..."
+MISSING_GIR=0
+for gir in Gio-2.0.gir GLib-2.0.gir GObject-2.0.gir; do
+    if [ -f "/opt/hud/share/gir-1.0/$gir" ]; then
+        echo "  Found /opt/hud/share/gir-1.0/$gir"
+    elif [ -f "/usr/share/gir-1.0/$gir" ]; then
+        echo "  Found /usr/share/gir-1.0/$gir (system)"
+        mkdir -p /opt/hud/share/gir-1.0
+        cp -v "/usr/share/gir-1.0/$gir" /opt/hud/share/gir-1.0/
+    else
+        echo "  MISSING: $gir"
+        MISSING_GIR=1
+    fi
+done
+if [ "$MISSING_GIR" = "1" ]; then
+    echo "ERROR: Required GIR files are missing!"
+    exit 1
+fi
+echo "All required GIR files found. Proceeding with build..."
+grep -rl '^#!.*python$' | xargs sed -i '1s/python/&3/' 2>/dev/null || true
+mkdir -p build
+cd build
+meson setup ..                         \
+      --prefix=/opt/hud                \
+      --sysconfdir=/etc                \
+      --localstatedir=/var             \
+      --buildtype=release              \
+      -D werror=false                  \
+      -D crypto=gnutls                 \
+      -D libaudit=no                   \
+      -D nmtui=true                    \
+      -D ovs=false                     \
+      -D ppp=false                     \
+      -D nbft=false                    \
+      -D selinux=false                 \
+      -D qt=false                      \
+      -D session_tracking=systemd      \
+      -D nm_cloud_setup=false          \
+      -D modem_manager=false           \
+      -D introspection=true            \
+      -D vapi=true                     \
+      -D tests=no
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share:${XDG_DATA_DIRS}"
+export GI_TYPELIB_PATH="/opt/hud/lib/girepository-1.0:/usr/lib/girepository-1.0"
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+mv -v $DESTDIR/opt/hud/share/doc/NetworkManager{,-1.54.0} 2>/dev/null || true
+if [ ! -f $DESTDIR/opt/hud/share/man/man1/nmcli.1 ]; then
+    for file in $(echo ../man/*.[1578]); do
+        section=${file##*.}
+        install -vdm755 $DESTDIR/opt/hud/share/man/man$section
+        install -vm644 $file $DESTDIR/opt/hud/share/man/man$section/
+    done
+fi
+echo "Checking for generated NetworkManager GIR files..."
+ls -la $DESTDIR/opt/hud/share/gir-1.0/NM-1.0.gir 2>/dev/null || echo "WARNING: NM-1.0.gir not found"
+ls -la $DESTDIR/opt/hud/lib/girepository-1.0/NM-1.0.typelib 2>/dev/null || echo "WARNING: NM-1.0.typelib not found"
+
+[postinst]
+ldconfig
+install -vdm755 /etc/NetworkManager/conf.d
+test -f /etc/NetworkManager/NetworkManager.conf || printf '[main]\nplugins=keyfile\n' > /etc/NetworkManager/NetworkManager.conf
+printf '[main]\nauth-polkit=true\n' > /etc/NetworkManager/conf.d/polkit.conf
+printf '[main]\ndhcp=dhcpcd\n' > /etc/NetworkManager/conf.d/dhcp.conf
+groupadd -fg 86 netdev 2>/dev/null || true
+install -vdm755 /usr/share/polkit-1/rules.d
+printf 'polkit.addRule(function(action, subject) { if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("netdev")) { return polkit.Result.YES; } });\n' > /usr/share/polkit-1/rules.d/org.freedesktop.NetworkManager.rules
+ln -sf /opt/hud/bin/nmcli /usr/bin/nmcli 2>/dev/null || true
+ln -sf /opt/hud/bin/nmtui /usr/bin/nmtui 2>/dev/null || true
+ln -sf /opt/hud/sbin/NetworkManager /usr/sbin/NetworkManager 2>/dev/null || true
+printf '[Unit]\nDescription=Network Manager\nDocumentation=man:NetworkManager(8)\nWants=network.target\nAfter=network-pre.target dbus.service\nBefore=network.target\n\n[Service]\nType=dbus\nBusName=org.freedesktop.NetworkManager\nExecReload=/bin/kill -HUP $MAINPID\nExecStart=/opt/hud/sbin/NetworkManager --no-daemon\nRestart=on-failure\nRestartSec=1s\nProtectSystem=true\nProtectHome=read-only\n\n[Install]\nWantedBy=multi-user.target\nAlias=dbus-org.freedesktop.NetworkManager.service\n' > /etc/systemd/system/NetworkManager.service
+printf '[Unit]\nDescription=Network Manager Wait Online\nRequires=NetworkManager.service\nAfter=NetworkManager.service\nBefore=network-online.target\n\n[Service]\nType=oneshot\nExecStart=/opt/hud/bin/nm-online -s -q\nRemainAfterExit=yes\n\n[Install]\nWantedBy=network-online.target\n' > /etc/systemd/system/NetworkManager-wait-online.service
+printf '[Unit]\nDescription=Network Manager Script Dispatcher Service\nWants=NetworkManager.service\nAfter=NetworkManager.service\n\n[Service]\nType=dbus\nBusName=org.freedesktop.nm_dispatcher\nExecStart=/opt/hud/libexec/nm-dispatcher\nNotifyAccess=main\n\n[Install]\nWantedBy=NetworkManager.service\n' > /etc/systemd/system/NetworkManager-dispatcher.service
+systemctl daemon-reload
+systemctl enable NetworkManager.service
+systemctl start NetworkManager.service || true
+echo "NetworkManager 1.54.0 installed and enabled"
+echo "Commands: nmtui, nmcli"
+echo "Check status: systemctl status NetworkManager"

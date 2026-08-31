@@ -1,0 +1,88 @@
+# HUD Package Definition - nftables 1.1.1
+# Netfilter tables - modern Linux firewall subsystem
+# Required by firewalld and libvirt for packet filtering
+# Reference: https://netfilter.org/projects/nftables/
+#
+# KERNEL REQUIREMENTS:
+# The following kernel options must be enabled:
+#   CONFIG_NF_TABLES=y
+#   CONFIG_NF_TABLES_INET=y (CRITICAL - inet family support)
+#   CONFIG_NF_TABLES_NETDEV=y
+#   CONFIG_NFT_CT=m
+#   CONFIG_NFT_LOG=m
+#   CONFIG_NFT_LIMIT=m
+#   CONFIG_NFT_MASQ=m
+#   CONFIG_NFT_NAT=m
+#   CONFIG_NFT_REJECT=m
+#   CONFIG_NFT_COMPAT=m
+#   CONFIG_NFT_COUNTER=y (built-in recommended)
+
+Package: nftables
+Version: 1.1.1
+Architecture: x86_64
+Section: network
+Depends: libnftnl, libmnl, readline, gmp, jansson
+Description: Netfilter tables userspace tools (modern iptables replacement)
+Source: https://www.netfilter.org/projects/nftables/files/nftables-1.1.1.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+./configure --prefix=/opt/hud          \
+            --sysconfdir=/etc          \
+            --localstatedir=/var       \
+            --with-json                \
+            --with-python-bin=/usr/bin/python3 \
+            --enable-python
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make -j$(nproc)
+
+[install]
+DESTDIR=$DESTDIR make install
+
+[postinst]
+ldconfig
+
+# Add library path to system ldconfig
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/hud.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/hud.conf
+ldconfig
+
+# Create symlinks
+ln -sf /opt/hud/sbin/nft /usr/sbin/nft 2>/dev/null || true
+ln -sf /opt/hud/sbin/nft /sbin/nft 2>/dev/null || true
+
+# Create basic nftables config
+install -vdm755 /etc/nftables
+cat > /etc/nftables/nftables.conf << 'EOF'
+#!/usr/sbin/nft -f
+# Basic nftables configuration
+# Managed by firewalld when firewalld is running
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy accept;
+    }
+    chain forward {
+        type filter hook forward priority 0; policy accept;
+    }
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}
+EOF
+
+echo ""
+echo "nftables 1.1.1 installed"
+echo "Binary: /opt/hud/sbin/nft (symlinked to /usr/sbin/nft)"
+echo ""
+echo "Test: nft list tables"
+echo "Note: firewalld manages nftables rules when running"
