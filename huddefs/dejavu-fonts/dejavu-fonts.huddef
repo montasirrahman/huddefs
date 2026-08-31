@@ -1,0 +1,19 @@
+# HUD Package Definition - dejavu-fonts 2.37
+# DejaVu fonts
+Package: dejavu-fonts
+Version: 2.37
+Architecture: x86_64
+Section: fonts
+Depends: fontconfig
+Description: DejaVu fonts based on Bitstream Vera fonts
+Source: https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2
+[configure]
+echo "No configure needed for fonts"
+[build]
+echo "No build needed for fonts"
+[install]
+mkdir -p $DESTDIR/opt/hud/share/fonts/dejavu
+cp -v ttf/*.ttf $DESTDIR/opt/hud/share/fonts/dejavu/
+[postinst]
+echo "✓ dejavu-fonts 2.37 installed to /opt/hud"
+fc-cache -f /opt/hud/share/fonts/dejavu 2>/dev/null || true

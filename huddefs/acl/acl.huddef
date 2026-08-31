@@ -1,0 +1,25 @@
+# HUD Package Definition - acl 2.3.2
+# Access Control Lists library
+
+Package: acl
+Version: 2.3.2
+Architecture: x86_64
+Section: libraries
+Depends: attr
+Description: Access Control Lists utilities and library
+Source: https://download.savannah.gnu.org/releases/acl/acl-2.3.2.tar.xz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ acl 2.3.2 installed to /opt/hud"

@@ -1,0 +1,76 @@
+# HUD Package Definition - CUPS 2.4.12
+# Common Unix Printing System
+# Print spooler and utilities based on Internet Printing Protocol
+
+Package: cups
+Version: 2.4.12
+Architecture: x86_64
+Section: system
+Depends: gnutls, dbus, libusb, linux-pam
+Description: Common Unix Printing System - print spooler and associated utilities based on IPP
+Source: https://github.com/OpenPrinting/cups/releases/download/v2.4.12/cups-2.4.12-source.tar.gz
+
+[configure]
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LDFLAGS="-L/opt/hud/lib ${LDFLAGS}"
+export CFLAGS="-I/opt/hud/include ${CFLAGS}"
+
+./configure --prefix=/opt/hud            \
+            --libdir=/opt/hud/lib        \
+            --with-rundir=/run/cups      \
+            --with-system-groups=lpadmin \
+            --with-docdir=/opt/hud/share/cups/doc-2.4.12
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# Create symlink for documentation
+ln -svnf ../cups/doc-2.4.12 $DESTDIR/opt/hud/share/doc/cups-2.4.12 2>/dev/null || true
+
+# Create PAM configuration
+mkdir -p $DESTDIR/etc/pam.d
+cat > $DESTDIR/etc/pam.d/cups << 'EOF'
+# Begin /etc/pam.d/cups
+
+auth    include system-auth
+account include system-account
+session include system-session
+
+# End /etc/pam.d/cups
+EOF
+
+# Create client configuration directory
+mkdir -p $DESTDIR/etc/cups
+
+[postinst]
+# Create lp user if not exists
+getent group lp >/dev/null || groupadd -g 7 lp
+getent passwd lp >/dev/null || useradd -c "Print Service User" -d /var/spool/cups \
+    -g lp -s /bin/false -u 9 lp
+
+# Create lpadmin group for administrative access
+getent group lpadmin >/dev/null || groupadd -g 19 lpadmin
+
+# Create required directories
+mkdir -p /var/spool/cups
+mkdir -p /var/log/cups
+mkdir -p /var/cache/cups
+mkdir -p /run/cups
+chown -R lp:lp /var/spool/cups
+chown -R lp:lp /var/log/cups
+chown -R lp:lp /var/cache/cups
+
+# Create client configuration
+echo "ServerName /run/cups/cups.sock" > /etc/cups/client.conf
+
+# Enable and start CUPS (socket activation)
+systemctl enable cups.socket 2>/dev/null || true
+systemctl enable cups.service 2>/dev/null || true
+
+ldconfig 2>/dev/null || true
+echo "✓ CUPS 2.4.12 installed to /opt/hud"
+echo "  Web interface: http://localhost:631"
+echo "  To add user to admin group: usermod -a -G lpadmin <username>"

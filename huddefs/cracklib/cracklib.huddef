@@ -1,0 +1,29 @@
+# HUD Package Definition - cracklib 2.10.3
+# Auto-generated for oVirt infrastructure
+
+Package: cracklib
+Version: 2.10.3
+Architecture: x86_64
+Section: libraries
+Depends: 
+Description: CrackLib-2.10.3
+Source: https://github.com/cracklib/cracklib/releases/download/v2.10.3/cracklib-2.10.3.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "cracklib 2.10.3 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

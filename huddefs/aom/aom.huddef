@@ -1,0 +1,23 @@
+# HUD Package Definition - aom 3.12.1
+# Alliance for Open Media AV1 codec
+
+Package: aom
+Version: 3.12.1
+Architecture: x86_64
+Section: multimedia
+Depends: cmake, nasm
+Description: AV1 video codec library from Alliance for Open Media
+Source: https://storage.googleapis.com/aom-releases/libaom-3.12.1.tar.gz
+
+[configure]
+mkdir -p aom_build && cd aom_build && cmake .. -DCMAKE_INSTALL_PREFIX=/opt/hud -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DENABLE_DOCS=OFF -DENABLE_TESTS=OFF
+
+[build]
+cd aom_build && make -j$(nproc)
+
+[install]
+cd aom_build && make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ aom 3.12.1 (AV1 codec) installed to /opt/hud"

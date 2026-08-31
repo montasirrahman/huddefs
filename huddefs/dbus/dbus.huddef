@@ -1,0 +1,23 @@
+# HUD Package Definition - dbus 1.16.2
+# D-Bus message bus system
+Package: dbus
+Version: 1.16.2
+Architecture: x86_64
+Section: system
+Depends: xorg-libraries
+Description: D-Bus message bus system for interprocess communication
+Source: https://dbus.freedesktop.org/releases/dbus/dbus-1.16.2.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release --wrap-mode=nofallback ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ dbus 1.16.2 installed to /opt/hud"
+chown -v root:messagebus /opt/hud/libexec/dbus-daemon-launch-helper 2>/dev/null || true
+chmod -v 4750 /opt/hud/libexec/dbus-daemon-launch-helper 2>/dev/null || true

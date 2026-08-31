@@ -1,0 +1,80 @@
+# HUD Package Definition - dhcpcd 10.2.4
+# DHCP client for automatic network configuration
+# Reference: Beyond Linux From Scratch (systemd Edition) 12.4
+
+Package: dhcpcd
+Version: 10.2.4
+Architecture: x86_64
+Section: network
+Depends: systemd
+Description: RFC2131 compliant DHCP client for automatic network configuration
+Source: https://github.com/NetworkConfiguration/dhcpcd/releases/download/v10.2.4/dhcpcd-10.2.4.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+./configure --prefix=/opt/hud                \
+            --sysconfdir=/opt/hud/etc        \
+            --libexecdir=/opt/hud/lib/dhcpcd \
+            --dbdir=/var/lib/dhcpcd          \
+            --runstatedir=/run               \
+            --disable-privsep
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make
+
+[install]
+DESTDIR=$DESTDIR make install
+
+[postinst]
+ldconfig
+
+# Create database directory
+install -v -m755 -d /var/lib/dhcpcd
+
+# Create systemd service template
+mkdir -p /opt/hud/lib/systemd/system
+
+cat > /opt/hud/lib/systemd/system/dhcpcd@.service << "EOF"
+[Unit]
+Description=DHCP Client Daemon on %I
+Wants=network.target
+Before=network.target
+BindsTo=sys-subsystem-net-devices-%i.device
+After=sys-subsystem-net-devices-%i.device
+
+[Service]
+Type=forking
+PIDFile=/run/dhcpcd-%I.pid
+ExecStart=/opt/hud/sbin/dhcpcd -q %I
+ExecStop=/opt/hud/sbin/dhcpcd -x %I
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd if running
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+fi
+
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "  dhcpcd 10.2.4 installed successfully"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+echo "Usage:"
+echo "  Manual:  /opt/hud/sbin/dhcpcd eth0"
+echo "  Start:   systemctl start dhcpcd@eth0"
+echo "  Enable:  systemctl enable dhcpcd@eth0"
+echo ""
+echo "Config file: /opt/hud/etc/dhcpcd.conf"
+echo ""
+echo "Note: Disable systemd-networkd for interfaces managed by dhcpcd"
+echo ""

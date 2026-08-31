@@ -1,0 +1,98 @@
+# HUD Package Definition - dnsmasq 2.91
+# Lightweight DHCP and caching DNS server
+# Required by libvirt for virtual network DHCP functionality
+# Reference: https://thekelleys.org.uk/dnsmasq/doc.html
+
+Package: dnsmasq
+Version: 2.91
+Architecture: x86_64
+Section: network
+Depends:
+Description: Lightweight DHCP and DNS caching server (required by libvirt for VM networking)
+Source: https://thekelleys.org.uk/dnsmasq/dnsmasq-2.91.tar.xz
+
+[configure]
+# dnsmasq uses make, no configure step needed
+test -f Makefile
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+make -j$(nproc) \
+    PREFIX=/opt/hud \
+    BINDIR=/opt/hud/sbin \
+    MANDIR=/opt/hud/share/man \
+    LOCALEDIR=/opt/hud/share/locale
+
+[install]
+make install \
+    PREFIX=/opt/hud \
+    BINDIR=/opt/hud/sbin \
+    MANDIR=/opt/hud/share/man \
+    LOCALEDIR=/opt/hud/share/locale \
+    DESTDIR=$DESTDIR
+
+[postinst]
+ldconfig
+
+# Create symlinks for libvirt to find dnsmasq
+ln -sf /opt/hud/sbin/dnsmasq /usr/sbin/dnsmasq 2>/dev/null || true
+ln -sf /opt/hud/sbin/dnsmasq /sbin/dnsmasq 2>/dev/null || true
+
+# Create dnsmasq config directory
+install -vdm755 /etc/dnsmasq.d
+
+# Create basic dnsmasq config (standalone use only - libvirt manages its own)
+cat > /etc/dnsmasq.conf << 'EOF'
+# dnsmasq configuration
+# Note: libvirt manages dnsmasq for virtual networks separately
+# This config is for standalone dnsmasq use only
+
+# Listen only on localhost for DNS caching
+listen-address=127.0.0.1
+bind-interfaces
+
+# Never forward plain names (without a dot or domain part)
+domain-needed
+
+# Never forward addresses in the non-routed address spaces
+bogus-priv
+
+# Include additional config files
+conf-dir=/etc/dnsmasq.d/,*.conf
+EOF
+
+# Create systemd service (for standalone use, not needed for libvirt)
+cat > /etc/systemd/system/dnsmasq.service << 'EOFSVC'
+[Unit]
+Description=dnsmasq - A lightweight DHCP and caching DNS server
+Documentation=man:dnsmasq(8)
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/dnsmasq.pid
+ExecStartPre=/opt/hud/sbin/dnsmasq --test
+ExecStart=/opt/hud/sbin/dnsmasq -x /var/run/dnsmasq.pid
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+systemctl daemon-reload
+# Don't enable by default - libvirt manages dnsmasq for virtual networks
+
+echo ""
+echo "dnsmasq 2.91 installed"
+echo "Binary: /opt/hud/sbin/dnsmasq (symlinked to /usr/sbin/dnsmasq)"
+echo ""
+echo "For libvirt virtual networking:"
+echo "  systemctl restart virtnetworkd"
+echo "  virsh net-start default"
+echo ""
+echo "For standalone DNS caching (optional):"
+echo "  systemctl enable --now dnsmasq"

@@ -1,0 +1,23 @@
+# HUD Package Definition - dav1d 1.5.1
+# Fast AV1 decoder
+
+Package: dav1d
+Version: 1.5.1
+Architecture: x86_64
+Section: multimedia
+Depends: meson, ninja, nasm
+Description: Fast AV1 decoder by VideoLAN and FFmpeg
+Source: https://code.videolan.org/videolan/dav1d/-/archive/1.5.1/dav1d-1.5.1.tar.bz2
+
+[configure]
+meson setup build --prefix=/opt/hud --buildtype=release -Ddefault_library=shared
+
+[build]
+ninja -C build
+
+[install]
+DESTDIR=$DESTDIR ninja -C build install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ dav1d 1.5.1 installed to /opt/hud"

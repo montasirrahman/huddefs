@@ -1,0 +1,32 @@
+# HUD Package Definition - Binutils 2.45
+# GNU Binary Utilities
+Package: binutils
+Version: 2.45
+Architecture: x86_64
+Section: development
+Depends: zlib
+Description: GNU Binary Utilities - linker, assembler, and other tools for handling object files
+Source: https://sourceware.org/pub/binutils/releases/binutils-2.45.tar.xz
+[configure]
+mkdir -v build
+cd build
+../configure --prefix=/opt/hud \
+             --sysconfdir=/opt/hud/etc \
+             --enable-ld=default \
+             --enable-plugins \
+             --enable-shared \
+             --disable-werror \
+             --enable-64-bit-bfd \
+             --enable-new-dtags \
+             --with-system-zlib \
+             --enable-default-hash-style=gnu
+[build]
+cd build
+make tooldir=/opt/hud
+[install]
+cd build
+make DESTDIR=$DESTDIR tooldir=/opt/hud install
+rm -fv $DESTDIR/opt/hud/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.a
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ Binutils 2.45 installed to /opt/hud"

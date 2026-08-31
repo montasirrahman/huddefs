@@ -1,0 +1,35 @@
+# HUD Package Definition - cyrus-sasl 2.1.28
+# Auto-generated for oVirt infrastructure
+
+Package: cyrus-sasl
+Version: 2.1.28
+Architecture: x86_64
+Section: security
+Depends: bootscripts,linux-pam,postgresql,mariadb,lmdb,sqlite
+Description: Cyrus SASL-2.1.28
+Source: https://github.com/cyrusimap/cyrus-sasl/releases/download/cyrus-sasl-2.1.28/cyrus-sasl-2.1.28.tar.gz
+Service: saslauthd
+
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc --enable-auth-sasldb --with-dbpath=/opt/hud/etc/sasldb2
+
+[build]
+make -j$(nproc)
+
+[install]
+make install &&
+install -v -dm755                          /usr/share/doc/cyrus-sasl-2.1.28/html &&
+install -v -m644  saslauthd/LDAP_SASLAUTHD /usr/share/doc/cyrus-sasl-2.1.28      &&
+install -v -m644
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "cyrus-sasl 2.1.28 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-saslauthd 2>/dev/null || true
+systemctl disable hud-saslauthd 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

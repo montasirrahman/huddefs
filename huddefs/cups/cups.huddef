@@ -1,0 +1,24 @@
+# HUD Package Definition - CUPS 2.4.12
+# Common Unix Printing System
+
+Package: cups
+Version: 2.4.12
+Architecture: x86_64
+Section: misc
+Depends: gnutls, libpng, libjpeg, libtiff, dbus, libusb
+Description: Common Unix Printing System
+Source: https://github.com/OpenPrinting/cups/releases/download/v2.4.12/cups-2.4.12-source.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc --localstatedir=/opt/hud/var --with-tls=gnutls --enable-libusb
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+getent group lpadmin || groupadd -r lpadmin 2>/dev/null || true
+echo "✓ CUPS 2.4.12 installed to /opt/hud"

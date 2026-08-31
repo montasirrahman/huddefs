@@ -1,0 +1,29 @@
+# HUD Package Definition - dbus 1.16.2
+# Auto-generated for oVirt infrastructure
+
+Package: dbus
+Version: 1.16.2
+Architecture: x86_64
+Section: misc
+Depends: bootscripts,valgrind,doxygen,dbus-python,elogind,xorg7-lib,pygobject3
+Description: dbus-1.16.2
+Source: https://dbus.freedesktop.org/releases/dbus/dbus-1.16.2.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "dbus 1.16.2 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,35 @@
+# HUD Package Definition - alsa-lib 1.2.14
+# ALSA Sound Library
+# Library for accessing ALSA sound interface
+
+Package: alsa-lib
+Version: 1.2.14
+Architecture: x86_64
+Section: multimedia
+Depends:
+Description: ALSA library used by programs requiring access to the ALSA sound interface
+Source: https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.14.tar.bz2
+ExtraSource: https://www.alsa-project.org/files/pub/lib/alsa-ucm-conf-1.2.14.tar.bz2
+
+[configure]
+# Fix for GCC-15: remove failing test
+sed 's/playmidi1//' -i test/Makefile.am 2>/dev/null || true
+autoreconf -fi 2>/dev/null || true
+
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# Install UCM configuration files if extra source exists
+if [ -f ../alsa-ucm-conf-1.2.14.tar.bz2 ]; then
+    tar -C $DESTDIR/opt/hud/share/alsa --strip-components=1 -xf ../alsa-ucm-conf-1.2.14.tar.bz2
+fi
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ alsa-lib 1.2.14 installed to /opt/hud"
+echo "  Note: Kernel ALSA support (CONFIG_SND) must be enabled"

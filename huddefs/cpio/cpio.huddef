@@ -1,0 +1,31 @@
+# HUD Package Definition - cpio 2.15
+# Archive Tool
+# Tools for archiving files
+
+Package: cpio
+Version: 2.15
+Architecture: x86_64
+Section: utilities
+Depends:
+Description: Tools for archiving files in cpio format
+Source: https://ftp.gnu.org/gnu/cpio/cpio-2.15.tar.bz2
+
+[configure]
+# Fix for GCC-15
+sed -e "/^extern int (\*xstat)/s/()/(const char * restrict,  struct stat * restrict)/" \
+    -i src/extern.h
+sed -e "/^int (\*xstat)/s/()/(const char * restrict,  struct stat * restrict)/" \
+    -i src/global.c
+
+./configure --prefix=/opt/hud \
+            --enable-mt       \
+            --with-rmt=/usr/libexec/rmt
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "✓ cpio 2.15 installed to /opt/hud"

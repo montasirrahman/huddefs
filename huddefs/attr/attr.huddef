@@ -1,0 +1,25 @@
+# HUD Package Definition - attr 2.5.2
+# Extended attributes library
+
+Package: attr
+Version: 2.5.2
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Extended attributes utilities and library
+Source: https://download.savannah.gnu.org/releases/attr/attr-2.5.2.tar.xz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ attr 2.5.2 installed to /opt/hud"

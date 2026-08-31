@@ -1,0 +1,80 @@
+# HUD Package Definition - D-Bus 1.16.2
+# Message Bus System
+# Inter-process communication system for software applications
+# Fixed: Creates symlink from /run/dbus to /opt/hud socket for compatibility
+
+Package: dbus
+Version: 1.16.2
+Architecture: x86_64
+Section: system
+Depends: expat
+Description: Message bus system for inter-process communication between applications
+Source: https://dbus.freedesktop.org/releases/dbus/dbus-1.16.2.tar.xz
+
+[configure]
+mkdir -p build
+cd build
+
+meson setup ..                     \
+    --prefix=/opt/hud              \
+    --buildtype=release            \
+    --wrap-mode=nofallback         \
+    -D system_socket=/opt/hud/var/run/dbus/system_bus_socket \
+    -D dbus_user=messagebus
+
+[build]
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+# Create tmpfiles.d configuration for socket symlink (standard location compatibility)
+mkdir -p $DESTDIR/etc/tmpfiles.d
+cat > $DESTDIR/etc/tmpfiles.d/dbus-socket-compat.conf << 'EOF'
+# D-Bus socket compatibility symlink
+# Creates /run/dbus/system_bus_socket -> /opt/hud/var/run/dbus/system_bus_socket
+# Required for systemd-logind and other services expecting standard socket path
+d /run/dbus 0755 root root -
+L+ /run/dbus/system_bus_socket - - - - /opt/hud/var/run/dbus/system_bus_socket
+EOF
+
+# Create systemd service drop-in for socket symlink
+mkdir -p $DESTDIR/etc/systemd/system/dbus.service.d
+cat > $DESTDIR/etc/systemd/system/dbus.service.d/socket-symlink.conf << 'EOF'
+[Service]
+# Ensure /run/dbus exists and symlink points to actual socket
+ExecStartPre=-/bin/mkdir -p /run/dbus
+ExecStartPre=-/bin/ln -sf /opt/hud/var/run/dbus/system_bus_socket /run/dbus/system_bus_socket
+EOF
+
+[postinst]
+# Create messagebus user/group if not exists
+getent group messagebus >/dev/null || groupadd -g 18 messagebus
+getent passwd messagebus >/dev/null || useradd -c "D-Bus Message Daemon User" -d /run/dbus \
+    -u 18 -g messagebus -s /bin/false messagebus
+
+# Create runtime directories
+mkdir -p /opt/hud/var/run/dbus
+mkdir -p /run/dbus
+chown messagebus:messagebus /opt/hud/var/run/dbus
+
+# Create socket symlink for standard path compatibility
+# systemd-logind and other services expect socket at /run/dbus/system_bus_socket
+ln -sf /opt/hud/var/run/dbus/system_bus_socket /run/dbus/system_bus_socket
+
+# Fix permissions on helper binary
+chown root:messagebus /opt/hud/libexec/dbus-daemon-launch-helper 2>/dev/null || true
+chmod 4750 /opt/hud/libexec/dbus-daemon-launch-helper 2>/dev/null || true
+
+# Apply tmpfiles configuration
+systemd-tmpfiles --create /etc/tmpfiles.d/dbus-socket-compat.conf 2>/dev/null || true
+
+# Reload systemd to pick up drop-in
+systemctl daemon-reload 2>/dev/null || true
+
+ldconfig 2>/dev/null || true
+echo "✓ D-Bus 1.16.2 installed to /opt/hud"
+echo "  Socket: /opt/hud/var/run/dbus/system_bus_socket"
+echo "  Symlink: /run/dbus/system_bus_socket -> /opt/hud/var/run/dbus/system_bus_socket"

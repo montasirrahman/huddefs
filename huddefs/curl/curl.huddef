@@ -1,0 +1,36 @@
+# HUD Package Definition - curl 8.15.0
+# Auto-generated for oVirt infrastructure
+
+Package: curl
+Version: 8.15.0
+Architecture: x86_64
+Section: network
+Depends: samba,nghttp2,apache,valgrind,openssh,gnutls,make-ca,brotli,libssh2,libpsl
+Description: cURL-8.15.0
+Source: https://curl.se/download/curl-8.15.0.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --with-openssl --enable-threaded-resolver --with-libssh2
+
+[build]
+make -j$(nproc)
+
+[install]
+make install &&
+
+rm -rf docs/examples/.deps &&
+
+find docs \( -name Makefile\* -o  \
+             -name \*.1       -o  \
+             -name \*.3       -o  \
+             -name CMakeLists.txt \) -delete
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "curl 8.15.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,35 @@
+# HUD Package Definition - dmidecode 3.6
+# Tool to dump system DMI (SMBIOS) data in human-readable format
+# Provides hardware information to libvirt/QEMU (removes "Cannot find dmidecode" warning)
+# Reference: https://www.nongnu.org/dmidecode/
+
+Package: dmidecode
+Version: 3.6
+Architecture: x86_64
+Section: system
+Depends:
+Description: Tool to dump DMI (SMBIOS) hardware information
+Source: https://download.savannah.gnu.org/releases/dmidecode/dmidecode-3.6.tar.xz
+
+[configure]
+# dmidecode uses make directly, no configure needed
+test -f Makefile
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+make -j$(nproc) prefix=/opt/hud
+
+[install]
+make prefix=/opt/hud DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig
+
+# Create symlinks for libvirt to find dmidecode
+ln -sf /opt/hud/sbin/dmidecode /usr/sbin/dmidecode 2>/dev/null || true
+ln -sf /opt/hud/sbin/dmidecode /sbin/dmidecode 2>/dev/null || true
+
+echo ""
+echo "dmidecode 3.6 installed"
+echo "Binary: /opt/hud/sbin/dmidecode"
+echo "Test: dmidecode -t system"

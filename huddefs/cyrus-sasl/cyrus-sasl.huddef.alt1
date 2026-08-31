@@ -1,0 +1,85 @@
+# HUD Package Definition - Cyrus SASL 2.1.28
+# Simple Authentication and Security Layer
+# Fixed for GCC 15: Uses -std=gnu17 to allow K&R style functions
+
+Package: cyrus-sasl
+Version: 2.1.28
+Architecture: x86_64
+Section: security
+Depends: lmdb, openssl
+Description: Simple Authentication and Security Layer implementation
+Source: https://github.com/cyrusimap/cyrus-sasl/releases/download/cyrus-sasl-2.1.28/cyrus-sasl-2.1.28.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+
+# GCC 15 defaults to C23 which rejects K&R style function definitions
+# Use -std=gnu17 to allow the old code to compile
+# Also disable -Werror=implicit-int which treats the warning as error
+export CFLAGS="${CFLAGS} -I/opt/hud/include -std=gnu17 -Wno-error=implicit-int -Wno-error=old-style-definition -Wno-error=implicit-function-declaration"
+
+export LDFLAGS="${LDFLAGS} -L/opt/hud/lib -L/opt/hud/lib64"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+# Fix time.h includes for glibc compatibility
+sed -i '/saslint/a #include <time.h>' lib/saslutil.c
+sed -i '/plugin_common/a #include <time.h>' plugins/cram.c
+
+# Regenerate configure
+autoreconf -fiv 2>/dev/null || autoreconf -fi 2>/dev/null || true
+
+./configure --prefix=/opt/hud                        \
+            --sysconfdir=/opt/hud/etc                \
+            --enable-auth-sasldb                     \
+            --with-dblib=lmdb                        \
+            --with-dbpath=/var/lib/sasl/sasldb2      \
+            --with-saslauthd=/run/saslauthd          \
+            --with-openssl=/opt/hud                  \
+            --disable-static                         \
+            --enable-shared                          \
+            CFLAGS="${CFLAGS}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+# Cyrus SASL does not support parallel build
+make -j1
+
+[install]
+make DESTDIR=$DESTDIR install
+install -vdm755 $DESTDIR/opt/hud/share/doc/cyrus-sasl-2.1.28/html
+install -vm644 saslauthd/LDAP_SASLAUTHD $DESTDIR/opt/hud/share/doc/cyrus-sasl-2.1.28/ 2>/dev/null || true
+install -vm644 doc/legacy/*.html $DESTDIR/opt/hud/share/doc/cyrus-sasl-2.1.28/html/ 2>/dev/null || true
+install -vdm700 $DESTDIR/var/lib/sasl
+
+# Install systemd service for saslauthd
+install -vdm755 $DESTDIR/etc/systemd/system
+cat > $DESTDIR/etc/systemd/system/saslauthd.service << 'SVCEOF'
+[Unit]
+Description=SASL Authentication Daemon
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/saslauthd/saslauthd.pid
+ExecStart=/opt/hud/sbin/saslauthd -a shadow -m /run/saslauthd
+ExecReload=/bin/kill -HUP $MAINPID
+RuntimeDirectory=saslauthd
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+[postinst]
+ldconfig
+install -vdm700 /var/lib/sasl 2>/dev/null || true
+install -vdm755 /run/saslauthd 2>/dev/null || true
+
+# Reload systemd if available
+systemctl daemon-reload 2>/dev/null || true
+
+echo "✓ Cyrus SASL 2.1.28 installed to /opt/hud"
+echo ""
+echo "To start saslauthd daemon:"
+echo "  systemctl enable --now saslauthd"

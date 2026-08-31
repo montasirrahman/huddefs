@@ -1,0 +1,29 @@
+# HUD Package Definition - cmake 3.31.0
+# Cross-platform build system
+
+Package: cmake
+Version: 3.31.0
+Architecture: x86_64
+Section: development
+Depends: openssl,zlib,curl
+Description: Cross-platform build system generator
+Source: https://github.com/Kitware/CMake/releases/download/v3.31.0/cmake-3.31.0.tar.gz
+
+[configure]
+./bootstrap \
+    --prefix=/opt/hud \
+    --system-curl \
+    --parallel=$(nproc) \
+    -- \
+    -DCMAKE_USE_OPENSSL=ON \
+    -DOPENSSL_ROOT_DIR=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "✓ cmake 3.31.0 installed to /opt/hud"
+/opt/hud/bin/cmake --version 2>/dev/null || true

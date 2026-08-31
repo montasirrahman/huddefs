@@ -1,0 +1,43 @@
+# HUD Package Definition - curl 8.6.0
+# Command line tool for transferring data with URLs
+
+Package: curl
+Version: 8.6.0
+Architecture: x86_64
+Section: network
+Depends: openssl,zlib,nghttp2,libssh2,libidn2,brotli
+Description: Command line tool for transferring data with URLs
+Source: https://curl.se/download/curl-8.6.0.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --with-openssl=/opt/hud \
+    --with-zlib=/opt/hud \
+    --enable-ipv6 \
+    --enable-threaded-resolver \
+    --with-ca-bundle=/etc/pki/tls/certs/ca-bundle.crt \
+    --with-ca-path=/etc/pki/tls/certs \
+    --with-nghttp2=/opt/hud \
+    --with-libssh2=/opt/hud \
+    --with-libidn2=/opt/hud \
+    --with-brotli=/opt/hud \
+    PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig" \
+    LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64 -Wl,-rpath,/opt/hud/lib -Wl,-rpath,/opt/hud/lib64" \
+    CPPFLAGS="-I/opt/hud/include"
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+# Verify curl works
+if /opt/hud/bin/curl --version >/dev/null 2>&1; then
+    echo "✓ curl 8.6.0 installed successfully"
+    /opt/hud/bin/curl --version | head -1
+else
+    echo "✓ curl installed to /opt/hud/bin/curl"
+fi

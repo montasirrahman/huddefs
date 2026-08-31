@@ -1,0 +1,30 @@
+# HUD Package Definition - bzip2 1.0.8
+# High-quality data compressor
+
+Package: bzip2
+Version: 1.0.8
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: High-quality data compressor
+Source: https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
+
+[build]
+# Build shared library
+make -f Makefile-libbz2_so
+make clean
+make -j$(nproc)
+
+[install]
+make PREFIX=$DESTDIR/opt/hud install
+# Install shared library
+install -m 755 libbz2.so.1.0.8 $DESTDIR/opt/hud/lib/
+ln -sf libbz2.so.1.0.8 $DESTDIR/opt/hud/lib/libbz2.so.1.0
+ln -sf libbz2.so.1.0.8 $DESTDIR/opt/hud/lib/libbz2.so.1
+ln -sf libbz2.so.1.0.8 $DESTDIR/opt/hud/lib/libbz2.so
+# Remove static library
+rm -f $DESTDIR/opt/hud/lib/libbz2.a 2>/dev/null || true
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ bzip2 1.0.8 installed to /opt/hud"
