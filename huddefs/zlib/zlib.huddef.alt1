@@ -1,0 +1,25 @@
+# HUD Package Definition - zlib 1.3.1
+# Compression library
+
+Package: zlib
+Version: 1.3.1
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: A Massively Spiffy Yet Delicately Unobtrusive Compression Library
+Source: https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --libdir=/opt/hud/lib
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ zlib 1.3.1 installed to /opt/hud"

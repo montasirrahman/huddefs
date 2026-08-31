@@ -1,0 +1,25 @@
+# HUD Package Definition - Zip 3.0
+# ZIP Compression Utility
+# Tools for compressing files into ZIP archives
+
+Package: zip
+Version: 3.0
+Architecture: x86_64
+Section: utilities
+Depends:
+Description: Utilities for compressing files into ZIP archives
+Source: https://downloads.sourceforge.net/infozip/zip30.tar.gz
+
+[configure]
+# No configure script - uses Makefile directly
+
+[build]
+make -f unix/Makefile generic CC="gcc -std=gnu89"
+
+[install]
+make prefix=$DESTDIR/opt/hud MANDIR=$DESTDIR/opt/hud/share/man/man1 \
+    -f unix/Makefile install
+
+[postinst]
+echo "✓ Zip 3.0 installed to /opt/hud"
+echo "  Provides: zip, zipcloak, zipnote, zipsplit"

@@ -1,0 +1,27 @@
+# HUD Package Definition - Yasm 1.3.0
+# Modular Assembler
+# Fixed for GCC 15: Use -std=gnu17 to allow 'false' and 'true' as identifiers
+
+Package: yasm
+Version: 1.3.0
+Architecture: x86_64
+Section: development
+Depends:
+Description: Yasm Modular Assembler
+Source: https://www.tortall.net/projects/yasm/releases/yasm-1.3.0.tar.gz
+
+[configure]
+# GCC 15 defaults to C23 where 'false' and 'true' are keywords
+# Yasm uses them as enum constants, so we need C17 mode
+./configure \
+    --prefix=/opt/hud \
+    CFLAGS="-O2 -std=gnu17"
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "✓ Yasm 1.3.0 installed to /opt/hud"

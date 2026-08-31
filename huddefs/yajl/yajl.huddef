@@ -1,0 +1,24 @@
+# HUD Package Definition - yajl 2.1.0
+# Yet Another JSON Library
+
+Package: yajl
+Version: 2.1.0
+Architecture: x86_64
+Section: libraries
+Depends: cmake
+Description: Yet Another JSON Library - a fast streaming JSON parsing library in C
+Source: https://github.com/lloyd/yajl/archive/refs/tags/2.1.0.tar.gz
+
+[configure]
+sed -i 's/GET_TARGET_PROPERTY(\(.*\) \(.*\) LOCATION)/set(\1 $<TARGET_FILE:\2>)/' reformatter/CMakeLists.txt verify/CMakeLists.txt
+mkdir -p build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/opt/hud -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_POLICY_DEFAULT_CMP0026=OLD ..
+
+[build]
+cd build && make -j$(nproc)
+
+[install]
+cd build && make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ yajl 2.1.0 installed to /opt/hud"

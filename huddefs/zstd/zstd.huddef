@@ -1,0 +1,24 @@
+# HUD Package Definition - Zstd 1.5.7
+# Zstandard fast compression algorithm
+# Using Makefile build (no cmake required)
+
+Package: zstd
+Version: 1.5.7
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Zstandard - Fast real-time compression algorithm
+Source: https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz
+
+[configure]
+# No configure needed - zstd uses plain Makefile
+
+[build]
+make -j$(nproc) PREFIX=/opt/hud
+
+[install]
+make PREFIX=/opt/hud DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ Zstd 1.5.7 installed to /opt/hud"
