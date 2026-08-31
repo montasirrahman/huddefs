@@ -1,0 +1,28 @@
+# HUD Package Definition - readline 8.2.13
+# GNU readline library
+
+Package: readline
+Version: 8.2.13
+Architecture: x86_64
+Section: libraries
+Depends: ncurses
+Description: GNU Readline library for command line editing
+Source: https://ftp.gnu.org/gnu/readline/readline-8.2.13.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --disable-static \
+    --with-curses \
+    LDFLAGS="-L/opt/hud/lib -Wl,-rpath,/opt/hud/lib" \
+    CPPFLAGS="-I/opt/hud/include -I/opt/hud/include/ncursesw"
+
+[build]
+make SHLIB_LIBS="-lncursesw" -j$(nproc)
+
+[install]
+make SHLIB_LIBS="-lncursesw" DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ readline 8.2.13 installed to /opt/hud"

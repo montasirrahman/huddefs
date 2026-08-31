@@ -1,0 +1,41 @@
+# HUD Package Definition - S-Lang 2.3.3
+# Interpreted language and display library
+# Required by newt for text-mode interfaces
+
+Package: slang
+Version: 2.3.3
+Architecture: x86_64
+Section: libraries
+Depends: glibc, readline, libpng
+Description: S-Lang interpreter and display library for text-mode UIs
+Source: https://www.jedsoft.org/releases/slang/slang-2.3.3.tar.bz2
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+./configure --prefix=/opt/hud \
+            --sysconfdir=/etc \
+            --with-readline=gnu
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+# Note: This package does not support parallel build
+make -j1 RPATH=
+
+[check]
+LC_ALL=C make check
+
+[install]
+make install_doc_dir=/opt/hud/share/doc/slang-2.3.3 \
+     SLSH_DOC_DIR=/opt/hud/share/doc/slang-2.3.3/slsh \
+     RPATH= \
+     DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig
+echo "✓ S-Lang 2.3.3 installed to /opt/hud"

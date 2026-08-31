@@ -1,0 +1,19 @@
+# HUD Package Definition - sphinxcontrib-jquery 4.1
+# Based on BLFS 12.4
+Package: python3-sphinxcontrib-jquery
+Version: 4.1
+Architecture: x86_64
+Section: python
+Depends: python3,python3-sphinx
+Description: sphinxcontrib-jquery-4.1 - Sphinx extension to include jQuery
+Source: https://files.pythonhosted.org/packages/source/s/sphinxcontrib-jquery/sphinxcontrib-jquery-4.1.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user sphinxcontrib-jquery
+[postinst]
+echo "python3-sphinxcontrib-jquery 4.1 installed"
+[prerm]
+pip3 uninstall -y sphinxcontrib-jquery 2>/dev/null || true
+[postrm]
+# Cleanup if needed

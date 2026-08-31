@@ -1,0 +1,32 @@
+# HUD Package Definition - sanlock 3.9.4
+# Auto-generated for oVirt infrastructure
+
+Package: sanlock
+Version: 3.9.4
+Architecture: x86_64
+Section: virtualization
+Depends: libaio,libuuid,python3
+Description: Shared storage lock manager
+Source: https://pagure.io/sanlock/archive/sanlock-3.9.4/sanlock-sanlock-3.9.4.tar.gz
+Service: sanlock
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -C wdmd && make -C src && make -C python
+
+[install]
+make -C wdmd DESTDIR=$DESTDIR PREFIX=/opt/hud install && make -C src DESTDIR=$DESTDIR PREFIX=/opt/hud install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "sanlock 3.9.4 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-sanlock 2>/dev/null || true
+systemctl disable hud-sanlock 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

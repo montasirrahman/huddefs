@@ -1,0 +1,29 @@
+# HUD Package Definition - sdl2 2.32.8
+# Auto-generated for oVirt infrastructure
+
+Package: sdl2
+Version: 2.32.8
+Architecture: x86_64
+Section: misc
+Depends: alsa-lib,libunwind,doxygen,wayland-protocols,x-window-system,ibus,libxkbcommon,xorg7-lib,pipewire
+Description: SDL2-2.32.8
+Source: https://www.libsdl.org/release/SDL2-2.32.8.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "sdl2 2.32.8 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,67 @@
+# HUD Package Definition - QEMU 10.0.3
+# Full virtualization solution for Linux on x86 hardware
+# Supports KVM hardware acceleration (Intel VT / AMD-V)
+
+Package: qemu
+Version: 10.0.3
+Architecture: x86_64
+Section: virtualization
+Depends: glib, pixman, alsa-lib, dtc, libslirp, sdl2
+Description: Full virtualization solution for Linux with KVM support
+Source: https://download.qemu.org/qemu-10.0.3.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+# Install required Python modules for QEMU build
+pip3 install distlib --break-system-packages 2>/dev/null || pip3 install distlib
+
+# Download and apply required patch for pip-25.2+ compatibility
+wget -nc https://www.linuxfromscratch.org/patches/blfs/12.4/qemu-10.0.3-python_fixes-1.patch -O ../qemu-10.0.3-python_fixes-1.patch 2>/dev/null || true
+patch -Np1 -i ../qemu-10.0.3-python_fixes-1.patch || true
+
+# Determine architecture
+if [ $(uname -m) = i686 ]; then
+   QEMU_ARCH=i386-softmmu
+else
+   QEMU_ARCH=x86_64-softmmu
+fi
+
+mkdir -vp build
+cd build
+
+../configure --prefix=/opt/hud              \
+             --sysconfdir=/etc              \
+             --localstatedir=/var           \
+             --target-list=$QEMU_ARCH       \
+             --audio-drv-list=alsa          \
+             --disable-pa                   \
+             --enable-slirp                 \
+             --enable-kvm                   \
+             --docdir=/opt/hud/share/doc/qemu-10.0.3
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+cd build
+make -j$(nproc)
+
+[install]
+cd build
+make DESTDIR=$DESTDIR install
+install -vdm755 $DESTDIR/etc/qemu
+
+[postinst]
+getent group kvm >/dev/null || groupadd -r kvm
+chgrp kvm /opt/hud/libexec/qemu-bridge-helper 2>/dev/null || true
+chmod 4750 /opt/hud/libexec/qemu-bridge-helper 2>/dev/null || true
+ln -sfv qemu-system-$(uname -m) /opt/hud/bin/qemu
+install -vdm755 /etc/qemu
+echo "allow br0" > /etc/qemu/bridge.conf 2>/dev/null || true
+ldconfig
+echo "✓ QEMU 10.0.3 installed to /opt/hud"
+echo "NOTE: Add users to 'kvm' group: usermod -a -G kvm <username>"

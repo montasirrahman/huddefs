@@ -1,0 +1,19 @@
+# HUD Package Definition - sphinxcontrib-jsmath 1.0.1
+# Based on BLFS 12.4
+Package: python3-sphinxcontrib-jsmath
+Version: 1.0.1
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: sphinxcontrib-jsmath-1.0.1 - Sphinx extension for math via JavaScript
+Source: https://files.pythonhosted.org/packages/source/s/sphinxcontrib-jsmath/sphinxcontrib-jsmath-1.0.1.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user sphinxcontrib-jsmath
+[postinst]
+echo "python3-sphinxcontrib-jsmath 1.0.1 installed"
+[prerm]
+pip3 uninstall -y sphinxcontrib-jsmath 2>/dev/null || true
+[postrm]
+# Cleanup if needed

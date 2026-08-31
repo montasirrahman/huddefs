@@ -1,0 +1,29 @@
+# HUD Package Definition - rdma-core 53.0
+# Auto-generated for oVirt infrastructure
+
+Package: rdma-core
+Version: 53.0
+Architecture: x86_64
+Section: libraries
+Depends: cmake,libnl,python3,systemd
+Description: RDMA Core userspace libraries
+Source: https://github.com/linux-rdma/rdma-core/releases/download/v53.0/rdma-core-53.0.tar.gz
+
+[configure]
+cmake -DCMAKE_INSTALL_PREFIX=/opt/hud -DNO_MAN_PAGES=1 .
+
+[build]
+make
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "rdma-core 53.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

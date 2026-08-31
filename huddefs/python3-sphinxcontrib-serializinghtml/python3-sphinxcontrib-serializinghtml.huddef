@@ -1,0 +1,19 @@
+# HUD Package Definition - sphinxcontrib-serializinghtml 2.0.0
+# Based on BLFS 12.4
+Package: python3-sphinxcontrib-serializinghtml
+Version: 2.0.0
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: sphinxcontrib-serializinghtml-2.0.0 - Sphinx extension for serialized HTML
+Source: https://files.pythonhosted.org/packages/source/s/sphinxcontrib_serializinghtml/sphinxcontrib_serializinghtml-2.0.0.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user sphinxcontrib-serializinghtml
+[postinst]
+echo "python3-sphinxcontrib-serializinghtml 2.0.0 installed"
+[prerm]
+pip3 uninstall -y sphinxcontrib-serializinghtml 2>/dev/null || true
+[postrm]
+# Cleanup if needed

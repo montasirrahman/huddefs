@@ -1,0 +1,32 @@
+# HUD Package Definition - qemu 10.0.3
+# Auto-generated for oVirt infrastructure
+
+Package: qemu
+Version: 10.0.3
+Architecture: x86_64
+Section: virtualization
+Depends: gnutls,keyutils,libslirp,pipewire,cyrus-sasl,alsa-lib,curl,sphinx_rtd_theme,glib2,sdl2,bridgeutils,libjpeg,xdisplay,libseccomp,libusb,elogind,gtk3,libpng,dtc,mesa,fuse3,linux-pam,vte,libssh2
+Description: qemu-10.0.3
+Source: https://download.qemu.org/qemu-10.0.3.tar.xz
+Service: qemu
+
+[configure]
+../configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc --enable-kvm --enable-virtfs --enable-vhost-net --target-list=x86_64-softmmu
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "qemu 10.0.3 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-qemu 2>/dev/null || true
+systemctl disable hud-qemu 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

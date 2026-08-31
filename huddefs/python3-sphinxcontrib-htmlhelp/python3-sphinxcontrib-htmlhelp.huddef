@@ -1,0 +1,19 @@
+# HUD Package Definition - sphinxcontrib-htmlhelp 2.1.0
+# Based on BLFS 12.4
+Package: python3-sphinxcontrib-htmlhelp
+Version: 2.1.0
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: sphinxcontrib-htmlhelp-2.1.0 - Sphinx extension for HTML help files
+Source: https://files.pythonhosted.org/packages/source/s/sphinxcontrib-htmlhelp/sphinxcontrib_htmlhelp-2.1.0.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user sphinxcontrib-htmlhelp
+[postinst]
+echo "python3-sphinxcontrib-htmlhelp 2.1.0 installed"
+[prerm]
+pip3 uninstall -y sphinxcontrib-htmlhelp 2>/dev/null || true
+[postrm]
+# Cleanup if needed

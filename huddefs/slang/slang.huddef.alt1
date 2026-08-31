@@ -1,0 +1,27 @@
+# HUD Package Definition - slang 2.3.3
+# S-Lang library for terminal handling
+
+Package: slang
+Version: 2.3.3
+Architecture: x86_64
+Section: libraries
+Depends: ncurses
+Description: S-Lang library for terminal handling
+Source: https://www.jedsoft.org/releases/slang/slang-2.3.3.tar.bz2
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --with-readline=gnu \
+    LDFLAGS="-L/opt/hud/lib -Wl,-rpath,/opt/hud/lib" \
+    CPPFLAGS="-I/opt/hud/include"
+
+[build]
+make -j1
+
+[install]
+make DESTDIR=$DESTDIR install-all
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ slang 2.3.3 installed to /opt/hud"

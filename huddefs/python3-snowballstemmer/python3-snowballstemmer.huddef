@@ -1,0 +1,19 @@
+# HUD Package Definition - snowballstemmer 3.0.1
+# Based on BLFS 12.4
+Package: python3-snowballstemmer
+Version: 3.0.1
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: Snowballstemmer-3.0.1 - stemming algorithms for Information Retrieval
+Source: https://files.pythonhosted.org/packages/source/s/snowballstemmer/snowballstemmer-3.0.1.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user snowballstemmer
+[postinst]
+echo "python3-snowballstemmer 3.0.1 installed"
+[prerm]
+pip3 uninstall -y snowballstemmer 2>/dev/null || true
+[postrm]
+# Cleanup if needed

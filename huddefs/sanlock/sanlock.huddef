@@ -1,0 +1,100 @@
+# HUD Package Definition - sanlock 3.9.5
+# Shared storage lock manager for virtual machines
+# CRITICAL: Prevents VM disk corruption during live migration and failover
+# Required by: libvirt, oVirt, cluster storage
+# Reference: https://pagure.io/sanlock
+
+Package: sanlock
+Version: 3.9.5
+Architecture: x86_64
+Section: virtualization
+Depends: libaio, python3
+Description: Shared storage lock manager for virtual machines
+Source: https://releases.pagure.org/sanlock/sanlock-3.9.5.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+# No configure script - uses plain Makefile
+echo "Sanlock uses Makefile build system"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+# Build sanlock
+make -j$(nproc) \
+    PREFIX=/opt/hud \
+    LIBDIR=/opt/hud/lib64 \
+    PYTHON=/usr/bin/python3
+
+[install]
+make DESTDIR=$DESTDIR \
+    PREFIX=/opt/hud \
+    LIBDIR=/opt/hud/lib64 \
+    install
+
+# Install Python bindings
+cd python
+python3 setup.py install --prefix=/opt/hud --root=$DESTDIR
+
+# Create directories
+mkdir -p $DESTDIR/var/run/sanlock
+mkdir -p $DESTDIR/var/lib/sanlock
+mkdir -p $DESTDIR/etc/sanlock
+
+[postinst]
+# Add library path
+echo "/opt/hud/lib64" > /etc/ld.so.conf.d/sanlock.conf
+ldconfig
+
+# Create sanlock user and group
+groupadd -r sanlock 2>/dev/null || true
+useradd -r -g sanlock -d /var/lib/sanlock -s /sbin/nologin \
+    -c "sanlock lock manager" sanlock 2>/dev/null || true
+
+# Set ownership
+chown -R sanlock:sanlock /var/run/sanlock
+chown -R sanlock:sanlock /var/lib/sanlock
+
+# Create systemd service
+cat > /etc/systemd/system/sanlock.service << 'EOFSVC'
+[Unit]
+Description=Shared Storage Lock Manager
+Requires=network.target
+After=network.target
+Documentation=man:sanlock(8)
+
+[Service]
+Type=forking
+ExecStart=/opt/hud/sbin/sanlock daemon
+ExecStop=/bin/kill -TERM $MAINPID
+User=sanlock
+Group=sanlock
+PIDFile=/var/run/sanlock/sanlock.pid
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+systemctl daemon-reload
+systemctl enable sanlock.service
+systemctl start sanlock.service || true
+
+echo ""
+echo "============================================"
+echo "sanlock 3.9.5 installed successfully"
+echo "============================================"
+echo ""
+echo "Service: systemctl status sanlock"
+echo "Verify: /opt/hud/sbin/sanlock status"
+echo ""
+echo "CRITICAL: This package prevents VM corruption"
+echo "during live migration and cluster failover"
+echo ""

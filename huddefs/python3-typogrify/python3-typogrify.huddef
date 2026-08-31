@@ -1,0 +1,19 @@
+# HUD Package Definition - typogrify 2.1.0
+# Based on BLFS 12.4
+Package: python3-typogrify
+Version: 2.1.0
+Architecture: x86_64
+Section: python
+Depends: python3,python3-hatchling,python3-smartypants
+Description: Typogrify-2.1.0 - filters to enhance web typography
+Source: https://files.pythonhosted.org/packages/source/t/typogrify/typogrify-2.1.0.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user typogrify
+[postinst]
+echo "python3-typogrify 2.1.0 installed"
+[prerm]
+pip3 uninstall -y typogrify 2>/dev/null || true
+[postrm]
+# Cleanup if needed
