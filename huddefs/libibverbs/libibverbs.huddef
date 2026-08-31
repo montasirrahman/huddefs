@@ -1,0 +1,29 @@
+# HUD Package Definition - libibverbs 53.0
+# Auto-generated for oVirt infrastructure
+
+Package: libibverbs
+Version: 53.0
+Architecture: x86_64
+Section: libraries
+Depends: cmake,libnl,python3
+Description: RDMA verbs library
+Source: https://github.com/linux-rdma/rdma-core/releases/download/v53.0/rdma-core-53.0.tar.gz
+
+[configure]
+cmake -DCMAKE_INSTALL_PREFIX=/opt/hud .
+
+[build]
+make
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libibverbs 53.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

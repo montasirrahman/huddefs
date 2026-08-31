@@ -1,0 +1,27 @@
+# HUD Package Definition - libffi 3.4.6
+# Foreign Function Interface library
+
+Package: libffi
+Version: 3.4.6
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Portable foreign function interface library
+Source: https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --disable-static \
+    --with-gcc-arch=native \
+    --disable-exec-static-tramp
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libffi 3.4.6 installed to /opt/hud"

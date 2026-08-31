@@ -1,0 +1,22 @@
+# HUD Package Definition - libdrm 2.4.124
+# Direct Rendering Manager library
+Package: libdrm
+Version: 2.4.124
+Architecture: x86_64
+Section: graphics
+Depends: libpciaccess,meson,ninja
+Description: Direct Rendering Manager runtime library
+Source: https://dri.freedesktop.org/libdrm/libdrm-2.4.124.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Dudev=true -Dvalgrind=disabled ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ libdrm 2.4.124 installed to /opt/hud"
+/sbin/ldconfig

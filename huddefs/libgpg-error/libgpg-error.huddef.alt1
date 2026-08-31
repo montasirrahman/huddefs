@@ -1,0 +1,23 @@
+# HUD Package Definition - libgpg-error 1.51
+# GnuPG error library
+
+Package: libgpg-error
+Version: 1.51
+Architecture: x86_64
+Section: security
+Depends:
+Description: Library for common error values and messages in GnuPG components
+Source: https://gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.51.tar.bz2
+
+[configure]
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libgpg-error 1.51 installed to /opt/hud"

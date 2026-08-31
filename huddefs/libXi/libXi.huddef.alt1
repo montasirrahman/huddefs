@@ -1,0 +1,18 @@
+# HUD Package Definition - libXi 1.8.2
+# X Input Extension Library
+Package: libXi
+Version: 1.8.2
+Architecture: x86_64
+Section: xorg
+Depends: libXext,libXfixes
+Description: X Input Extension Library
+Source: https://www.x.org/pub/individual/lib/libXi-1.8.2.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXi 1.8.2 installed to /opt/hud"
+/sbin/ldconfig

@@ -1,0 +1,26 @@
+# HUD Package Definition - libevent 2.1.12
+# Asynchronous event notification library
+Package: libevent
+Version: 2.1.12
+Architecture: x86_64
+Section: libraries
+Depends: openssl,python3
+Description: Asynchronous event notification software library for executing callbacks on events
+Source: https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz
+[configure]
+sed -i 's/python/&3/' event_rpcgen.py
+./configure --prefix=/opt/hud \
+            --disable-static \
+            CPPFLAGS="-I/opt/hud/include" \
+            LDFLAGS="-L/opt/hud/lib"
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libevent 2.1.12 installed to /opt/hud"
+[prerm]
+# Stop service if running
+[postrm]
+ldconfig 2>/dev/null || true

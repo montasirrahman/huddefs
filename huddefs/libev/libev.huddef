@@ -1,0 +1,18 @@
+# HUD Package Definition - libev 4.33
+# Event loop library
+Package: libev
+Version: 4.33
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: High-performance event loop library
+Source: http://dist.schmorp.de/libev/libev-4.33.tar.gz
+[configure]
+./configure --prefix=/opt/hud --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libev 4.33 installed to /opt/hud"
+/sbin/ldconfig

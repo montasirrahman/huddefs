@@ -1,0 +1,29 @@
+# HUD Package Definition - libidn2 2.3.8
+# Internationalized Domain Names library (Updated from 2.3.7)
+
+Package: libidn2
+Version: 2.3.8
+Architecture: x86_64
+Section: libraries
+Depends: libunistring
+Description: Library for Internationalized Domain Names (IDNA2008/TR46)
+Source: https://ftp.gnu.org/gnu/libidn/libidn2-2.3.8.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --disable-static \
+    --with-libunistring-prefix=/opt/hud \
+    PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig" \
+    LDFLAGS="-L/opt/hud/lib -Wl,-rpath,/opt/hud/lib" \
+    CPPFLAGS="-I/opt/hud/include"
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libidn2 2.3.8 installed to /opt/hud"

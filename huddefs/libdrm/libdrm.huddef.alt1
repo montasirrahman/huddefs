@@ -1,0 +1,29 @@
+# HUD Package Definition - libdrm 2.4.125
+# Auto-generated for oVirt infrastructure
+
+Package: libdrm
+Version: 2.4.125
+Architecture: x86_64
+Section: libraries
+Depends: libatomic_ops,valgrind,libxslt,cmake,docutils,xorg7-lib,cairo,docbook
+Description: Libdrm-2.4.125
+Source: https://dri.freedesktop.org/libdrm/libdrm-2.4.125.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libdrm 2.4.125 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

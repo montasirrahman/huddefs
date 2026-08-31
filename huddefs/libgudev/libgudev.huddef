@@ -1,0 +1,24 @@
+# HUD Package Definition - libgudev 238
+# GObject bindings for libudev
+
+Package: libgudev
+Version: 238
+Architecture: x86_64
+Section: libraries
+Depends: glib2
+Description: GObject bindings for libudev
+Source: https://download.gnome.org/sources/libgudev/238/libgudev-238.tar.xz
+MD5sum: 46da30a1c69101c3a13fa660d9ab7b73
+
+[configure]
+mkdir -p build && cd build && meson setup --prefix=/opt/hud --buildtype=release ..
+
+[build]
+cd build && ninja -j$(nproc)
+
+[install]
+cd build && DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libgudev 238 installed to /opt/hud"

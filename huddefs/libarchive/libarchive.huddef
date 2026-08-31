@@ -1,0 +1,28 @@
+# HUD Package Definition - libarchive 3.8.1
+# Archive Library
+# Single interface for reading/writing various compression formats
+
+Package: libarchive
+Version: 3.8.1
+Architecture: x86_64
+Section: libraries
+Depends: zlib, xz, zstd, openssl
+Description: Library providing single interface for reading/writing various archive formats
+Source: https://github.com/libarchive/libarchive/releases/download/v3.8.1/libarchive-3.8.1.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# Create unzip symlink to bsdunzip
+ln -sfv bsdunzip $DESTDIR/opt/hud/bin/unzip
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libarchive 3.8.1 installed to /opt/hud"
+echo "  Provides: bsdtar, bsdcpio, bsdcat, bsdunzip (linked as unzip)"

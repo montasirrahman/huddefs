@@ -1,0 +1,18 @@
+# HUD Package Definition - libXrender 0.9.12
+# X Render Extension Library
+Package: libXrender
+Version: 0.9.12
+Architecture: x86_64
+Section: xorg
+Depends: libX11
+Description: X Render Extension Library
+Source: https://www.x.org/pub/individual/lib/libXrender-0.9.12.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXrender 0.9.12 installed to /opt/hud"
+/sbin/ldconfig

@@ -1,0 +1,18 @@
+# HUD Package Definition - libXrandr 1.5.4
+# X Resize, Rotate and Reflection extension library
+Package: libXrandr
+Version: 1.5.4
+Architecture: x86_64
+Section: xorg
+Depends: libXext,libXrender
+Description: X Resize, Rotate and Reflection extension library
+Source: https://www.x.org/pub/individual/lib/libXrandr-1.5.4.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXrandr 1.5.4 installed to /opt/hud"
+/sbin/ldconfig

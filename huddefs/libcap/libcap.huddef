@@ -1,0 +1,23 @@
+# HUD Package Definition - libcap 2.73
+# POSIX capabilities library
+
+Package: libcap
+Version: 2.73
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: POSIX capabilities library
+Source: https://kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.73.tar.xz
+
+[build]
+make prefix=/opt/hud lib=lib -j$(nproc)
+
+[install]
+make prefix=/opt/hud lib=lib DESTDIR=$DESTDIR install
+# Remove static libraries
+rm -f $DESTDIR/opt/hud/lib/libcap.a 2>/dev/null || true
+rm -f $DESTDIR/opt/hud/lib/libpsx.a 2>/dev/null || true
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libcap 2.73 installed to /opt/hud"

@@ -1,0 +1,27 @@
+# HUD Package Definition - libXtst 1.2.5
+# X Test Extension Library
+# X11 Testing -- Record extension library
+
+Package: libXtst
+Version: 1.2.5
+Architecture: x86_64
+Section: xorg
+Depends: libX11, libXext, libXi, xorgproto, util-macros
+Description: X11 Testing -- Record extension library
+Source: https://www.x.org/pub/individual/lib/libXtst-1.2.5.tar.xz
+
+[configure]
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/opt/hud/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH}"
+export ACLOCAL_PATH="/opt/hud/share/aclocal:${ACLOCAL_PATH}"
+
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libXtst 1.2.5 installed to /opt/hud"

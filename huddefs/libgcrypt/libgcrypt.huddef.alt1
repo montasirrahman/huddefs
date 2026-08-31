@@ -1,0 +1,23 @@
+# HUD Package Definition - libgcrypt 1.11.1
+# Cryptographic library
+
+Package: libgcrypt
+Version: 1.11.1
+Architecture: x86_64
+Section: security
+Depends: libgpg-error
+Description: General purpose cryptographic library
+Source: https://gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-1.11.1.tar.bz2
+
+[configure]
+./configure --prefix=/opt/hud --disable-static --with-libgpg-error-prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libgcrypt 1.11.1 installed to /opt/hud"

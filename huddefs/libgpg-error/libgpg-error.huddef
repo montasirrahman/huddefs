@@ -1,0 +1,25 @@
+# HUD Package Definition - libgpg-error 1.55
+# GnuPG Error Library
+# Common error values for all GnuPG components
+
+Package: libgpg-error
+Version: 1.55
+Architecture: x86_64
+Section: security
+Depends:
+Description: Library that defines common error values for all GnuPG components
+Source: https://www.gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.55.tar.bz2
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+install -v -m644 -D README $DESTDIR/opt/hud/share/doc/libgpg-error-1.55/README
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libgpg-error 1.55 installed to /opt/hud"

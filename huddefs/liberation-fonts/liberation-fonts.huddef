@@ -1,0 +1,19 @@
+# HUD Package Definition - liberation-fonts 2.1.5
+# Liberation fonts
+Package: liberation-fonts
+Version: 2.1.5
+Architecture: x86_64
+Section: fonts
+Depends: fontconfig
+Description: Liberation fonts compatible with Microsoft fonts
+Source: https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz
+[configure]
+echo "No configure needed for fonts"
+[build]
+echo "No build needed for fonts"
+[install]
+mkdir -p $DESTDIR/opt/hud/share/fonts/liberation
+cp -v *.ttf $DESTDIR/opt/hud/share/fonts/liberation/
+[postinst]
+echo "✓ liberation-fonts 2.1.5 installed to /opt/hud"
+fc-cache -f /opt/hud/share/fonts/liberation 2>/dev/null || true
