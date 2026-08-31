@@ -1,31 +1,40 @@
 # HUD Package Definition - libpng 1.6.50
-# Auto-generated for oVirt infrastructure
+# Converted from v1 to v2 per docs/huddef-v2-spec.md
 
-Package: libpng
-Version: 1.6.50
-Architecture: x86_64
-Section: libraries
-Depends: 
-Description: libpng-1.6.50
-Source: https://downloads.sourceforge.net/libpng/libpng-1.6.50.tar.xz
+Package:          libpng
+Version:          1.6.50
+Architecture:     x86_64
+Section:          libraries
+Description:      PNG reference library for reading and writing PNG images
+
+Source:           https://downloads.sourceforge.net/libpng/libpng-1.6.50.tar.xz
+Source-SHA256:    4df396518620a7aa3651443e87d1b2862e4e88cad135a8b93423e01706232307
+
+Build-Depends:    zlib
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud
 
 [build]
-make -j$(nproc)
+make -j$NPROC
 
 [install]
-make install &&
-mkdir -v /usr/share/doc/libpng-1.6.50 &&
-cp -v README libpng-manual.txt /usr/share/doc/libpng-1.6.50
+make DESTDIR=$DESTDIR install
+
+# v1 installed the docs into /usr/share/doc, which is outside the package prefix
+# and outside $DESTDIR entirely: the files never appeared in FILES, never shipped
+# in the .hud, and were written onto the build server instead. They belong under
+# the prefix, staged like everything else.
+install -vdm755 $DESTDIR/opt/hud/share/doc/libpng-1.6.50
+install -vm644 README libpng-manual.txt $DESTDIR/opt/hud/share/doc/libpng-1.6.50/
+
+[check]
+test -f $DESTDIR/opt/hud/lib/libpng16.so.16.50.0
+test -f $DESTDIR/opt/hud/lib/pkgconfig/libpng16.pc
+test -f $DESTDIR/opt/hud/bin/libpng16-config
+grep -q '#define PNG_LIBPNG_VER_STRING "1.6.50"' $DESTDIR/opt/hud/include/png.h
 
 [postinst]
-ldconfig 2>/dev/null || true
-echo "libpng 1.6.50 installed to /opt/hud"
-
-[prerm]
-# Stop service if running
-
-[postrm]
-ldconfig 2>/dev/null || true
+ldconfig
