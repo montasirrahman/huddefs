@@ -1,0 +1,37 @@
+# HUD Package Definition - sudo 1.9.17p2
+# Execute commands as another user
+
+Package: sudo
+Version: 1.9.17p2
+Architecture: x86_64
+Section: security
+Depends:
+Description: Execute commands as another user
+Source: https://www.sudo.ws/dist/sudo-1.9.17p2.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --libexecdir=/opt/hud/lib \
+    --sysconfdir=/opt/hud/etc \
+    --with-secure-path="/opt/hud/bin:/opt/hud/sbin:/usr/sbin:/usr/bin:/sbin:/bin" \
+    --with-env-editor \
+    --docdir=/opt/hud/share/doc/sudo-1.9.17p2 \
+    --with-passprompt="[sudo] password for %p: " \
+    --with-rundir=/opt/hud/var/run/sudo \
+    --with-vardir=/opt/hud/var/lib/sudo \
+    --with-logpath=/opt/hud/var/log/sudo.log \
+    --without-pam
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+mkdir -p /opt/hud/etc/sudoers.d
+chmod 750 /opt/hud/etc/sudoers.d
+chmod 440 /opt/hud/etc/sudoers 2>/dev/null || true
+chmod 4755 /opt/hud/bin/sudo 2>/dev/null || true
+echo "sudo installed to /opt/hud/bin/sudo"

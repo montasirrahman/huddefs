@@ -1,0 +1,25 @@
+# HUD Package Definition - xmlto 0.0.29
+# XML to Other Formats Converter
+# Front-end to XSL toolchain for document conversion
+
+Package: xmlto
+Version: 0.0.29
+Architecture: x86_64
+Section: xml
+Depends: docbook-xml, docbook-xsl, libxslt
+Description: Front-end to XSL toolchain for converting XML to other formats
+Source: https://pagure.io/xmlto/archive/0.0.29/xmlto-0.0.29.tar.gz
+
+[configure]
+autoreconf -fiv
+
+LINKS="/usr/bin/links" ./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "✓ xmlto 0.0.29 installed to /opt/hud"

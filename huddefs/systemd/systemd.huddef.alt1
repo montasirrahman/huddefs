@@ -1,0 +1,25 @@
+# HUD Package Definition - systemd 257.8
+# System and Service Manager
+
+Package: systemd
+Version: 257.8
+Architecture: x86_64
+Section: core
+Depends: meson, ninja, gperf, libcap, libseccomp, dbus, acl, libgcrypt, kmod
+Description: System and Service Manager
+Source: https://github.com/systemd/systemd/archive/v257.8/systemd-257.8.tar.gz
+
+[configure]
+meson setup build --prefix=/opt/hud --sysconfdir=/opt/hud/etc --localstatedir=/opt/hud/var \
+    -Drootprefix=/opt/hud -Drootlibdir=/opt/hud/lib -Dmode=release \
+    -Dpam=true -Dselinux=false -Dapparmor=false -Daudit=false
+
+[build]
+ninja -C build
+
+[install]
+DESTDIR=$DESTDIR ninja -C build install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ systemd 257.8 installed to /opt/hud"

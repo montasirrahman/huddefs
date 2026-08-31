@@ -1,0 +1,97 @@
+# HUD Package Definition - wpa_supplicant 2.11
+# WPA/WPA2/WPA3 supplicant for wireless networks
+# Runtime recommended for NetworkManager WiFi support
+
+Package: wpa_supplicant
+Version: 2.11
+Architecture: x86_64
+Section: networking
+Depends: libnl, openssl, dbus, readline
+Description: WPA supplicant for wireless network authentication
+Source: https://w1.fi/releases/wpa_supplicant-2.11.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include -I/opt/hud/include/libnl3"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+# Create build configuration
+cat > wpa_supplicant/.config << "EOF"
+CONFIG_BACKEND=file
+CONFIG_CTRL_IFACE=y
+CONFIG_DEBUG_FILE=y
+CONFIG_DEBUG_SYSLOG=y
+CONFIG_DEBUG_SYSLOG_FACILITY=LOG_DAEMON
+CONFIG_DRIVER_NL80211=y
+CONFIG_DRIVER_WEXT=y
+CONFIG_DRIVER_WIRED=y
+CONFIG_EAP_GTC=y
+CONFIG_EAP_LEAP=y
+CONFIG_EAP_MD5=y
+CONFIG_EAP_MSCHAPV2=y
+CONFIG_EAP_OTP=y
+CONFIG_EAP_PEAP=y
+CONFIG_EAP_TLS=y
+CONFIG_EAP_TTLS=y
+CONFIG_IEEE8021X_EAPOL=y
+CONFIG_IPV6=y
+CONFIG_LIBNL32=y
+CONFIG_PEERKEY=y
+CONFIG_PKCS12=y
+CONFIG_READLINE=y
+CONFIG_SMARTCARD=y
+CONFIG_WPS=y
+CFLAGS += -I/opt/hud/include/libnl3
+# D-Bus support for NetworkManager integration
+CONFIG_CTRL_IFACE_DBUS=y
+CONFIG_CTRL_IFACE_DBUS_NEW=y
+CONFIG_CTRL_IFACE_DBUS_INTRO=y
+EOF
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include -I/opt/hud/include/libnl3"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+cd wpa_supplicant
+make BINDIR=/opt/hud/sbin LIBDIR=/opt/hud/lib -j$(nproc)
+
+[install]
+cd wpa_supplicant
+install -v -dm755 $DESTDIR/opt/hud/sbin
+install -v -dm755 $DESTDIR/opt/hud/share/man/man5
+install -v -dm755 $DESTDIR/opt/hud/share/man/man8
+install -v -dm755 $DESTDIR/usr/lib/systemd/system
+install -v -dm755 $DESTDIR/usr/share/dbus-1/system-services
+install -v -dm755 $DESTDIR/etc/dbus-1/system.d
+
+install -v -m755 wpa_{cli,passphrase,supplicant} $DESTDIR/opt/hud/sbin/
+install -v -m644 doc/docbook/wpa_supplicant.conf.5 $DESTDIR/opt/hud/share/man/man5/
+install -v -m644 doc/docbook/wpa_{cli,passphrase,supplicant}.8 $DESTDIR/opt/hud/share/man/man8/
+
+# Install systemd service files
+install -v -m644 systemd/*.service $DESTDIR/usr/lib/systemd/system/
+
+# Install D-Bus configuration
+install -v -m644 dbus/fi.w1.wpa_supplicant1.service \
+                 $DESTDIR/usr/share/dbus-1/system-services/
+install -v -m644 dbus/dbus-wpa_supplicant.conf \
+                 $DESTDIR/etc/dbus-1/system.d/wpa_supplicant.conf
+
+[postinst]
+# Create symlinks for system access
+ln -sf /opt/hud/sbin/wpa_supplicant /usr/sbin/wpa_supplicant 2>/dev/null || true
+ln -sf /opt/hud/sbin/wpa_cli /usr/sbin/wpa_cli 2>/dev/null || true
+ln -sf /opt/hud/sbin/wpa_passphrase /usr/sbin/wpa_passphrase 2>/dev/null || true
+
+# Create wpa_supplicant config directory
+install -v -dm755 /etc/wpa_supplicant
+
+# Reload D-Bus to recognize new service
+systemctl reload dbus 2>/dev/null || true
+
+echo "✓ wpa_supplicant 2.11 installed to /opt/hud"
+echo "  Configure wireless with: wpa_passphrase SSID > /etc/wpa_supplicant/wpa_supplicant-<iface>.conf"
+echo "  Enable with: systemctl enable wpa_supplicant@<iface>"

@@ -1,0 +1,17 @@
+# HUD Package Definition - util-macros 1.20.2
+# M4 macros used by Xorg packages
+Package: util-macros
+Version: 1.20.2
+Architecture: x86_64
+Section: xorg
+Depends:
+Description: M4 macros used by all of the Xorg packages
+Source: https://www.x.org/pub/individual/util/util-macros-1.20.2.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+echo "No build step required"
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ util-macros 1.20.2 installed to /opt/hud"

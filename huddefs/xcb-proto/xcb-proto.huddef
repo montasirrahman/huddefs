@@ -1,0 +1,18 @@
+# HUD Package Definition - xcb-proto 1.17.0
+# XML-XCB protocol descriptions
+Package: xcb-proto
+Version: 1.17.0
+Architecture: x86_64
+Section: xorg
+Depends: python3
+Description: XML-XCB protocol descriptions that libxcb uses to generate code and API
+Source: https://xorg.freedesktop.org/archive/individual/proto/xcb-proto-1.17.0.tar.xz
+[configure]
+PYTHON=python3 ./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+rm -f $DESTDIR/opt/hud/lib/pkgconfig/xcb-proto.pc 2>/dev/null || true
+[postinst]
+echo "✓ xcb-proto 1.17.0 installed to /opt/hud"

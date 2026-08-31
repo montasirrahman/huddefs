@@ -1,0 +1,29 @@
+# HUD Package Definition - valgrind 3.25.1
+# Auto-generated for oVirt infrastructure
+
+Package: valgrind
+Version: 3.25.1
+Architecture: x86_64
+Section: development
+Depends: 
+Description: Valgrind-3.25.1
+Source: https://sourceware.org/pub/valgrind/valgrind-3.25.1.tar.bz2
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "valgrind 3.25.1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,45 @@
+# HUD Package Definition - util-linux 2.41.1
+# Linux Utility Programs
+# Miscellaneous system utilities for Linux
+
+Package: util-linux
+Version: 2.41.1
+Architecture: x86_64
+Section: system
+Depends:
+Description: Miscellaneous system utility programs including mount, fdisk, hwclock, etc.
+Source: https://www.kernel.org/pub/linux/utils/util-linux/v2.41/util-linux-2.41.1.tar.xz
+
+[configure]
+# Create hwclock directory per FHS
+mkdir -pv /var/lib/hwclock 2>/dev/null || true
+
+./configure --prefix=/opt/hud          \
+            --libdir=/opt/hud/lib      \
+            --runstatedir=/run         \
+            --disable-chfn-chsh        \
+            --disable-login            \
+            --disable-nologin          \
+            --disable-su               \
+            --disable-setpriv          \
+            --disable-runuser          \
+            --disable-pylibmount       \
+            --disable-static           \
+            --disable-liblastlog2      \
+            --without-python           \
+            --without-systemd          \
+            ADJTIME_PATH=/var/lib/hwclock/adjtime \
+            --docdir=/opt/hud/share/doc/util-linux-2.41.1
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+# Create hwclock directory
+mkdir -pv /var/lib/hwclock 2>/dev/null || true
+
+ldconfig 2>/dev/null || true
+echo "✓ util-linux 2.41.1 installed to /opt/hud"

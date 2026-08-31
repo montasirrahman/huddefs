@@ -1,0 +1,29 @@
+# HUD Package Definition - sudo 1.9.17p2
+# Auto-generated for oVirt infrastructure
+
+Package: sudo
+Version: 1.9.17p2
+Architecture: x86_64
+Section: security
+Depends: 
+Description: Sudo-1.9.17p2
+Source: https://www.sudo.ws/dist/sudo-1.9.17p2.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud --libexecdir=/opt/hud/lib --sysconfdir=/opt/hud/etc --with-secure-path="/opt/hud/bin:/opt/hud/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "sudo 1.9.17p2 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

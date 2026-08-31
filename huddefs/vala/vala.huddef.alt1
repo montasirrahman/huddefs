@@ -1,0 +1,29 @@
+# HUD Package Definition - vala 0.56.18
+# Auto-generated for oVirt infrastructure
+
+Package: vala
+Version: 0.56.18
+Architecture: x86_64
+Section: misc
+Depends: libxslt,glib2,graphviz,dbus
+Description: Vala-0.56.18
+Source: https://download.gnome.org/sources/vala/0.56/vala-0.56.18.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "vala 0.56.18 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

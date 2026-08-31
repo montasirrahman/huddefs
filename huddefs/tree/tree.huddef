@@ -1,0 +1,29 @@
+# HUD Package Definition - tree 2.2.1
+# List directory contents in tree format
+
+Package: tree
+Version: 2.2.1
+Architecture: x86_64
+Section: utilities
+Depends:
+Description: List directory contents in tree format
+Source: https://github.com/Old-Man-Programmer/tree/archive/refs/tags/2.2.1.tar.gz
+
+[build]
+make PREFIX=/opt/hud CFLAGS="-O2 -Wall"
+
+[install]
+mkdir -p $DESTDIR/opt/hud/bin
+mkdir -p $DESTDIR/opt/hud/share/man/man1
+install -m 755 tree $DESTDIR/opt/hud/bin/tree
+install -m 644 doc/tree.1 $DESTDIR/opt/hud/share/man/man1/tree.1 2>/dev/null || \
+install -m 644 man/tree.1 $DESTDIR/opt/hud/share/man/man1/tree.1 2>/dev/null || true
+
+[postinst]
+if [ -x /opt/hud/bin/tree ]; then
+    echo "✓ tree 2.2.1 installed successfully"
+    /opt/hud/bin/tree --version 2>/dev/null || echo "  Location: /opt/hud/bin/tree"
+else
+    echo "⚠ Warning: /opt/hud/bin/tree not found"
+fi
+

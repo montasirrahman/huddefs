@@ -1,0 +1,23 @@
+# HUD Package Definition - x264 0.164
+# H.264/AVC video encoder
+
+Package: x264
+Version: 0.164
+Architecture: x86_64
+Section: multimedia
+Depends: nasm
+Description: H.264/AVC video encoder library
+Source: https://code.videolan.org/videolan/x264/-/archive/stable/x264-stable.tar.bz2
+
+[configure]
+./configure --prefix=/opt/hud --enable-shared --disable-static --enable-pic
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ x264 installed to /opt/hud"

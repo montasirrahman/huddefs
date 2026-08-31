@@ -1,0 +1,93 @@
+# HUD Package Definition - Systemd 257.8
+# System and Service Manager
+# Controls startup, running, and shutdown of the system
+# Fixed: Added jinja2 Python module dependency check
+
+Package: systemd
+Version: 257.8
+Architecture: x86_64
+Section: system
+Depends: dbus, libcap, libgcrypt, util-linux, kmod, acl, xz, zstd
+Description: System and service manager for Linux, including udev device manager and logind
+Source: https://github.com/systemd/systemd/archive/v257.8/systemd-257.8.tar.gz
+
+[configure]
+# Ensure jinja2 Python module is installed (required for build)
+python3 -c "import jinja2" 2>/dev/null || pip3 install jinja2 --break-system-packages
+
+# Remove unneeded groups from udev rules
+sed -e 's/GROUP="render"/GROUP="video"/' \
+    -e 's/GROUP="sgx", //'               \
+    -i rules.d/50-udev-default.rules.in
+
+mkdir -p build
+cd build
+
+# Set up environment for finding libraries in /opt/hud
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LIBRARY_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include ${CFLAGS}"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64 ${LDFLAGS}"
+
+# Check if PAM is available
+PAM_OPT="disabled"
+if pkg-config --exists pam 2>/dev/null; then
+    PAM_OPT="enabled"
+elif [ -f /opt/hud/lib/libpam.so ] || [ -f /usr/lib/libpam.so ]; then
+    PAM_OPT="enabled"
+fi
+
+meson setup ..                    \
+    --prefix=/opt/hud             \
+    --buildtype=release           \
+    --pkg-config-path=/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig \
+    -D default-dnssec=no          \
+    -D firstboot=false            \
+    -D install-tests=false        \
+    -D ldconfig=false             \
+    -D sysusers=false             \
+    -D rpmmacrosdir=no            \
+    -D homed=disabled             \
+    -D userdb=false               \
+    -D man=disabled               \
+    -D mode=release               \
+    -D pam=${PAM_OPT}             \
+    -D dev-kvm-mode=0660          \
+    -D nobody-group=nogroup       \
+    -D sysupdate=disabled         \
+    -D ukify=disabled             \
+    -D selinux=disabled           \
+    -D apparmor=disabled          \
+    -D audit=disabled             \
+    -D polkit=disabled            \
+    -D bpf-framework=disabled     \
+    -D docdir=/opt/hud/share/doc/systemd-257.8
+
+[build]
+cd build
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+[postinst]
+# Create machine-id if it doesn't exist
+if [ ! -f /etc/machine-id ]; then
+    /opt/hud/bin/systemd-machine-id-setup 2>/dev/null || true
+fi
+
+# Set up basic target structure
+/opt/hud/bin/systemctl preset-all 2>/dev/null || true
+
+# Create necessary runtime directories
+mkdir -p /run/systemd/seats
+mkdir -p /run/systemd/sessions
+mkdir -p /run/systemd/users
+
+ldconfig 2>/dev/null || true
+echo "✓ Systemd 257.8 installed to /opt/hud"
+echo "  Note: Download man pages separately from:"
+echo "  https://anduin.linuxfromscratch.org/LFS/systemd-man-pages-257.8.tar.xz"

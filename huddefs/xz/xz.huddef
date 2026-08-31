@@ -1,0 +1,23 @@
+# HUD Package Definition - XZ Utils 5.8.0
+# LZMA compression library and tools
+
+Package: xz
+Version: 5.8.0
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: XZ Utils - LZMA compression library and tools
+Source: https://github.com/tukaani-project/xz/releases/download/v5.8.0/xz-5.8.0.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ XZ Utils 5.8.0 installed to /opt/hud"

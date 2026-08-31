@@ -1,0 +1,29 @@
+# HUD Package Definition - sqlite 3.50.4
+# Auto-generated for oVirt infrastructure
+
+Package: sqlite
+Version: 3.50.4
+Architecture: x86_64
+Section: databases
+Depends: 
+Description: SQLite-3.50.4
+Source: https://sqlite.org/2025/sqlite-autoconf-3500400.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud --enable-fts5 --enable-session
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "sqlite 3.50.4 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

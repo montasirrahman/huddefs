@@ -1,0 +1,22 @@
+# HUD Package Definition - wayland 1.23.1
+# Wayland display server protocol
+Package: wayland
+Version: 1.23.1
+Architecture: x86_64
+Section: graphics
+Depends: libxml2,libffi,expat
+Description: Wayland display server protocol library
+Source: https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.23.1/downloads/wayland-1.23.1.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Ddocumentation=false ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ wayland 1.23.1 installed to /opt/hud"
+/sbin/ldconfig

@@ -1,0 +1,22 @@
+# HUD Package Definition - xorgproto 2024.1
+# Xorg protocol headers
+Package: xorgproto
+Version: 2024.1
+Architecture: x86_64
+Section: xorg
+Depends: util-macros
+Description: Header files required to build the X Window system
+Source: https://xorg.freedesktop.org/archive/individual/proto/xorgproto-2024.1.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+mv -v $DESTDIR/opt/hud/share/doc/xorgproto $DESTDIR/opt/hud/share/doc/xorgproto-2024.1 2>/dev/null || true
+[postinst]
+echo "✓ xorgproto 2024.1 installed to /opt/hud"

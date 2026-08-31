@@ -1,0 +1,23 @@
+# HUD Package Definition - which 2.23
+# Command Locator
+# Shows full path of shell commands
+
+Package: which
+Version: 2.23
+Architecture: x86_64
+Section: utilities
+Depends:
+Description: Utility to show the full path of shell commands installed in PATH
+Source: https://ftp.gnu.org/gnu/which/which-2.23.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "✓ which 2.23 installed to /opt/hud"

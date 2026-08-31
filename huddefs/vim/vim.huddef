@@ -1,0 +1,39 @@
+# HUD Package Definition - vim 9.1.0
+# Vi IMproved - enhanced vi editor
+
+Package: vim
+Version: 9.1.0
+Architecture: x86_64
+Section: editors
+Depends: ncurses
+Description: Vi IMproved - enhanced vi editor
+Source: https://github.com/vim/vim/archive/refs/tags/v9.1.0.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --with-features=huge \
+    --enable-multibyte \
+    --enable-cscope \
+    --disable-gui \
+    --without-x \
+    --with-tlib=ncurses \
+    LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64 -Wl,-rpath,/opt/hud/lib -Wl,-rpath,/opt/hud/lib64" \
+    CPPFLAGS="-I/opt/hud/include -I/opt/hud/include/ncurses"
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+# Create vi symlink
+ln -sf vim /opt/hud/bin/vi 2>/dev/null || true
+ldconfig 2>/dev/null || true
+if /opt/hud/bin/vim --version >/dev/null 2>&1; then
+    echo "✓ vim 9.1.0 installed successfully"
+    /opt/hud/bin/vim --version | head -1
+else
+    echo "✓ vim installed to /opt/hud/bin/vim"
+fi

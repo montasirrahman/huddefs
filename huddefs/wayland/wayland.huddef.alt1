@@ -1,0 +1,29 @@
+# HUD Package Definition - wayland 1.24.0
+# Auto-generated for oVirt infrastructure
+
+Package: wayland
+Version: 1.24.0
+Architecture: x86_64
+Section: graphics
+Depends: xmlto,doxygen,libxslt,libxml2,docbook
+Description: Wayland-1.24.0
+Source: https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.24.0/downloads/wayland-1.24.0.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "wayland 1.24.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

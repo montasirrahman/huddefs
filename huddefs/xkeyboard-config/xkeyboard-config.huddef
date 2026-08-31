@@ -1,0 +1,21 @@
+# HUD Package Definition - xkeyboard-config 2.44
+# X Keyboard Configuration Database
+Package: xkeyboard-config
+Version: 2.44
+Architecture: x86_64
+Section: xorg
+Depends: xorgproto,libX11,meson,ninja
+Description: X Keyboard Configuration Database
+Source: https://www.x.org/pub/individual/data/xkeyboard-config/xkeyboard-config-2.44.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ xkeyboard-config 2.44 installed to /opt/hud"
