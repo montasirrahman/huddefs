@@ -82,7 +82,11 @@ PATCHES=$(header_field "$HUDDEF" Patches)
 [ -n "$VERSION" ] || die "Version: is missing"
 
 mkdir -p "$CACHE_DIR" "$OUTPUT_DIR" "$LOG_DIR" "$BUILD_ROOT/work"
-LOG="$LOG_DIR/${NAME}-${VERSION}.log"
+# Timestamped, never overwritten. A retry used to clobber the log of the failure
+# it was retrying, which is precisely the log you need. The stable
+# <name>-<version>.log symlink always points at the newest run.
+LOG="$LOG_DIR/${NAME}-${VERSION}-$(date -u +%Y%m%dT%H%M%SZ).log"
+ln -sfn "$(basename "$LOG")" "$LOG_DIR/${NAME}-${VERSION}.log"
 exec > >(tee "$LOG") 2>&1
 
 info "Building $NAME $VERSION ($ARCH)"
