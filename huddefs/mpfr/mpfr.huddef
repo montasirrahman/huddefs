@@ -1,0 +1,23 @@
+# HUD Package Definition - MPFR 4.2.2
+# Multiple Precision Floating-Point Reliable Library
+
+Package: mpfr
+Version: 4.2.2
+Architecture: x86_64
+Section: libraries
+Depends: gmp
+Description: Multiple Precision Floating-Point Reliable Library
+Source: https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static --with-gmp=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ MPFR 4.2.2 installed to /opt/hud"

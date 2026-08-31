@@ -1,0 +1,22 @@
+# HUD Package Definition - meson 1.6.1
+# High performance build system
+
+Package: meson
+Version: 1.6.1
+Architecture: x86_64
+Section: development
+Depends: python3,ninja
+Description: High performance build system
+Source: https://github.com/mesonbuild/meson/releases/download/1.6.1/meson-1.6.1.tar.gz
+
+[build]
+pip3 install --prefix=/opt/hud --root=$DESTDIR --no-deps . || \
+python3 -m pip install --prefix=/opt/hud --root=$DESTDIR --no-deps .
+
+[install]
+# Installation done in build step
+echo "Meson installed via pip"
+
+[postinst]
+echo "✓ meson 1.6.1 installed to /opt/hud"
+/opt/hud/bin/meson --version 2>/dev/null || true

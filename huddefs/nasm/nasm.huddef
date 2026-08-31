@@ -1,0 +1,22 @@
+# HUD Package Definition - NASM 2.16.03
+# Netwide Assembler
+
+Package: nasm
+Version: 2.16.03
+Architecture: x86_64
+Section: development
+Depends:
+Description: Netwide Assembler - x86 assembler
+Source: https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/nasm-2.16.03.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "✓ NASM 2.16.03 installed to /opt/hud"

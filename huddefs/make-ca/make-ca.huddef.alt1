@@ -1,0 +1,36 @@
+# HUD Package Definition - make-ca 1.16.1
+# Certificate Authority Management
+# Script to manage system CA certificates
+
+Package: make-ca
+Version: 1.16.1
+Architecture: x86_64
+Section: security
+Depends: p11-kit, openssl
+Description: Script and configuration for managing Certificate Authorities (CA) in various formats
+Source: https://github.com/lfs-book/make-ca/releases/download/v1.16.1/make-ca-1.16.1.tar.xz
+
+[configure]
+# No configure needed - it's a script-based package
+
+[build]
+# No build needed
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# Install configuration
+install -vdm755 $DESTDIR/etc/ssl/local
+
+[postinst]
+# Create necessary directories
+install -vdm755 /etc/ssl/local
+install -vdm755 /etc/pki/tls/certs
+install -vdm755 /etc/pki/anchors
+
+# Run make-ca to set up initial certificates
+/opt/hud/sbin/make-ca -g 2>/dev/null || true
+
+ldconfig 2>/dev/null || true
+echo "✓ make-ca 1.16.1 installed to /opt/hud"
+echo "  Run '/opt/hud/sbin/make-ca -g' to update CA certificates"

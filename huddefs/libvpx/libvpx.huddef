@@ -1,0 +1,23 @@
+# HUD Package Definition - libvpx 1.15.0
+# VP8/VP9 video codec
+
+Package: libvpx
+Version: 1.15.0
+Architecture: x86_64
+Section: multimedia
+Depends: nasm
+Description: VP8/VP9 video codec library
+Source: https://github.com/webmproject/libvpx/archive/v1.15.0/libvpx-1.15.0.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud --enable-shared --disable-static --enable-pic --enable-vp8 --enable-vp9 --enable-vp9-highbitdepth
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libvpx 1.15.0 installed to /opt/hud"

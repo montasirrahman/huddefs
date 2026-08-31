@@ -1,0 +1,27 @@
+# HUD Package Definition - Nettle 3.10.2
+# Cryptographic Library
+# Low-level cryptographic library
+
+Package: nettle
+Version: 3.10.2
+Architecture: x86_64
+Section: security
+Depends: gmp
+Description: Low-level cryptographic library designed to fit easily in many contexts
+Source: https://ftp.gnu.org/gnu/nettle/nettle-3.10.2.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# Install documentation
+chmod -v 755 $DESTDIR/opt/hud/lib/lib*.so* 2>/dev/null || true
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ Nettle 3.10.2 installed to /opt/hud"

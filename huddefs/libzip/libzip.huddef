@@ -1,0 +1,23 @@
+# HUD Package Definition - libzip 1.11.3
+# C library for zip archives
+
+Package: libzip
+Version: 1.11.3
+Architecture: x86_64
+Section: libraries
+Depends: zlib, bzip2, openssl, zstd
+Description: C library for reading, creating, and modifying zip archives
+Source: https://libzip.org/download/libzip-1.11.3.tar.xz
+
+[configure]
+mkdir -p build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=/opt/hud -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+
+[build]
+cd build && make -j$(nproc)
+
+[install]
+cd build && make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libzip 1.11.3 installed to /opt/hud"

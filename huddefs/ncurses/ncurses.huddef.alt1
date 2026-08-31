@@ -1,0 +1,45 @@
+# HUD Package Definition - ncurses 6.5
+# Terminal handling library
+
+Package: ncurses
+Version: 6.5
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: New curses library - terminal handling
+Source: https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --with-shared \
+    --without-debug \
+    --without-ada \
+    --with-cxx-shared \
+    --enable-widec \
+    --enable-pc-files \
+    --with-pkg-config-libdir=/opt/hud/lib/pkgconfig \
+    --enable-symlinks
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+# Create non-wide character symlinks for compatibility
+for lib in ncurses form panel menu; do
+    rm -f $DESTDIR/opt/hud/lib/lib${lib}.so
+    echo "INPUT(-l${lib}w)" > $DESTDIR/opt/hud/lib/lib${lib}.so
+    ln -sf lib${lib}w.a $DESTDIR/opt/hud/lib/lib${lib}.a 2>/dev/null || true
+done
+# Create ncurses -> ncursesw symlinks for headers
+ln -sf ncursesw $DESTDIR/opt/hud/include/ncurses 2>/dev/null || true
+# Create pkg-config files for non-wide versions
+for pc in ncurses form panel menu; do
+    [ -f $DESTDIR/opt/hud/lib/pkgconfig/${pc}w.pc ] && \
+    ln -sf ${pc}w.pc $DESTDIR/opt/hud/lib/pkgconfig/${pc}.pc 2>/dev/null || true
+done
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ ncurses 6.5 installed to /opt/hud"

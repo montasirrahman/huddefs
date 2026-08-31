@@ -1,0 +1,34 @@
+# HUD Package Definition - make-ca 1.16.1
+# Based on BLFS 12.4 documentation
+
+Package: make-ca
+Version: 1.16.1
+Architecture: x86_64
+Section: security
+Depends: p11-kit
+Description: PKI certificate management tool that downloads and processes CA certificates for system trust store
+Source: https://github.com/lfs-book/make-ca/archive/v1.16.1/make-ca-1.16.1.tar.gz
+
+[configure]
+# No configuration needed - make-ca is a shell script package
+
+[build]
+# No build step needed - make-ca is a shell script package
+
+[install]
+make install DESTDIR=$DESTDIR &&
+install -vdm755 $DESTDIR/etc/ssl/local
+
+[postinst]
+ldconfig 2>/dev/null || true
+# Generate initial certificate store
+# Note: Requires network access - run manually if needed
+# /usr/sbin/make-ca -g
+echo "make-ca 1.16.1 installed to /opt/hud"
+echo "Run '/usr/sbin/make-ca -g' to download and generate certificate stores"
+
+[prerm]
+# No services to stop
+
+[postrm]
+# Certificate stores managed separately

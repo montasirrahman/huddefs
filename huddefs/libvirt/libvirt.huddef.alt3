@@ -1,0 +1,32 @@
+# HUD Package Definition - libvirt 10.10.0
+# Auto-generated for oVirt infrastructure
+
+Package: libvirt
+Version: 10.10.0
+Architecture: x86_64
+Section: virtualization
+Depends: glib2,libxml2,python3,qemu,gnutls,libssh2,cyrus-sasl,polkit,dbus,yajl
+Description: The virtualization API
+Source: https://libvirt.org/sources/libvirt-10.10.0.tar.xz
+Service: libvirtd
+
+[configure]
+meson setup build --prefix=/opt/hud -Dsystem=true -Ddriver_qemu=enabled -Ddriver_libvirtd=enabled
+
+[build]
+ninja -C build
+
+[install]
+DESTDIR=$DESTDIR ninja -C build install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libvirt 10.10.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-libvirtd 2>/dev/null || true
+systemctl disable hud-libvirtd 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,20 @@
+# HUD Package Definition - meson 1.8.3
+# High performance build system
+Package: meson
+Version: 1.8.3
+Architecture: x86_64
+Section: development
+Depends: python3,ninja
+Description: Open source build system designed to be extremely fast and user friendly
+Source: https://github.com/mesonbuild/meson/releases/download/1.8.3/meson-1.8.3.tar.gz
+[build]
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+[install]
+pip3 install --no-index --find-links dist --prefix=/opt/hud --root=$DESTDIR meson
+mkdir -p $DESTDIR/opt/hud/share/bash-completion/completions
+mkdir -p $DESTDIR/opt/hud/share/zsh/site-functions
+install -vDm644 data/shell-completions/bash/meson $DESTDIR/opt/hud/share/bash-completion/completions/meson
+install -vDm644 data/shell-completions/zsh/_meson $DESTDIR/opt/hud/share/zsh/site-functions/_meson
+[postinst]
+echo "✓ meson 1.8.3 installed to /opt/hud"
+/opt/hud/bin/meson --version 2>/dev/null || true

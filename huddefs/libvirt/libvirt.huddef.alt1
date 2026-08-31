@@ -1,0 +1,382 @@
+# HUD Package Definition - libvirt 10.10.0
+# Virtualization API for managing QEMU/KVM hypervisors
+# Uses modular daemon architecture (virtqemud, virtnetworkd, etc.)
+# Reference: https://libvirt.org/
+#
+# FIXES APPLIED:
+# - Modular daemons (virtqemud, virtnetworkd) instead of monolithic libvirtd
+# - Socket config files for daemon-created sockets (not systemd socket activation)
+# - nftables firewall backend for compatibility with firewalld
+# - Proper systemd services with timeouts
+# - Copies missing binaries (virsh, virt-host-validate, virtqemud, virtnetworkd)
+# - Creates firewalld libvirt zone
+# - Polkit rules for libvirt group
+
+Package: libvirt
+Version: 10.10.0
+Architecture: x86_64
+Section: virtualization
+Depends: qemu, python3, glib, libxml2, yajl, libpciaccess, numactl, polkit, dbus, libnl, gnutls, libgcrypt, curl, libssh2, nftables, dnsmasq, dmidecode
+Description: Virtualization API library for managing hypervisors (QEMU/KVM)
+Source: https://download.libvirt.org/libvirt-10.10.0.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share:${XDG_DATA_DIRS}"
+mkdir -p build
+cd build
+meson setup ..                              \
+      --prefix=/opt/hud                     \
+      --sysconfdir=/etc                     \
+      --localstatedir=/var                  \
+      --buildtype=release                   \
+      -D system=true                        \
+      -D driver_qemu=enabled                \
+      -D driver_libvirtd=enabled            \
+      -D driver_remote=enabled              \
+      -D driver_network=enabled             \
+      -D driver_interface=enabled           \
+      -D driver_secrets=enabled             \
+      -D secdriver_apparmor=disabled        \
+      -D secdriver_selinux=disabled         \
+      -D apparmor_profiles=disabled         \
+      -D selinux=disabled                   \
+      -D firewalld=disabled                 \
+      -D wireshark_dissector=disabled       \
+      -D storage_iscsi=disabled             \
+      -D storage_iscsi_direct=disabled      \
+      -D storage_scsi=enabled               \
+      -D storage_mpath=disabled             \
+      -D storage_gluster=disabled           \
+      -D storage_rbd=disabled               \
+      -D storage_zfs=disabled               \
+      -D glusterfs=disabled                 \
+      -D openwsman=disabled                 \
+      -D libiscsi=disabled                  \
+      -D sanlock=disabled                   \
+      -D libssh=disabled                    \
+      -D libssh2=enabled                    \
+      -D audit=disabled                     \
+      -D dtrace=disabled                    \
+      -D numad=disabled                     \
+      -D numactl=enabled                    \
+      -D netcf=disabled                     \
+      -D fuse=disabled                      \
+      -D nbdkit=disabled                    \
+      -D nss=disabled                       \
+      -D bash_completion=disabled           \
+      -D tests=disabled                     \
+      -D docs=disabled
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share:${XDG_DATA_DIRS}"
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+# Ensure key binaries are copied to standard locations
+mkdir -p $DESTDIR/usr/bin $DESTDIR/usr/sbin
+cp -f tools/virsh $DESTDIR/usr/bin/virsh 2>/dev/null || true
+cp -f tools/virt-host-validate $DESTDIR/usr/bin/virt-host-validate 2>/dev/null || true
+cp -f src/virtqemud $DESTDIR/usr/sbin/virtqemud 2>/dev/null || true
+cp -f src/virtnetworkd $DESTDIR/usr/sbin/virtnetworkd 2>/dev/null || true
+chmod +x $DESTDIR/usr/bin/virsh $DESTDIR/usr/bin/virt-host-validate 2>/dev/null || true
+chmod +x $DESTDIR/usr/sbin/virtqemud $DESTDIR/usr/sbin/virtnetworkd 2>/dev/null || true
+
+# Copy libraries to /opt/hud/lib (they might only be in pkg)
+mkdir -p $DESTDIR/opt/hud/lib
+cp -f src/libvirt.so.0.10010.0 $DESTDIR/opt/hud/lib/ 2>/dev/null || true
+cp -f src/libvirt-lxc.so.0.10010.0 $DESTDIR/opt/hud/lib/ 2>/dev/null || true
+cp -f src/libvirt-qemu.so.0.10010.0 $DESTDIR/opt/hud/lib/ 2>/dev/null || true
+cp -f src/libvirt-admin.so.0.10010.0 $DESTDIR/opt/hud/lib/ 2>/dev/null || true
+
+# Copy driver modules
+mkdir -p $DESTDIR/opt/hud/lib/libvirt/connection-driver
+mkdir -p $DESTDIR/opt/hud/lib/libvirt/lock-driver
+mkdir -p $DESTDIR/opt/hud/lib/libvirt/storage-backend
+mkdir -p $DESTDIR/opt/hud/lib/libvirt/storage-file
+cp -f src/libvirt_driver_*.so $DESTDIR/opt/hud/lib/libvirt/connection-driver/ 2>/dev/null || true
+cp -f src/libvirt_storage_backend_*.so $DESTDIR/opt/hud/lib/libvirt/storage-backend/ 2>/dev/null || true
+cp -f src/libvirt_storage_file_*.so $DESTDIR/opt/hud/lib/libvirt/storage-file/ 2>/dev/null || true
+cp -f src/lockd.so $DESTDIR/opt/hud/lib/libvirt/lock-driver/ 2>/dev/null || true
+
+# Also copy to /usr/lib/libvirt (virtqemud looks here)
+mkdir -p $DESTDIR/usr/lib/libvirt/connection-driver
+mkdir -p $DESTDIR/usr/lib/libvirt/lock-driver
+mkdir -p $DESTDIR/usr/lib/libvirt/storage-backend
+mkdir -p $DESTDIR/usr/lib/libvirt/storage-file
+cp -f src/libvirt_driver_*.so $DESTDIR/usr/lib/libvirt/connection-driver/ 2>/dev/null || true
+cp -f src/libvirt_storage_backend_*.so $DESTDIR/usr/lib/libvirt/storage-backend/ 2>/dev/null || true
+cp -f src/libvirt_storage_file_*.so $DESTDIR/usr/lib/libvirt/storage-file/ 2>/dev/null || true
+cp -f src/lockd.so $DESTDIR/usr/lib/libvirt/lock-driver/ 2>/dev/null || true
+
+# Also copy to /usr/lib for compatibility
+mkdir -p $DESTDIR/usr/lib/libvirt/connection-driver
+mkdir -p $DESTDIR/usr/lib/libvirt/lock-driver
+mkdir -p $DESTDIR/usr/lib/libvirt/storage-backend
+mkdir -p $DESTDIR/usr/lib/libvirt/storage-file
+cp -f src/libvirt_driver_*.so $DESTDIR/usr/lib/libvirt/connection-driver/ 2>/dev/null || true
+cp -f src/libvirt_storage_backend_*.so $DESTDIR/usr/lib/libvirt/storage-backend/ 2>/dev/null || true
+cp -f src/libvirt_storage_file_*.so $DESTDIR/usr/lib/libvirt/storage-file/ 2>/dev/null || true
+cp -f src/lockd.so $DESTDIR/usr/lib/libvirt/lock-driver/ 2>/dev/null || true
+
+[postinst]
+# Add library paths to ldconfig
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/hud.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/hud.conf
+ldconfig
+
+# Create library symlinks
+cd /opt/hud/lib
+ln -sf libvirt.so.0.10010.0 libvirt.so.0 2>/dev/null || true
+ln -sf libvirt.so.0 libvirt.so 2>/dev/null || true
+ln -sf libvirt-lxc.so.0.10010.0 libvirt-lxc.so.0 2>/dev/null || true
+ln -sf libvirt-lxc.so.0 libvirt-lxc.so 2>/dev/null || true
+ln -sf libvirt-qemu.so.0.10010.0 libvirt-qemu.so.0 2>/dev/null || true
+ln -sf libvirt-qemu.so.0 libvirt-qemu.so 2>/dev/null || true
+ln -sf libvirt-admin.so.0.10010.0 libvirt-admin.so.0 2>/dev/null || true
+ln -sf libvirt-admin.so.0 libvirt-admin.so 2>/dev/null || true
+ldconfig
+
+# Create directories
+install -vdm755 /etc/libvirt
+install -vdm755 /etc/libvirt/qemu
+install -vdm755 /etc/libvirt/qemu/networks
+install -vdm755 /var/lib/libvirt
+install -vdm755 /var/lib/libvirt/images
+install -vdm755 /var/lib/libvirt/qemu
+install -vdm755 /var/log/libvirt
+install -vdm755 /var/run/libvirt
+install -vdm755 /var/run/libvirt/qemu
+
+# Create groups and users
+groupadd -fg 36 kvm 2>/dev/null || true
+groupadd -fg 27 libvirt 2>/dev/null || true
+useradd -c "Libvirt User" -d /var/lib/libvirt -g libvirt -s /bin/false -u 27 libvirt 2>/dev/null || true
+chown -R libvirt:libvirt /var/lib/libvirt 2>/dev/null || true
+chown -R libvirt:libvirt /var/log/libvirt 2>/dev/null || true
+
+# Ensure binaries are in place (fallback to build directory)
+test -f /usr/bin/virsh || cp /var/hud-build/staging/libvirt-*/src/libvirt-*/build/tools/virsh /usr/bin/virsh 2>/dev/null || true
+test -f /usr/bin/virt-host-validate || cp /var/hud-build/staging/libvirt-*/src/libvirt-*/build/tools/virt-host-validate /usr/bin/virt-host-validate 2>/dev/null || true
+test -f /usr/sbin/virtqemud || cp /var/hud-build/staging/libvirt-*/src/libvirt-*/build/src/virtqemud /usr/sbin/virtqemud 2>/dev/null || true
+test -f /usr/sbin/virtnetworkd || cp /var/hud-build/staging/libvirt-*/src/libvirt-*/build/src/virtnetworkd /usr/sbin/virtnetworkd 2>/dev/null || true
+chmod +x /usr/bin/virsh /usr/bin/virt-host-validate /usr/sbin/virtqemud /usr/sbin/virtnetworkd 2>/dev/null || true
+
+# ============================================================
+# DAEMON SOCKET CONFIGURATION (CRITICAL FOR SOCKET CREATION)
+# ============================================================
+# These config files tell the daemons to create their own sockets
+# instead of relying on systemd socket activation
+
+cat > /etc/libvirt/virtqemud.conf << 'EOFCONF'
+# virtqemud socket configuration
+# Daemon creates its own sockets (not systemd socket activation)
+unix_sock_group = "libvirt"
+unix_sock_ro_perms = "0777"
+unix_sock_rw_perms = "0770"
+unix_sock_admin_perms = "0700"
+unix_sock_dir = "/var/run/libvirt"
+EOFCONF
+
+cat > /etc/libvirt/virtnetworkd.conf << 'EOFCONF'
+# virtnetworkd socket configuration
+unix_sock_group = "libvirt"
+unix_sock_ro_perms = "0777"
+unix_sock_rw_perms = "0770"
+unix_sock_admin_perms = "0700"
+unix_sock_dir = "/var/run/libvirt"
+EOFCONF
+
+# Configure network to use nftables backend (works with firewalld)
+cat > /etc/libvirt/network.conf << 'EOFCONF'
+# Network driver configuration
+# Use nftables backend for firewalld compatibility
+firewall_backend = "nftables"
+EOFCONF
+
+# ============================================================
+# FIREWALLD LIBVIRT ZONE
+# ============================================================
+install -vdm755 /etc/firewalld/zones
+cat > /etc/firewalld/zones/libvirt.xml << 'EOFXML'
+<?xml version="1.0" encoding="utf-8"?>
+<zone target="ACCEPT">
+  <short>libvirt</short>
+  <description>The libvirt zone for virtual networks. Used by libvirt for NAT and routed virtual networks.</description>
+</zone>
+EOFXML
+
+# ============================================================
+# SYSTEMD SERVICES (MODULAR DAEMONS)
+# ============================================================
+
+# virtqemud - QEMU/KVM hypervisor daemon
+cat > /etc/systemd/system/virtqemud.service << 'EOFSVC'
+[Unit]
+Description=Virtualization QEMU daemon
+Requires=virtlogd.socket
+Requires=virtlockd.socket
+After=network.target
+After=dbus.service
+After=local-fs.target
+Documentation=man:virtqemud(8)
+
+[Service]
+Type=notify
+TimeoutStartSec=60
+ExecStart=/usr/sbin/virtqemud
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# virtnetworkd - Virtual network daemon
+cat > /etc/systemd/system/virtnetworkd.service << 'EOFSVC'
+[Unit]
+Description=Virtualization Network daemon
+After=network.target
+After=dbus.service
+After=firewalld.service
+Documentation=man:virtnetworkd(8)
+
+[Service]
+Type=notify
+TimeoutStartSec=60
+ExecStart=/usr/sbin/virtnetworkd
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# virtlockd - Lock manager service
+cat > /etc/systemd/system/virtlockd.service << 'EOFSVC'
+[Unit]
+Description=Virtual machine lock manager
+Requires=virtlockd.socket
+Before=virtqemud.service
+Documentation=man:virtlockd(8)
+
+[Service]
+Type=notify
+ExecStart=/usr/sbin/virtlockd
+ExecReload=/bin/kill -USR1 $MAINPID
+Restart=on-failure
+
+[Install]
+Also=virtlockd.socket
+EOFSVC
+
+# virtlockd socket
+cat > /etc/systemd/system/virtlockd.socket << 'EOFSVC'
+[Unit]
+Description=Virtual machine lock manager socket
+Before=virtqemud.service
+
+[Socket]
+ListenStream=/var/run/libvirt/virtlockd-sock
+ListenStream=/var/run/libvirt/virtlockd-admin-sock
+
+[Install]
+WantedBy=sockets.target
+EOFSVC
+
+# virtlogd - Log manager service
+cat > /etc/systemd/system/virtlogd.service << 'EOFSVC'
+[Unit]
+Description=Virtual machine log manager
+Requires=virtlogd.socket
+Before=virtqemud.service
+Documentation=man:virtlogd(8)
+
+[Service]
+Type=notify
+ExecStart=/usr/sbin/virtlogd
+ExecReload=/bin/kill -USR1 $MAINPID
+Restart=on-failure
+
+[Install]
+Also=virtlogd.socket
+EOFSVC
+
+# virtlogd socket
+cat > /etc/systemd/system/virtlogd.socket << 'EOFSVC'
+[Unit]
+Description=Virtual machine log manager socket
+Before=virtqemud.service
+
+[Socket]
+ListenStream=/var/run/libvirt/virtlogd-sock
+ListenStream=/var/run/libvirt/virtlogd-admin-sock
+
+[Install]
+WantedBy=sockets.target
+EOFSVC
+
+# ============================================================
+# REMOVE OLD LIBVIRTD SERVICE (we use modular daemons)
+# ============================================================
+rm -f /etc/systemd/system/libvirtd.service 2>/dev/null || true
+
+# ============================================================
+# POLKIT RULES
+# ============================================================
+install -vdm755 /usr/share/polkit-1/rules.d
+cat > /usr/share/polkit-1/rules.d/org.libvirt.unix.manager.rules << 'EOFRULE'
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.libvirt.unix.manage" && subject.isInGroup("libvirt")) {
+        return polkit.Result.YES;
+    }
+});
+EOFRULE
+
+# ============================================================
+# ENABLE AND START SERVICES
+# ============================================================
+systemctl daemon-reload
+systemctl enable virtlockd.socket
+systemctl enable virtlogd.socket
+systemctl enable virtqemud.service
+systemctl enable virtnetworkd.service
+systemctl start virtlockd.socket || true
+systemctl start virtlogd.socket || true
+systemctl start virtqemud.service || true
+systemctl start virtnetworkd.service || true
+
+echo ""
+echo "============================================"
+echo "libvirt 10.10.0 installed successfully"
+echo "============================================"
+echo ""
+echo "Commands:"
+echo "  virsh list --all          - List all VMs"
+echo "  virsh net-list --all      - List all networks"
+echo "  virt-host-validate qemu   - Validate host for QEMU/KVM"
+echo ""
+echo "Services:"
+echo "  systemctl status virtqemud"
+echo "  systemctl status virtnetworkd"
+echo ""
+echo "Add users to libvirt group:"
+echo "  usermod -aG libvirt <username>"
+echo ""
+echo "Start default network (requires dnsmasq):"
+echo "  virsh net-start default"
+echo ""

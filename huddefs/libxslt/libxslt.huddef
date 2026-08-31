@@ -1,0 +1,29 @@
+# HUD Package Definition - libxslt 1.1.43
+# Auto-generated for oVirt infrastructure
+
+Package: libxslt
+Version: 1.1.43
+Architecture: x86_64
+Section: libraries
+Depends: libxml2,docbook,libgcrypt,docbook-xsl
+Description: libxslt-1.1.43
+Source: https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.43.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libxslt 1.1.43 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

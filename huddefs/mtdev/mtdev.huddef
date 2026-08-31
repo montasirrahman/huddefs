@@ -1,0 +1,18 @@
+# HUD Package Definition - mtdev 1.1.7
+# Multitouch protocol translation library
+Package: mtdev
+Version: 1.1.7
+Architecture: x86_64
+Section: system
+Depends:
+Description: Multitouch protocol translation library
+Source: https://bitmath.org/code/mtdev/mtdev-1.1.7.tar.bz2
+[configure]
+./configure --prefix=/opt/hud --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ mtdev 1.1.7 installed to /opt/hud"
+/sbin/ldconfig

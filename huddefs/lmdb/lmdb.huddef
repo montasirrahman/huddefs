@@ -1,0 +1,42 @@
+# HUD Package Definition - LMDB 0.9.33
+# Lightning Memory-Mapped Database Manager
+# Dependency for: cyrus-sasl
+
+Package: lmdb
+Version: 0.9.33
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Lightning Memory-Mapped Database - ultra-fast key-value store
+Source: https://github.com/LMDB/lmdb/archive/LMDB_0.9.33.tar.gz
+
+[configure]
+# LMDB uses a simple Makefile, no configure script
+cd libraries/liblmdb
+
+[build]
+cd libraries/liblmdb
+make CFLAGS="${CFLAGS} -fPIC" prefix=/opt/hud
+
+[install]
+cd libraries/liblmdb
+make prefix=/opt/hud DESTDIR=$DESTDIR install
+
+# Create pkgconfig file
+install -vdm755 $DESTDIR/opt/hud/lib/pkgconfig
+cat > $DESTDIR/opt/hud/lib/pkgconfig/lmdb.pc << "PCEOF"
+prefix=/opt/hud
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: lmdb
+Description: Lightning Memory-Mapped Database
+Version: 0.9.33
+Libs: -L${libdir} -llmdb
+Cflags: -I${includedir}
+PCEOF
+
+[postinst]
+ldconfig
+echo "✓ LMDB 0.9.33 installed to /opt/hud"

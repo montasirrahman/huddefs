@@ -1,0 +1,30 @@
+# HUD Package Definition - make-ca 1.16.1
+# Auto-generated for oVirt infrastructure
+
+Package: make-ca
+Version: 1.16.1
+Architecture: x86_64
+Section: misc
+Depends: nss,wget,fcron,p11-kit,libtasn1
+Description: make-ca-1.16.1
+Source: https://github.com/lfs-book/make-ca/archive/v1.16.1/make-ca-1.16.1.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install &&
+install -vdm755 /etc/ssl/local
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "make-ca 1.16.1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

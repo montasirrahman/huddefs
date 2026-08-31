@@ -1,0 +1,29 @@
+# HUD Package Definition - linux-pam 1.7.1
+# Auto-generated for oVirt infrastructure
+
+Package: linux-pam
+Version: 1.7.1
+Architecture: x86_64
+Section: security
+Depends: libxslt,lynx,shadow,libpwquality,elogind,docbook5
+Description: Linux-PAM-1.7.1
+Source: https://github.com/linux-pam/linux-pam/releases/download/v1.7.1/Linux-PAM-1.7.1.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "linux-pam 1.7.1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

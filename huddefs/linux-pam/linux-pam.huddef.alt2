@@ -1,0 +1,43 @@
+# HUD Package Definition - linux-pam 1.7.0
+# Pluggable Authentication Modules
+
+Package: linux-pam
+Version: 1.7.0
+Architecture: x86_64
+Section: security
+Depends:
+Description: Pluggable Authentication Modules for Linux
+Source: https://github.com/linux-pam/linux-pam/releases/download/v1.7.0/Linux-PAM-1.7.0.tar.xz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --sysconfdir=/opt/hud/etc \
+    --libdir=/opt/hud/lib \
+    --enable-securedir=/opt/hud/lib/security \
+    --docdir=/opt/hud/share/doc/linux-pam-1.7.0 \
+    --disable-regenerate-docu
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+# Install PAM config files
+mkdir -p $DESTDIR/opt/hud/etc/pam.d
+cat > $DESTDIR/opt/hud/etc/pam.d/system-auth << 'SYSAUTH'
+auth      required  pam_unix.so
+account   required  pam_unix.so
+password  required  pam_unix.so sha512 shadow
+session   required  pam_unix.so
+SYSAUTH
+cat > $DESTDIR/opt/hud/etc/pam.d/other << 'OTHER'
+auth      required  pam_deny.so
+account   required  pam_deny.so
+password  required  pam_deny.so
+session   required  pam_deny.so
+OTHER
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ linux-pam 1.7.0 installed to /opt/hud"

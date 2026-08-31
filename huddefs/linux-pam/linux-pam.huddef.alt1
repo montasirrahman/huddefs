@@ -1,0 +1,97 @@
+# HUD Package Definition - Linux-PAM 1.7.1
+# Pluggable Authentication Modules
+# Authentication framework for Linux systems
+# Fixed: Disabled documentation to avoid DocBook 5.0 dependency
+
+Package: linux-pam
+Version: 1.7.1
+Architecture: x86_64
+Section: security
+Depends:
+Description: Pluggable Authentication Modules for controlling how applications authenticate users
+Source: https://github.com/linux-pam/linux-pam/releases/download/v1.7.1/Linux-PAM-1.7.1.tar.xz
+
+[configure]
+mkdir -p build
+cd build
+
+# Disable documentation generation to avoid DocBook 5.0 XML schema dependency
+# Documentation can be installed separately from pre-built tarball
+meson setup ..                \
+    --prefix=/opt/hud         \
+    --buildtype=release       \
+    -D docs=disabled          \
+    -D docdir=/opt/hud/share/doc/Linux-PAM-1.7.1
+
+[build]
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+# Set proper permissions on unix_chkpwd
+chmod -v 4755 $DESTDIR/opt/hud/sbin/unix_chkpwd 2>/dev/null || true
+
+[postinst]
+# Create PAM configuration directories
+install -v -m755 -d /etc/pam.d
+install -v -m755 -d /etc/security
+
+# Create basic PAM configuration files if they don't exist
+if [ ! -f /etc/pam.d/system-account ]; then
+cat > /etc/pam.d/system-account << "EOF"
+# Begin /etc/pam.d/system-account
+account   required    pam_unix.so
+# End /etc/pam.d/system-account
+EOF
+fi
+
+if [ ! -f /etc/pam.d/system-auth ]; then
+cat > /etc/pam.d/system-auth << "EOF"
+# Begin /etc/pam.d/system-auth
+auth      required    pam_unix.so
+# End /etc/pam.d/system-auth
+EOF
+fi
+
+if [ ! -f /etc/pam.d/system-session ]; then
+cat > /etc/pam.d/system-session << "EOF"
+# Begin /etc/pam.d/system-session
+session   required    pam_unix.so
+# End /etc/pam.d/system-session
+EOF
+fi
+
+if [ ! -f /etc/pam.d/system-password ]; then
+cat > /etc/pam.d/system-password << "EOF"
+# Begin /etc/pam.d/system-password
+password  required    pam_unix.so       yescrypt shadow try_first_pass
+# End /etc/pam.d/system-password
+EOF
+fi
+
+if [ ! -f /etc/pam.d/other ]; then
+cat > /etc/pam.d/other << "EOF"
+# Begin /etc/pam.d/other
+auth        required        pam_warn.so
+auth        required        pam_deny.so
+account     required        pam_warn.so
+account     required        pam_deny.so
+password    required        pam_warn.so
+password    required        pam_deny.so
+session     required        pam_warn.so
+session     required        pam_deny.so
+# End /etc/pam.d/other
+EOF
+fi
+
+# Fix permissions
+chmod -v 4755 /opt/hud/sbin/unix_chkpwd 2>/dev/null || true
+
+ldconfig 2>/dev/null || true
+echo "✓ Linux-PAM 1.7.1 installed to /opt/hud"
+echo "  Note: Documentation was not built. Install pre-built docs from:"
+echo "  https://anduin.linuxfromscratch.org/BLFS/Linux-PAM/Linux-PAM-1.7.1-docs.tar.xz"
+echo "  IMPORTANT: Reinstall Shadow and Systemd with PAM support!"

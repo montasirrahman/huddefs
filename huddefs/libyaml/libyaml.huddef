@@ -1,0 +1,29 @@
+# HUD Package Definition - libyaml 0.2.5
+# Auto-generated for oVirt infrastructure
+
+Package: libyaml
+Version: 0.2.5
+Architecture: x86_64
+Section: libraries
+Depends: 
+Description: YAML 1.1 parser and emitter
+Source: https://github.com/yaml/libyaml/releases/download/0.2.5/yaml-0.2.5.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libyaml 0.2.5 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

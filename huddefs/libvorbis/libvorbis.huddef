@@ -1,0 +1,25 @@
+# HUD Package Definition - libvorbis 1.3.7
+# General purpose audio and music encoding format
+
+Package: libvorbis
+Version: 1.3.7
+Architecture: x86_64
+Section: libraries
+Depends: libogg
+Description: General purpose audio and music encoding format (patent free)
+Source: https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static --with-ogg-prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+install -v -dm755 $DESTDIR/opt/hud/share/doc/libvorbis-1.3.7
+install -v -m644 doc/Vorbis* $DESTDIR/opt/hud/share/doc/libvorbis-1.3.7
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libvorbis 1.3.7 installed to /opt/hud"

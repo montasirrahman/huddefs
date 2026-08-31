@@ -1,0 +1,18 @@
+# HUD Package Definition - libxcb 1.17.0
+# Interface to X Window System protocol
+Package: libxcb
+Version: 1.17.0
+Architecture: x86_64
+Section: xorg
+Depends: libXau,libXdmcp,xcb-proto
+Description: Interface to the X Window System protocol replacing Xlib
+Source: https://xorg.freedesktop.org/archive/individual/lib/libxcb-1.17.0.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static --without-doxygen --docdir=/opt/hud/share/doc/libxcb-1.17.0
+[build]
+LC_ALL=en_US.UTF-8 make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libxcb 1.17.0 installed to /opt/hud"
+/sbin/ldconfig

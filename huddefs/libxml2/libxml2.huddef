@@ -1,0 +1,42 @@
+# HUD Package Definition - libxml2 2.14.5
+# XML parsing library
+
+Package: libxml2
+Version: 2.14.5
+Architecture: x86_64
+Section: libraries
+Depends: icu
+Description: libxml2 - XML parsing library with ICU support
+Source: https://download.gnome.org/sources/libxml2/2.14/libxml2-2.14.5.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud           \
+            --sysconfdir=/opt/hud/etc   \
+            --disable-static            \
+            --with-history              \
+            --with-icu                  \
+            --docdir=/opt/hud/share/doc/libxml2-2.14.5
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=${DESTDIR} install
+
+# Remove libtool archive to prevent unnecessary ICU linking
+rm -vf ${DESTDIR}/opt/hud/lib/libxml2.la
+
+# Fix xml2-config to prevent unnecessary ICU linking
+if [ -f ${DESTDIR}/opt/hud/bin/xml2-config ]; then
+    sed '/libs=/s/xml2.*/xml2"/' -i ${DESTDIR}/opt/hud/bin/xml2-config
+fi
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libxml2 2.14.5 installed to /opt/hud"
+
+[prerm]
+# Nothing to do
+
+[postrm]
+ldconfig 2>/dev/null || true

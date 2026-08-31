@@ -1,0 +1,29 @@
+# HUD Package Definition - libwebp 1.6.0
+# Auto-generated for oVirt infrastructure
+
+Package: libwebp
+Version: 1.6.0
+Architecture: x86_64
+Section: libraries
+Depends: libjpeg,libpng,freeglut,sdl2
+Description: libwebp-1.6.0
+Source: https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.6.0.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libwebp 1.6.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

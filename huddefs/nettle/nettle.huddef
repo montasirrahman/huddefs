@@ -1,0 +1,36 @@
+# HUD Package Definition - nettle 3.10.2
+# Based on BLFS 12.4 documentation
+
+Package: nettle
+Version: 3.10.2
+Architecture: x86_64
+Section: security
+Depends:
+Description: Low-level cryptographic library designed to fit easily in many contexts
+Source: https://ftp.gnu.org/gnu/nettle/nettle-3.10.2.tar.gz
+
+[configure]
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:$PKG_CONFIG_PATH"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64 $LDFLAGS"
+export CPPFLAGS="-I/opt/hud/include $CPPFLAGS"
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make install DESTDIR=$DESTDIR &&
+chmod -v 755 $DESTDIR/opt/hud/lib/lib{hogweed,nettle}.so 2>/dev/null || true &&
+chmod -v 755 $DESTDIR/opt/hud/lib64/lib{hogweed,nettle}.so 2>/dev/null || true &&
+install -v -m755 -d $DESTDIR/opt/hud/share/doc/nettle-3.10.2 &&
+install -v -m644 nettle.{html,pdf} $DESTDIR/opt/hud/share/doc/nettle-3.10.2 2>/dev/null || true
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "nettle 3.10.2 installed to /opt/hud"
+
+[prerm]
+# No services to stop
+
+[postrm]
+ldconfig 2>/dev/null || true

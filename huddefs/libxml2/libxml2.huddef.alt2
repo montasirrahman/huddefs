@@ -1,0 +1,29 @@
+# HUD Package Definition - libxml2 2.14.5
+# Auto-generated for oVirt infrastructure
+
+Package: libxml2
+Version: 2.14.5
+Architecture: x86_64
+Section: libraries
+Depends: icu,valgrind
+Description: libxml2-2.14.5
+Source: https://download.gnome.org/sources/libxml2/2.14/libxml2-2.14.5.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --with-history --with-icu --with-python=/opt/hud/bin/python3
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libxml2 2.14.5 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

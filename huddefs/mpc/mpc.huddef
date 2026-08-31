@@ -1,0 +1,23 @@
+# HUD Package Definition - MPC 1.3.1
+# Multiple Precision Complex Library
+
+Package: mpc
+Version: 1.3.1
+Architecture: x86_64
+Section: libraries
+Depends: gmp, mpfr
+Description: GNU MPC - Multiple Precision Complex Library
+Source: https://ftp.gnu.org/gnu/mpc/mpc-1.3.1.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static --with-gmp=/opt/hud --with-mpfr=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ MPC 1.3.1 installed to /opt/hud"

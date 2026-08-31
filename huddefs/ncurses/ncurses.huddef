@@ -1,0 +1,59 @@
+# HUD Package Definition - ncurses 6.5-20250809
+# Terminal handling library - Based on LFS 12.4-systemd
+# Updated version with GCC 15 compatibility
+
+Package: ncurses
+Version: 6.5.20250809
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: New curses library - terminal handling (LFS 12.4)
+Source: https://invisible-mirror.net/archives/ncurses/current/ncurses-6.5-20250809.tgz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --mandir=/opt/hud/share/man \
+    --with-manpage-format=normal \
+    --with-shared \
+    --without-normal \
+    --with-cxx-shared \
+    --without-debug \
+    --without-ada \
+    --enable-widec \
+    --enable-pc-files \
+    --with-pkg-config-libdir=/opt/hud/lib/pkgconfig \
+    AWK=gawk
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# Create libncurses.so symlink (needed by some packages)
+ln -sfv libncursesw.so $DESTDIR/opt/hud/lib/libncurses.so
+
+# Fix curses.h to always use wide-character data structures
+sed -e 's/^#if.*XOPEN.*$/#if 1/' \
+    -i $DESTDIR/opt/hud/include/curses.h
+
+# Create non-wide character compatibility symlinks
+for lib in ncurses form panel menu; do
+    rm -f $DESTDIR/opt/hud/lib/lib${lib}.so
+    echo "INPUT(-l${lib}w)" > $DESTDIR/opt/hud/lib/lib${lib}.so
+    ln -sfv lib${lib}w.a $DESTDIR/opt/hud/lib/lib${lib}.a 2>/dev/null || true
+done
+
+# Create include directory symlink
+ln -sfv ncursesw $DESTDIR/opt/hud/include/ncurses 2>/dev/null || true
+
+# Create pkg-config symlinks for non-wide versions
+for pc in ncurses form panel menu; do
+    [ -f $DESTDIR/opt/hud/lib/pkgconfig/${pc}w.pc ] && \
+    ln -sfv ${pc}w.pc $DESTDIR/opt/hud/lib/pkgconfig/${pc}.pc 2>/dev/null || true
+done
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ ncurses 6.5-20250809 installed to /opt/hud"

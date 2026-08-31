@@ -1,0 +1,33 @@
+# HUD Package Definition - libxcb 1.17.0
+# X Protocol C-language Binding
+# C interface to the X Window System protocol
+# Fixed: Added util-macros dependency and proper PKG_CONFIG_PATH
+
+Package: libxcb
+Version: 1.17.0
+Architecture: x86_64
+Section: xorg
+Depends: xcb-proto, libXau, libXdmcp, util-macros
+Description: C interface to the X Window System protocol replacing Xlib
+Source: https://xorg.freedesktop.org/archive/individual/lib/libxcb-1.17.0.tar.xz
+
+[configure]
+# Ensure pkg-config can find all dependencies
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/opt/hud/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH}"
+export ACLOCAL_PATH="/opt/hud/share/aclocal:${ACLOCAL_PATH}"
+
+./configure --prefix=/opt/hud    \
+            --sysconfdir=/etc    \
+            --localstatedir=/var \
+            --disable-static     \
+            --without-doxygen
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libxcb 1.17.0 installed to /opt/hud"

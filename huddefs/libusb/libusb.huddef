@@ -1,0 +1,23 @@
+# HUD Package Definition - libusb 1.0.28
+# USB device access library
+
+Package: libusb
+Version: 1.0.28
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Library for USB device access
+Source: https://github.com/libusb/libusb/releases/download/v1.0.28/libusb-1.0.28.tar.bz2
+
+[configure]
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libusb 1.0.28 installed to /opt/hud"

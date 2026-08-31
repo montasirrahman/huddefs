@@ -1,0 +1,32 @@
+# HUD Package Definition - nettle 3.10.2
+# Auto-generated for oVirt infrastructure
+
+Package: nettle
+Version: 3.10.2
+Architecture: x86_64
+Section: misc
+Depends: 
+Description: Nettle-3.10.2
+Source: https://ftp.gnu.org/gnu/nettle/nettle-3.10.2.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install &&
+chmod   -v   755 /usr/lib/lib{hogweed,nettle}.so &&
+install -v -m755 -d /usr/share/doc/nettle-3.10.2 &&
+install -v -m644 nettle.{html,pdf} /usr/share/doc/nettle-3.10.2
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "nettle 3.10.2 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

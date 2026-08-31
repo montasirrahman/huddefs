@@ -1,0 +1,111 @@
+# HUD Package Definition - libvirt 10.10.0
+# Virtualization API for managing QEMU/KVM, Xen, and other hypervisors
+# Reference: https://libvirt.org/
+
+Package: libvirt
+Version: 10.10.0
+Architecture: x86_64
+Section: virtualization
+Depends: qemu, python3, glib, libxml2, yajl, libpciaccess, numactl, polkit, dbus, libnl, gnutls, libgcrypt, curl, libssh2
+Description: Virtualization API library for managing hypervisors (QEMU/KVM)
+Source: https://download.libvirt.org/libvirt-10.10.0.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share:${XDG_DATA_DIRS}"
+mkdir -p build
+cd build
+meson setup ..                              \
+      --prefix=/opt/hud                     \
+      --sysconfdir=/etc                     \
+      --localstatedir=/var                  \
+      --buildtype=release                   \
+      -D system=true                        \
+      -D driver_qemu=enabled                \
+      -D driver_libvirtd=enabled            \
+      -D driver_remote=enabled              \
+      -D driver_network=enabled             \
+      -D driver_interface=enabled           \
+      -D driver_secrets=enabled             \
+      -D secdriver_apparmor=disabled        \
+      -D secdriver_selinux=disabled         \
+      -D apparmor_profiles=disabled         \
+      -D selinux=disabled                   \
+      -D firewalld=disabled                 \
+      -D wireshark_dissector=disabled       \
+      -D storage_iscsi=disabled             \
+      -D storage_iscsi_direct=disabled      \
+      -D storage_scsi=enabled               \
+      -D storage_mpath=disabled             \
+      -D storage_gluster=disabled           \
+      -D storage_rbd=disabled               \
+      -D storage_zfs=disabled               \
+      -D glusterfs=disabled                 \
+      -D openwsman=disabled                 \
+      -D libiscsi=disabled                  \
+      -D sanlock=disabled                   \
+      -D libssh=disabled                    \
+      -D libssh2=enabled                    \
+      -D audit=disabled                     \
+      -D dtrace=disabled                    \
+      -D numad=disabled                     \
+      -D numactl=enabled                    \
+      -D netcf=disabled                     \
+      -D fuse=disabled                      \
+      -D nbdkit=disabled                    \
+      -D nss=disabled                       \
+      -D bash_completion=disabled           \
+      -D tests=disabled                     \
+      -D docs=disabled
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share:${XDG_DATA_DIRS}"
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig
+install -vdm755 /etc/libvirt
+install -vdm755 /etc/libvirt/qemu
+install -vdm755 /var/lib/libvirt
+install -vdm755 /var/lib/libvirt/images
+install -vdm755 /var/lib/libvirt/qemu
+install -vdm755 /var/log/libvirt
+install -vdm755 /var/run/libvirt
+groupadd -fg 36 kvm 2>/dev/null || true
+groupadd -fg 27 libvirt 2>/dev/null || true
+useradd -c "Libvirt User" -d /var/lib/libvirt -g libvirt -s /bin/false -u 27 libvirt 2>/dev/null || true
+chown -R libvirt:libvirt /var/lib/libvirt 2>/dev/null || true
+chown -R libvirt:libvirt /var/log/libvirt 2>/dev/null || true
+ln -sf /opt/hud/bin/virsh /usr/bin/virsh 2>/dev/null || true
+ln -sf /opt/hud/bin/virt-host-validate /usr/bin/virt-host-validate 2>/dev/null || true
+ln -sf /opt/hud/sbin/libvirtd /usr/sbin/libvirtd 2>/dev/null || true
+ln -sf /opt/hud/sbin/virtqemud /usr/sbin/virtqemud 2>/dev/null || true
+printf '[Unit]\nDescription=Virtualization daemon\nRequires=virtlogd.socket\nRequires=virtlockd.socket\nBefore=libvirt-guests.service\nAfter=network.target\nAfter=dbus.service\nAfter=apparmor.service\nAfter=remote-fs.target\nDocumentation=man:libvirtd(8)\nDocumentation=https://libvirt.org\n\n[Service]\nType=notify\nEnvironment=LIBVIRTD_ARGS="--timeout 120"\nEnvironmentFile=-/etc/sysconfig/libvirtd\nExecStart=/opt/hud/sbin/libvirtd $LIBVIRTD_ARGS\nExecReload=/bin/kill -HUP $MAINPID\nRestart=on-failure\nKillMode=process\n\n[Install]\nWantedBy=multi-user.target\n' > /etc/systemd/system/libvirtd.service
+printf '[Unit]\nDescription=Virtual machine lock manager\nRequires=virtlockd.socket\nBefore=libvirtd.service\nDocumentation=man:virtlockd(8)\nDocumentation=https://libvirt.org\n\n[Service]\nType=notify\nExecStart=/opt/hud/sbin/virtlockd\nExecReload=/bin/kill -USR1 $MAINPID\nRestart=on-failure\n\n[Install]\nAlso=virtlockd.socket\n' > /etc/systemd/system/virtlockd.service
+printf '[Unit]\nDescription=Virtual machine lock manager socket\nBefore=libvirtd.service\n\n[Socket]\nListenStream=/var/run/libvirt/virtlockd-sock\nListenStream=/var/run/libvirt/virtlockd-admin-sock\n\n[Install]\nWantedBy=sockets.target\n' > /etc/systemd/system/virtlockd.socket
+printf '[Unit]\nDescription=Virtual machine log manager\nRequires=virtlogd.socket\nBefore=libvirtd.service\nDocumentation=man:virtlogd(8)\nDocumentation=https://libvirt.org\n\n[Service]\nType=notify\nExecStart=/opt/hud/sbin/virtlogd\nExecReload=/bin/kill -USR1 $MAINPID\nRestart=on-failure\n\n[Install]\nAlso=virtlogd.socket\n' > /etc/systemd/system/virtlogd.service
+printf '[Unit]\nDescription=Virtual machine log manager socket\nBefore=libvirtd.service\n\n[Socket]\nListenStream=/var/run/libvirt/virtlogd-sock\nListenStream=/var/run/libvirt/virtlogd-admin-sock\n\n[Install]\nWantedBy=sockets.target\n' > /etc/systemd/system/virtlogd.socket
+install -vdm755 /usr/share/polkit-1/rules.d
+printf 'polkit.addRule(function(action, subject) {\n    if (action.id == "org.libvirt.unix.manage" && subject.isInGroup("libvirt")) {\n        return polkit.Result.YES;\n    }\n});\n' > /usr/share/polkit-1/rules.d/org.libvirt.unix.manager.rules
+systemctl daemon-reload
+systemctl enable virtlockd.socket
+systemctl enable virtlogd.socket
+systemctl enable libvirtd.service
+systemctl start virtlockd.socket || true
+systemctl start virtlogd.socket || true
+systemctl start libvirtd.service || true
+echo "libvirt 10.10.0 installed"
+echo "Commands: virsh, virt-host-validate"
+echo "Service: systemctl status libvirtd"
+echo "Add users to libvirt group: usermod -aG libvirt username"
