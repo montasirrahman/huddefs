@@ -1,0 +1,19 @@
+# HUD Package Definition - doxyqml 0.5.3
+# Based on BLFS 12.4
+Package: python3-doxyqml
+Version: 0.5.3
+Architecture: x86_64
+Section: python
+Depends: python3,doxygen
+Description: Doxyqml-0.5.3 - allows using Doxygen to document QML classes
+Source: https://files.pythonhosted.org/packages/source/d/doxyqml/doxyqml-0.5.3.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user doxyqml
+[postinst]
+echo "python3-doxyqml 0.5.3 installed"
+[prerm]
+pip3 uninstall -y doxyqml 2>/dev/null || true
+[postrm]
+# Cleanup if needed

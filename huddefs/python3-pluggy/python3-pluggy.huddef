@@ -1,0 +1,19 @@
+# HUD Package Definition - pluggy 1.6.0
+# Based on BLFS 12.4
+Package: python3-pluggy
+Version: 1.6.0
+Architecture: x86_64
+Section: python
+Depends: python3,python3-setuptools-scm
+Description: Pluggy-1.6.0 - enables function hooking for pluggable systems
+Source: https://files.pythonhosted.org/packages/source/p/pluggy/pluggy-1.6.0.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user pluggy
+[postinst]
+echo "python3-pluggy 1.6.0 installed"
+[prerm]
+pip3 uninstall -y pluggy 2>/dev/null || true
+[postrm]
+# Cleanup if needed

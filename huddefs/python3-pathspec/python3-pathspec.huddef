@@ -1,0 +1,19 @@
+# HUD Package Definition - pathspec 0.12.1
+# Based on BLFS 12.4
+Package: python3-pathspec
+Version: 0.12.1
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: Pathspec-0.12.1 - utility library for pattern matching of file paths
+Source: https://files.pythonhosted.org/packages/source/p/pathspec/pathspec-0.12.1.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user pathspec
+[postinst]
+echo "python3-pathspec 0.12.1 installed"
+[prerm]
+pip3 uninstall -y pathspec 2>/dev/null || true
+[postrm]
+# Cleanup if needed

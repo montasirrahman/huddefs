@@ -1,0 +1,19 @@
+# HUD Package Definition - editables 0.5
+# Based on BLFS 12.4
+Package: python3-editables
+Version: 0.5
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: Editables-0.5 - Python library for creating editable wheels
+Source: https://files.pythonhosted.org/packages/source/e/editables/editables-0.5.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user editables
+[postinst]
+echo "python3-editables 0.5 installed"
+[prerm]
+pip3 uninstall -y editables 2>/dev/null || true
+[postrm]
+# Cleanup if needed

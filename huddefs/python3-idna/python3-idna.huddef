@@ -1,0 +1,19 @@
+# HUD Package Definition - idna 3.10
+# Based on BLFS 12.4
+Package: python3-idna
+Version: 3.10
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: Idna-3.10 - Internationalized Domain Names in Applications (IDNA) support
+Source: https://files.pythonhosted.org/packages/source/i/idna/idna-3.10.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user idna
+[postinst]
+echo "python3-idna 3.10 installed"
+[prerm]
+pip3 uninstall -y idna 2>/dev/null || true
+[postrm]
+# Cleanup if needed

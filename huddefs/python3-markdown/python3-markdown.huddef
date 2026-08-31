@@ -1,0 +1,19 @@
+# HUD Package Definition - Markdown 3.8.2
+# Based on BLFS 12.4
+Package: python3-markdown
+Version: 3.8.2
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: Markdown-3.8.2 - Python parser for John Gruber's Markdown
+Source: https://files.pythonhosted.org/packages/source/M/Markdown/markdown-3.8.2.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user Markdown
+[postinst]
+echo "python3-markdown 3.8.2 installed"
+[prerm]
+pip3 uninstall -y Markdown 2>/dev/null || true
+[postrm]
+# Cleanup if needed

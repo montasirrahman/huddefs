@@ -1,0 +1,19 @@
+# HUD Package Definition - lxml 6.0.0
+# Based on BLFS 12.4
+Package: python3-lxml
+Version: 6.0.0
+Architecture: x86_64
+Section: python
+Depends: python3,libxslt
+Description: lxml-6.0.0 - Python bindings for libxslt and libxml2
+Source: https://files.pythonhosted.org/packages/source/l/lxml/lxml-6.0.0.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user lxml
+[postinst]
+echo "python3-lxml 6.0.0 installed"
+[prerm]
+pip3 uninstall -y lxml 2>/dev/null || true
+[postrm]
+# Cleanup if needed
