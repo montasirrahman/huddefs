@@ -1,0 +1,19 @@
+# HUD Package Definition - pyproject_hooks 1.2.0
+# Based on BLFS 12.4
+Package: python3-pyproject-hooks
+Version: 1.2.0
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: pyproject_hooks-1.2.0 - low-level library for calling build-backends
+Source: https://files.pythonhosted.org/packages/source/p/pyproject-hooks/pyproject_hooks-1.2.0.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user pyproject_hooks
+[postinst]
+echo "python3-pyproject-hooks 1.2.0 installed"
+[prerm]
+pip3 uninstall -y pyproject_hooks 2>/dev/null || true
+[postrm]
+# Cleanup if needed

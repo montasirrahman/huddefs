@@ -1,0 +1,21 @@
+# HUD Package Definition - requests 2.32.5
+# Based on BLFS 12.4
+Package: python3-requests
+Version: 2.32.5
+Architecture: x86_64
+Section: python
+Depends: python3,python3-charset-normalizer,python3-idna,python3-urllib3
+Description: Requests-2.32.5 - elegant and simple HTTP library for Python
+Source: https://files.pythonhosted.org/packages/source/r/requests/requests-2.32.5.tar.gz
+Patch: https://www.linuxfromscratch.org/patches/blfs/12.4/requests-use_system_certs-1.patch
+[build]
+patch -Np1 -i ../requests-use_system_certs-1.patch
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user requests
+[postinst]
+echo "python3-requests 2.32.5 installed"
+[prerm]
+pip3 uninstall -y requests 2>/dev/null || true
+[postrm]
+# Cleanup if needed

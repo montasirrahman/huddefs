@@ -1,0 +1,19 @@
+# HUD Package Definition - smartypants 2.0.2
+# Based on BLFS 12.4
+Package: python3-smartypants
+Version: 2.0.2
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: Smartypants-2.0.2 - translates ASCII punctuation to typographic HTML entities
+Source: https://files.pythonhosted.org/packages/source/s/smartypants/smartypants-2.0.2.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user smartypants
+[postinst]
+echo "python3-smartypants 2.0.2 installed"
+[prerm]
+pip3 uninstall -y smartypants 2>/dev/null || true
+[postrm]
+# Cleanup if needed

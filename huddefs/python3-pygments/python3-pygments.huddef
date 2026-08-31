@@ -1,0 +1,19 @@
+# HUD Package Definition - Pygments 2.19.2
+# Based on BLFS 12.4
+Package: python3-pygments
+Version: 2.19.2
+Architecture: x86_64
+Section: python
+Depends: python3,python3-hatchling
+Description: Pygments-2.19.2 - general syntax highlighter for 300+ languages
+Source: https://files.pythonhosted.org/packages/source/P/Pygments/pygments-2.19.2.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user Pygments
+[postinst]
+echo "python3-pygments 2.19.2 installed"
+[prerm]
+pip3 uninstall -y Pygments 2>/dev/null || true
+[postrm]
+# Cleanup if needed

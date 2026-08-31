@@ -1,0 +1,19 @@
+# HUD Package Definition - PyYAML 6.0.2
+# Based on BLFS 12.4
+Package: python3-pyyaml
+Version: 6.0.2
+Architecture: x86_64
+Section: python
+Depends: python3,python3-cython,libyaml
+Description: PyYAML-6.0.2 - YAML parser and emitter for Python
+Source: https://files.pythonhosted.org/packages/source/P/PyYAML/pyyaml-6.0.2.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user PyYAML
+[postinst]
+echo "python3-pyyaml 6.0.2 installed"
+[prerm]
+pip3 uninstall -y PyYAML 2>/dev/null || true
+[postrm]
+# Cleanup if needed

@@ -1,0 +1,19 @@
+# HUD Package Definition - pyproject-metadata 0.9.1
+# Based on BLFS 12.4
+Package: python3-pyproject-metadata
+Version: 0.9.1
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: pyproject-metadata-0.9.1 - data class for PEP 621 metadata
+Source: https://files.pythonhosted.org/packages/source/p/pyproject-metadata/pyproject_metadata-0.9.1.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user pyproject-metadata
+[postinst]
+echo "python3-pyproject-metadata 0.9.1 installed"
+[prerm]
+pip3 uninstall -y pyproject-metadata 2>/dev/null || true
+[postrm]
+# Cleanup if needed

@@ -1,0 +1,19 @@
+# HUD Package Definition - Scour 0.38.2
+# Based on BLFS 12.4
+Package: python3-scour
+Version: 0.38.2
+Architecture: x86_64
+Section: python
+Depends: python3,python3-six
+Description: Scour-0.38.2 - SVG optimizer/cleaner
+Source: https://github.com/scour-project/scour/archive/v0.38.2/scour-0.38.2.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user scour
+[postinst]
+echo "python3-scour 0.38.2 installed"
+[prerm]
+pip3 uninstall -y scour 2>/dev/null || true
+[postrm]
+# Cleanup if needed

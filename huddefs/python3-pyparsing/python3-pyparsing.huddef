@@ -1,0 +1,19 @@
+# HUD Package Definition - pyparsing 3.2.3
+# Based on BLFS 12.4
+Package: python3-pyparsing
+Version: 3.2.3
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: pyparsing-3.2.3 - alternative approach to creating simple grammars
+Source: https://files.pythonhosted.org/packages/source/p/pyparsing/pyparsing-3.2.3.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user pyparsing
+[postinst]
+echo "python3-pyparsing 3.2.3 installed"
+[prerm]
+pip3 uninstall -y pyparsing 2>/dev/null || true
+[postrm]
+# Cleanup if needed

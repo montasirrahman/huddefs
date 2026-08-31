@@ -1,0 +1,19 @@
+# HUD Package Definition - PyXDG 0.28
+# Based on BLFS 12.4
+Package: python3-pyxdg
+Version: 0.28
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: PyXDG-0.28 - Python library to access freedesktop.org standards
+Source: https://files.pythonhosted.org/packages/b0/25/7998cd2dec731acbd438fbf91bc619603fc5188de0a9a17699a781840452/pyxdg-0.28.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user pyxdg
+[postinst]
+echo "python3-pyxdg 0.28 installed"
+[prerm]
+pip3 uninstall -y pyxdg 2>/dev/null || true
+[postrm]
+# Cleanup if needed

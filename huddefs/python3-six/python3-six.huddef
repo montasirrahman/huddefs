@@ -1,0 +1,19 @@
+# HUD Package Definition - six 1.17.0
+# Based on BLFS 12.4
+Package: python3-six
+Version: 1.17.0
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: six-1.17.0 - Python 2 to 3 compatibility library
+Source: https://files.pythonhosted.org/packages/source/s/six/six-1.17.0.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user six
+[postinst]
+echo "python3-six 1.17.0 installed"
+[prerm]
+pip3 uninstall -y six 2>/dev/null || true
+[postrm]
+# Cleanup if needed
