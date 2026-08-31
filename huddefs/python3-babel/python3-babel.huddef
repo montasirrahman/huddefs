@@ -1,0 +1,19 @@
+# HUD Package Definition - babel 2.17.0
+# Based on BLFS 12.4
+Package: python3-babel
+Version: 2.17.0
+Architecture: x86_64
+Section: python
+Depends: python3,python3-pytz
+Description: Babel-2.17.0 - utilities for internationalizing Python applications
+Source: https://files.pythonhosted.org/packages/source/B/Babel/babel-2.17.0.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user Babel
+[postinst]
+echo "python3-babel 2.17.0 installed"
+[prerm]
+pip3 uninstall -y Babel 2>/dev/null || true
+[postrm]
+# Cleanup if needed

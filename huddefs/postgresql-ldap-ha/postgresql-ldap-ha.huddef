@@ -1,0 +1,538 @@
+# HUD Package Definition - PostgreSQL 17.6 with LDAP and HA Support
+# Advanced Object-Relational Database Management System
+# Full-featured build with LDAP authentication, High Availability, and Replication
+# Reference: https://www.postgresql.org/docs/17/auth-ldap.html
+#
+# FEATURES:
+# - LDAP/AD authentication integration
+# - Streaming replication (primary/standby)
+# - Hot standby for read replicas
+# - Connection pooling ready
+# - Health check endpoints
+# - Automatic failover preparation
+# - Centralized user management via LDAP
+
+Package: postgresql-ldap-ha
+Version: 17.6
+Architecture: x86_64
+Section: databases
+Depends: openssl, icu, libxml2, libxslt, openldap, systemd
+Recommends: pgbouncer, haproxy, keepalived
+Description: PostgreSQL with LDAP authentication and High Availability support
+Source: https://ftp.postgresql.org/pub/source/v17.6/postgresql-17.6.tar.bz2
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export CFLAGS="${CFLAGS} -I/opt/hud/include"
+export CPPFLAGS="${CPPFLAGS} -I/opt/hud/include"
+export LDFLAGS="${LDFLAGS} -L/opt/hud/lib -L/opt/hud/lib64 -Wl,-rpath,/opt/hud/lib"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+# Change default socket directory from /tmp to /run/postgresql
+sed -i '/DEFAULT_PGSOCKET_DIR/s@/tmp@/run/postgresql@' src/include/pg_config_manual.h
+
+./configure --prefix=/opt/hud                          \
+            --sysconfdir=/opt/hud/etc                  \
+            --docdir=/opt/hud/share/doc/postgresql-17.6 \
+            --with-openssl                             \
+            --with-icu                                 \
+            --with-libxml                              \
+            --with-libxslt                             \
+            --with-ldap                                \
+            --with-system-tzdata=/usr/share/zoneinfo  \
+            --enable-thread-safety                     \
+            --enable-debug                             \
+            CPPFLAGS="-I/opt/hud/include"              \
+            LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make
+make -C contrib
+
+[install]
+make DESTDIR=$DESTDIR install
+make DESTDIR=$DESTDIR install-docs
+make -C contrib DESTDIR=$DESTDIR install
+
+# Create directory structure
+install -vdm700 $DESTDIR/srv/pgsql/data
+install -vdm700 $DESTDIR/srv/pgsql/archive
+install -vdm700 $DESTDIR/srv/pgsql/backup
+install -vdm755 $DESTDIR/run/postgresql
+install -vdm755 $DESTDIR/var/log/postgresql
+
+# ============================================================
+# SYSTEMD SERVICE
+# ============================================================
+install -vdm755 $DESTDIR/etc/systemd/system
+cat > $DESTDIR/etc/systemd/system/postgresql.service << 'SVCEOF'
+[Unit]
+Description=PostgreSQL 17.6 database server (LDAP + HA)
+Documentation=man:postgres(1)
+Documentation=https://www.postgresql.org/docs/17/
+After=network.target
+After=network-online.target
+After=slapd.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=postgres
+Group=postgres
+
+Environment=PGDATA=/srv/pgsql/data
+RuntimeDirectory=postgresql
+RuntimeDirectoryMode=0755
+Environment=PATH=/opt/hud/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=LD_LIBRARY_PATH=/opt/hud/lib
+
+ExecStartPre=/bin/mkdir -p /run/postgresql
+ExecStartPre=/bin/chown postgres:postgres /run/postgresql
+ExecStartPre=/bin/sh -c 'test -f ${PGDATA}/PG_VERSION || echo "WARNING: Database not initialized."'
+
+ExecStart=/opt/hud/bin/postgres -D ${PGDATA}
+ExecReload=/bin/kill -HUP $MAINPID
+
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutStopSec=300
+
+Restart=on-failure
+RestartSec=10
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+LimitNOFILE=65536
+LimitNPROC=16384
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+# ============================================================
+# HEALTH CHECK SCRIPT
+# ============================================================
+install -vdm755 $DESTDIR/opt/hud/bin
+cat > $DESTDIR/opt/hud/bin/pg_health_check.sh << 'HEALTHEOF'
+#!/bin/bash
+# PostgreSQL health check for HAProxy/load balancers
+PGDATA=${PGDATA:-/srv/pgsql/data}
+PGPORT=${PGPORT:-5432}
+PGUSER=${PGUSER:-postgres}
+
+if ! /opt/hud/bin/pg_isready -h localhost -p ${PGPORT} -U ${PGUSER} -q; then
+    exit 1
+fi
+
+IS_IN_RECOVERY=$(/opt/hud/bin/psql -h localhost -p ${PGPORT} -U ${PGUSER} -d postgres -tAc "SELECT pg_is_in_recovery();")
+
+if [ "$1" = "primary" ]; then
+    [ "$IS_IN_RECOVERY" = "f" ] && exit 0 || exit 1
+fi
+
+if [ "$1" = "standby" ]; then
+    [ "$IS_IN_RECOVERY" = "t" ] && exit 0 || exit 1
+fi
+
+exit 0
+HEALTHEOF
+chmod +x $DESTDIR/opt/hud/bin/pg_health_check.sh
+
+# ============================================================
+# LDAP CONFIGURATION SCRIPT
+# ============================================================
+cat > $DESTDIR/opt/hud/bin/pg_configure_ldap.sh << 'LDAPEOF'
+#!/bin/bash
+# Configure PostgreSQL for LDAP/AD authentication
+set -e
+
+LDAP_SERVER=${LDAP_SERVER:-ldap.example.com}
+LDAP_PORT=${LDAP_PORT:-389}
+LDAP_BASE_DN=${LDAP_BASE_DN:-dc=example,dc=com}
+LDAP_BIND_DN=${LDAP_BIND_DN:-cn=admin,dc=example,dc=com}
+LDAP_BIND_PASSWORD=${LDAP_BIND_PASSWORD:-}
+LDAP_SEARCH_ATTR=${LDAP_SEARCH_ATTR:-uid}
+LDAP_USE_TLS=${LDAP_USE_TLS:-no}
+
+PGDATA=${PGDATA:-/srv/pgsql/data}
+
+echo "Configuring PostgreSQL LDAP authentication..."
+echo "LDAP Server: ${LDAP_SERVER}:${LDAP_PORT}"
+echo "Base DN: ${LDAP_BASE_DN}"
+
+# Backup existing pg_hba.conf
+cp ${PGDATA}/pg_hba.conf ${PGDATA}/pg_hba.conf.backup.$(date +%Y%m%d_%H%M%S)
+
+# Add LDAP authentication rules
+cat >> ${PGDATA}/pg_hba.conf << EOF
+
+# === LDAP AUTHENTICATION ===
+# Simple bind (user provides full DN or uses search+bind)
+host    all             all             0.0.0.0/0               ldap ldapserver=${LDAP_SERVER} ldapport=${LDAP_PORT} ldapbasedn="${LDAP_BASE_DN}" ldapsearchattribute=${LDAP_SEARCH_ATTR}
+
+# For Active Directory (using sAMAccountName)
+# host    all             all             0.0.0.0/0               ldap ldapserver=${LDAP_SERVER} ldapbasedn="${LDAP_BASE_DN}" ldapsearchattribute=sAMAccountName
+
+# LDAP with TLS
+# host    all             all             0.0.0.0/0               ldap ldapserver=${LDAP_SERVER} ldapport=636 ldaptls=1 ldapbasedn="${LDAP_BASE_DN}" ldapsearchattribute=${LDAP_SEARCH_ATTR}
+
+# Search + bind method (more secure, requires bind DN)
+# host    all             all             0.0.0.0/0               ldap ldapserver=${LDAP_SERVER} ldapbasedn="${LDAP_BASE_DN}" ldapbinddn="${LDAP_BIND_DN}" ldapbindpasswd="${LDAP_BIND_PASSWORD}" ldapsearchattribute=${LDAP_SEARCH_ATTR}
+EOF
+
+# Create LDAP user mapping script
+cat > /opt/hud/bin/pg_ldap_sync_users.sh << 'SYNCEOF'
+#!/bin/bash
+# Sync LDAP users to PostgreSQL
+# This creates PostgreSQL roles for LDAP users
+
+LDAP_SERVER=${LDAP_SERVER:-ldap.example.com}
+LDAP_BASE_DN=${LDAP_BASE_DN:-dc=example,dc=com}
+LDAP_SEARCH_ATTR=${LDAP_SEARCH_ATTR:-uid}
+
+echo "Syncing LDAP users to PostgreSQL..."
+
+# Query LDAP for users (requires ldapsearch)
+ldapsearch -x -H ldap://${LDAP_SERVER} -b "${LDAP_BASE_DN}" "(objectClass=person)" ${LDAP_SEARCH_ATTR} | \
+grep "^${LDAP_SEARCH_ATTR}:" | \
+awk '{print $2}' | \
+while read USERNAME; do
+    echo "Creating role for user: ${USERNAME}"
+    sudo -u postgres psql -c "CREATE ROLE \"${USERNAME}\" WITH LOGIN;" 2>/dev/null || echo "  Role already exists"
+done
+
+echo "LDAP user sync complete"
+SYNCEOF
+chmod +x /opt/hud/bin/pg_ldap_sync_users.sh
+
+echo ""
+echo "LDAP configuration added to pg_hba.conf"
+echo ""
+echo "IMPORTANT: Review and customize the LDAP settings in:"
+echo "  ${PGDATA}/pg_hba.conf"
+echo ""
+echo "Then reload PostgreSQL:"
+echo "  systemctl reload postgresql"
+echo ""
+echo "Test LDAP authentication:"
+echo "  psql -h localhost -U ldapuser -d postgres"
+echo ""
+echo "Sync LDAP users (optional):"
+echo "  /opt/hud/bin/pg_ldap_sync_users.sh"
+LDAPEOF
+chmod +x $DESTDIR/opt/hud/bin/pg_configure_ldap.sh
+
+# ============================================================
+# PRIMARY SETUP SCRIPT
+# ============================================================
+cat > $DESTDIR/opt/hud/bin/pg_setup_primary.sh << 'PRIMARYEOF'
+#!/bin/bash
+set -e
+
+PGDATA=${PGDATA:-/srv/pgsql/data}
+REPL_USER=${REPL_USER:-replicator}
+REPL_PASSWORD=${REPL_PASSWORD:-changeme}
+
+echo "Setting up PostgreSQL as primary (with LDAP)..."
+
+sudo -u postgres /opt/hud/bin/psql -c "CREATE ROLE ${REPL_USER} WITH REPLICATION LOGIN PASSWORD '${REPL_PASSWORD}';" 2>/dev/null || true
+
+cat >> ${PGDATA}/pg_hba.conf << EOF
+
+# === REPLICATION ===
+host    replication     ${REPL_USER}     0.0.0.0/0               scram-sha-256
+host    replication     ${REPL_USER}     ::0/0                   scram-sha-256
+EOF
+
+cat >> ${PGDATA}/postgresql.auto.conf << EOF
+
+# === REPLICATION (PRIMARY) ===
+wal_level = replica
+max_wal_senders = 10
+max_replication_slots = 10
+wal_keep_size = 1024
+hot_standby = on
+synchronous_commit = remote_apply
+synchronous_standby_names = '*'
+
+# === ARCHIVE ===
+archive_mode = on
+archive_command = 'test ! -f /srv/pgsql/archive/%f && cp %p /srv/pgsql/archive/%f'
+restore_command = 'cp /srv/pgsql/archive/%f %p'
+
+# === CONNECTIONS ===
+listen_addresses = '*'
+max_connections = 200
+
+# === LOGGING ===
+log_destination = 'stderr'
+logging_collector = on
+log_directory = '/var/log/postgresql'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_rotation_age = 1d
+log_line_prefix = '%t [%p]: user=%u,db=%d,app=%a,client=%h '
+
+# === PERFORMANCE ===
+shared_buffers = 256MB
+effective_cache_size = 1GB
+work_mem = 4MB
+maintenance_work_mem = 64MB
+checkpoint_completion_target = 0.9
+max_wal_size = 4GB
+EOF
+
+echo "Primary setup complete. Restart PostgreSQL:"
+echo "  systemctl restart postgresql"
+PRIMARYEOF
+chmod +x $DESTDIR/opt/hud/bin/pg_setup_primary.sh
+
+# ============================================================
+# STANDBY SETUP SCRIPT
+# ============================================================
+cat > $DESTDIR/opt/hud/bin/pg_setup_standby.sh << 'STANDBYEOF'
+#!/bin/bash
+set -e
+
+PRIMARY_HOST=${PRIMARY_HOST:-192.168.1.100}
+REPL_USER=${REPL_USER:-replicator}
+REPL_PASSWORD=${REPL_PASSWORD:-changeme}
+PGDATA=${PGDATA:-/srv/pgsql/data}
+
+echo "Setting up PostgreSQL as standby..."
+echo "Primary: ${PRIMARY_HOST}"
+
+systemctl stop postgresql 2>/dev/null || true
+
+if [ -d "${PGDATA}" ] && [ "$(ls -A ${PGDATA})" ]; then
+    mv ${PGDATA} ${PGDATA}.backup.$(date +%Y%m%d_%H%M%S)
+fi
+
+mkdir -p ${PGDATA}
+chown postgres:postgres ${PGDATA}
+chmod 700 ${PGDATA}
+
+sudo -u postgres /opt/hud/bin/pg_basebackup \
+    -h ${PRIMARY_HOST} \
+    -U ${REPL_USER} \
+    -D ${PGDATA} \
+    -P \
+    -R \
+    -X stream \
+    -c fast
+
+sudo -u postgres touch ${PGDATA}/standby.signal
+
+cat >> ${PGDATA}/postgresql.auto.conf << EOF
+
+# === STANDBY CONFIGURATION ===
+primary_conninfo = 'host=${PRIMARY_HOST} port=5432 user=${REPL_USER} password=${REPL_PASSWORD} application_name=standby1'
+restore_command = 'cp /srv/pgsql/archive/%f %p'
+hot_standby = on
+hot_standby_feedback = on
+max_standby_streaming_delay = 30s
+
+# === LOGGING ===
+log_destination = 'stderr'
+logging_collector = on
+log_directory = '/var/log/postgresql'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+EOF
+
+echo "Standby setup complete. Start PostgreSQL:"
+echo "  systemctl start postgresql"
+STANDBYEOF
+chmod +x $DESTDIR/opt/hud/bin/pg_setup_standby.sh
+
+# ============================================================
+# PROMOTION SCRIPT
+# ============================================================
+cat > $DESTDIR/opt/hud/bin/pg_promote.sh << 'PROMOTEEOF'
+#!/bin/bash
+set -e
+
+PGDATA=${PGDATA:-/srv/pgsql/data}
+
+echo "Promoting standby to primary..."
+
+IS_IN_RECOVERY=$(sudo -u postgres /opt/hud/bin/psql -d postgres -tAc "SELECT pg_is_in_recovery();")
+
+if [ "$IS_IN_RECOVERY" != "t" ]; then
+    echo "ERROR: This node is not a standby!"
+    exit 1
+fi
+
+sudo -u postgres /opt/hud/bin/pg_ctl promote -D ${PGDATA}
+
+echo "Promotion initiated. Waiting..."
+sleep 5
+
+IS_IN_RECOVERY=$(sudo -u postgres /opt/hud/bin/psql -d postgres -tAc "SELECT pg_is_in_recovery();")
+
+if [ "$IS_IN_RECOVERY" = "f" ]; then
+    echo "SUCCESS: Node is now PRIMARY!"
+else
+    echo "WARNING: Check logs for promotion status"
+fi
+PROMOTEEOF
+chmod +x $DESTDIR/opt/hud/bin/pg_promote.sh
+
+# ============================================================
+# LDAP + HA CONFIGURATION EXAMPLE
+# ============================================================
+install -vdm755 $DESTDIR/opt/hud/etc
+cat > $DESTDIR/opt/hud/etc/postgresql-ldap-ha.conf.example << 'CONFEOF'
+# PostgreSQL LDAP + HA Configuration Example
+# Combines LDAP authentication with replication
+
+# === LDAP AUTHENTICATION (in pg_hba.conf) ===
+# Simple LDAP:
+#   host all all 0.0.0.0/0 ldap ldapserver=ldap.example.com ldapbasedn="dc=example,dc=com" ldapsearchattribute=uid
+
+# Active Directory:
+#   host all all 0.0.0.0/0 ldap ldapserver=ad.example.com ldapbasedn="dc=example,dc=com" ldapsearchattribute=sAMAccountName
+
+# LDAP with TLS:
+#   host all all 0.0.0.0/0 ldap ldapserver=ldap.example.com ldapport=636 ldaptls=1 ldapbasedn="dc=example,dc=com"
+
+# Search+Bind (requires bind credentials):
+#   host all all 0.0.0.0/0 ldap ldapserver=ldap.example.com ldapbinddn="cn=admin,dc=example,dc=com" ldapbindpasswd="secret"
+
+# === REPLICATION SETTINGS ===
+wal_level = replica
+max_wal_senders = 10
+max_replication_slots = 10
+hot_standby = on
+synchronous_commit = remote_apply
+
+# === CONNECTIONS ===
+listen_addresses = '*'
+max_connections = 200
+password_encryption = scram-sha-256
+
+# === MEMORY ===
+shared_buffers = 256MB
+effective_cache_size = 1GB
+work_mem = 4MB
+
+# === LOGGING ===
+logging_collector = on
+log_directory = '/var/log/postgresql'
+log_filename = 'postgresql-%Y-%m-%d.log'
+log_line_prefix = '%t [%p]: user=%u,db=%d '
+CONFEOF
+
+# ============================================================
+# EXAMPLE pg_hba.conf with LDAP
+# ============================================================
+cat > $DESTDIR/opt/hud/etc/pg_hba.conf.ldap.example << 'HBAEOF'
+# PostgreSQL pg_hba.conf Example - LDAP Authentication
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# Local connections (Unix socket)
+local   all             postgres                                peer
+local   all             all                                     peer
+
+# LDAP authentication for all remote users
+host    all             all             0.0.0.0/0               ldap ldapserver=ldap.example.com ldapbasedn="dc=example,dc=com" ldapsearchattribute=uid
+host    all             all             ::0/0                   ldap ldapserver=ldap.example.com ldapbasedn="dc=example,dc=com" ldapsearchattribute=uid
+
+# Replication connections (use scram-sha-256)
+host    replication     replicator      0.0.0.0/0               scram-sha-256
+host    replication     replicator      ::0/0                   scram-sha-256
+
+# Alternative: Active Directory (Windows)
+# host    all             all             0.0.0.0/0               ldap ldapserver=ad.example.com ldapbasedn="dc=example,dc=com" ldapsearchattribute=sAMAccountName
+
+# Alternative: LDAP with TLS
+# host    all             all             0.0.0.0/0               ldap ldapserver=ldap.example.com ldapport=636 ldaptls=1 ldapbasedn="dc=example,dc=com" ldapsearchattribute=uid
+HBAEOF
+
+# ============================================================
+# ENVIRONMENT PROFILE
+# ============================================================
+install -vdm755 $DESTDIR/etc/profile.d
+cat > $DESTDIR/etc/profile.d/postgresql.sh << 'ENVEOF'
+# PostgreSQL LDAP + HA environment
+PGSQL_HOME=/opt/hud
+export PATH="${PGSQL_HOME}/bin:${PATH}"
+export LD_LIBRARY_PATH="${PGSQL_HOME}/lib:${LD_LIBRARY_PATH}"
+export PGDATA=/srv/pgsql/data
+export PGSOCKET=/run/postgresql
+ENVEOF
+
+[postinst]
+ldconfig
+
+# ============================================================
+# CREATE USER AND DIRECTORIES
+# ============================================================
+getent group postgres >/dev/null || groupadd -g 41 postgres
+getent passwd postgres >/dev/null || useradd -c "PostgreSQL Server" \
+    -g postgres -d /srv/pgsql -u 41 -s /bin/bash postgres
+
+install -vdm700 -o postgres -g postgres /srv/pgsql/data 2>/dev/null || true
+install -vdm700 -o postgres -g postgres /srv/pgsql/archive 2>/dev/null || true
+install -vdm700 -o postgres -g postgres /srv/pgsql/backup 2>/dev/null || true
+install -vdm755 -o postgres -g postgres /run/postgresql 2>/dev/null || true
+install -vdm755 -o postgres -g postgres /var/log/postgresql 2>/dev/null || true
+chown -R postgres:postgres /srv/pgsql 2>/dev/null || true
+
+systemctl daemon-reload 2>/dev/null || true
+
+echo ""
+echo "============================================"
+echo "PostgreSQL 17.6 LDAP + HA Edition installed"
+echo "============================================"
+echo ""
+echo "=== INITIALIZATION ==="
+echo ""
+echo "1. Initialize database:"
+echo "   su - postgres -c '/opt/hud/bin/initdb -D /srv/pgsql/data'"
+echo ""
+echo "=== LDAP CONFIGURATION ==="
+echo ""
+echo "2. Configure LDAP authentication:"
+echo "   /opt/hud/bin/pg_configure_ldap.sh"
+echo ""
+echo "   Or manually edit: /srv/pgsql/data/pg_hba.conf"
+echo "   Example: /opt/hud/etc/pg_hba.conf.ldap.example"
+echo ""
+echo "=== HIGH AVAILABILITY SETUP ==="
+echo ""
+echo "3. Setup as PRIMARY:"
+echo "   /opt/hud/bin/pg_setup_primary.sh"
+echo "   systemctl enable --now postgresql"
+echo ""
+echo "   Setup as STANDBY:"
+echo "   export PRIMARY_HOST=192.168.1.100"
+echo "   /opt/hud/bin/pg_setup_standby.sh"
+echo "   systemctl enable --now postgresql"
+echo ""
+echo "=== VERIFICATION ==="
+echo ""
+echo "4. Verify LDAP:"
+echo "   psql -h localhost -U <ldap_username> -d postgres"
+echo ""
+echo "5. Verify replication:"
+echo "   PRIMARY: sudo -u postgres psql -c 'SELECT * FROM pg_stat_replication;'"
+echo "   STANDBY: sudo -u postgres psql -c 'SELECT pg_is_in_recovery();'"
+echo ""
+echo "=== HEALTH CHECKS ==="
+echo ""
+echo "   /opt/hud/bin/pg_health_check.sh primary"
+echo "   /opt/hud/bin/pg_health_check.sh standby"
+echo ""
+echo "=== FAILOVER ==="
+echo ""
+echo "   Promote standby: /opt/hud/bin/pg_promote.sh"
+echo ""
+echo "=== CONFIGURATION ==="
+echo "   Config example: /opt/hud/etc/postgresql-ldap-ha.conf.example"
+echo "   pg_hba example: /opt/hud/etc/pg_hba.conf.ldap.example"
+echo "   Data directory: /srv/pgsql/data"
+echo "   Logs: /var/log/postgresql"
+echo ""

@@ -1,0 +1,20 @@
+# HUD Package Definition - docutils 0.21.2
+# Based on BLFS 12.4
+Package: python3-docutils
+Version: 0.21.2
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: docutils-0.21.2 - processing plaintext docs into formats like HTML, XML, LaTeX
+Source: https://files.pythonhosted.org/packages/source/d/docutils/docutils-0.21.2.tar.gz
+[build]
+for f in /usr/bin/rst*.py; do rm -fv /usr/bin/$(basename $f .py) 2>/dev/null || true; done
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user docutils
+[postinst]
+echo "python3-docutils 0.21.2 installed"
+[prerm]
+pip3 uninstall -y docutils 2>/dev/null || true
+[postrm]
+# Cleanup if needed

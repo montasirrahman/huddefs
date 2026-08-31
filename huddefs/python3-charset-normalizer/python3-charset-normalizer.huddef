@@ -1,0 +1,19 @@
+# HUD Package Definition - charset-normalizer 3.4.3
+# Based on BLFS 12.4
+Package: python3-charset-normalizer
+Version: 3.4.3
+Architecture: x86_64
+Section: python
+Depends: python3,python3-setuptools-scm
+Description: charset-normalizer-3.4.3 - reading text from unknown character encoding
+Source: https://files.pythonhosted.org/packages/source/c/charset-normalizer/charset_normalizer-3.4.3.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user charset-normalizer
+[postinst]
+echo "python3-charset-normalizer 3.4.3 installed"
+[prerm]
+pip3 uninstall -y charset-normalizer 2>/dev/null || true
+[postrm]
+# Cleanup if needed

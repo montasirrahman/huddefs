@@ -1,0 +1,39 @@
+# HUD Package Definition - PyGObject 3.50.0
+# Python bindings for GObject/GLib/GIO
+# Required by firewalld and other GTK/GNOME Python applications
+
+Package: pygobject
+Version: 3.50.0
+Architecture: x86_64
+Section: python
+Depends: python3, glib, gobject-introspection, libffi
+Description: Python bindings for GObject introspection libraries
+Source: https://download.gnome.org/sources/pygobject/3.50/pygobject-3.50.0.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+mkdir -p build
+cd build
+meson setup ..                          \
+      --prefix=/opt/hud                 \
+      --buildtype=release               \
+      -D tests=false
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig
+echo "pygobject 3.50.0 installed"
+echo "Test with: python3 -c \"from gi.repository import GLib; print(GLib.get_prgname())\""

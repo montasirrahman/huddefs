@@ -1,0 +1,26 @@
+# HUD Package Definition - setuptools 80.9.0
+# Python packaging and distribution tools
+# Required by many build systems including meson for g-i
+
+Package: python-setuptools
+Version: 80.9.0
+Architecture: x86_64
+Section: python
+Depends: python
+Description: Python packaging and distribution tools
+Source: https://files.pythonhosted.org/packages/source/s/setuptools/setuptools-80.9.0.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR setuptools
+
+[postinst]
+echo "✓ Python setuptools 80.9.0 installed"

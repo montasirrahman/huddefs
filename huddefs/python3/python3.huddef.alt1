@@ -1,0 +1,29 @@
+# HUD Package Definition - python3 3.13.7
+# Auto-generated for oVirt infrastructure
+
+Package: python3
+Version: 3.13.7
+Architecture: x86_64
+Section: development
+Depends: tk,gdb,libnsl,valgrind,bluez,sqlite
+Description: Python-3.13.7
+Source: https://www.python.org/ftp/python/3.13.7/Python-3.13.7.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --enable-shared --with-system-expat --enable-optimizations
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "python3 3.13.7 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

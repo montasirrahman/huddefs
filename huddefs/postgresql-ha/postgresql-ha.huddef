@@ -1,0 +1,496 @@
+# HUD Package Definition - PostgreSQL 17.6 with HA Support
+# Advanced Object-Relational Database Management System
+# Full-featured build with High Availability, Replication, and Connection Pooling
+# Reference: https://www.postgresql.org/docs/17/high-availability.html
+#
+# HA FEATURES:
+# - Streaming replication (primary/standby)
+# - Synchronous and asynchronous replication modes
+# - Hot standby for read replicas
+# - PgBouncer connection pooling (optional companion package)
+# - Replication slots for WAL retention
+# - Health check endpoints for load balancers
+# - Automatic failover preparation (works with Patroni/repmgr)
+# - Multi-node cluster support
+
+Package: postgresql-ha
+Version: 17.6
+Architecture: x86_64
+Section: databases
+Depends: openssl, icu, libxml2, libxslt, systemd
+Recommends: pgbouncer, haproxy, keepalived
+Description: PostgreSQL with High Availability and Replication support
+Source: https://ftp.postgresql.org/pub/source/v17.6/postgresql-17.6.tar.bz2
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export CFLAGS="${CFLAGS} -I/opt/hud/include"
+export CPPFLAGS="${CPPFLAGS} -I/opt/hud/include"
+export LDFLAGS="${LDFLAGS} -L/opt/hud/lib -L/opt/hud/lib64 -Wl,-rpath,/opt/hud/lib"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+# Change default socket directory from /tmp to /run/postgresql
+sed -i '/DEFAULT_PGSOCKET_DIR/s@/tmp@/run/postgresql@' src/include/pg_config_manual.h
+
+./configure --prefix=/opt/hud                          \
+            --sysconfdir=/opt/hud/etc                  \
+            --docdir=/opt/hud/share/doc/postgresql-17.6 \
+            --with-openssl                             \
+            --with-icu                                 \
+            --with-libxml                              \
+            --with-libxslt                             \
+            --with-system-tzdata=/usr/share/zoneinfo  \
+            --enable-thread-safety                     \
+            --enable-debug
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make
+
+# Build contrib modules (required for HA features)
+make -C contrib
+
+[install]
+make DESTDIR=$DESTDIR install
+make DESTDIR=$DESTDIR install-docs
+make -C contrib DESTDIR=$DESTDIR install
+
+# Create directory structure for HA setup
+install -vdm700 $DESTDIR/srv/pgsql/data
+install -vdm700 $DESTDIR/srv/pgsql/archive
+install -vdm700 $DESTDIR/srv/pgsql/backup
+install -vdm755 $DESTDIR/run/postgresql
+install -vdm755 $DESTDIR/var/log/postgresql
+
+# ============================================================
+# SYSTEMD SERVICE - PRIMARY/STANDBY AWARE
+# ============================================================
+install -vdm755 $DESTDIR/etc/systemd/system
+cat > $DESTDIR/etc/systemd/system/postgresql.service << 'SVCEOF'
+[Unit]
+Description=PostgreSQL 17.6 database server (HA-enabled)
+Documentation=man:postgres(1)
+Documentation=https://www.postgresql.org/docs/17/
+After=network.target
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=postgres
+Group=postgres
+
+# Data directory
+Environment=PGDATA=/srv/pgsql/data
+
+# Runtime directory
+RuntimeDirectory=postgresql
+RuntimeDirectoryMode=0755
+
+# Paths
+Environment=PATH=/opt/hud/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=LD_LIBRARY_PATH=/opt/hud/lib
+
+# Pre-start: create runtime directory and perform checks
+ExecStartPre=/bin/mkdir -p /run/postgresql
+ExecStartPre=/bin/chown postgres:postgres /run/postgresql
+ExecStartPre=/bin/sh -c 'test -f ${PGDATA}/PG_VERSION || echo "WARNING: Database not initialized. Run initdb first."'
+
+# Start PostgreSQL
+ExecStart=/opt/hud/bin/postgres -D ${PGDATA}
+
+# Reload configuration
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Stop PostgreSQL (smart shutdown with timeout)
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutStopSec=300
+
+# Restart policy for HA
+Restart=on-failure
+RestartSec=10
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits (adjust based on your needs)
+LimitNOFILE=65536
+LimitNPROC=16384
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+# ============================================================
+# HEALTH CHECK SCRIPT FOR LOAD BALANCERS
+# ============================================================
+install -vdm755 $DESTDIR/opt/hud/bin
+cat > $DESTDIR/opt/hud/bin/pg_health_check.sh << 'HEALTHEOF'
+#!/bin/bash
+# PostgreSQL health check for HAProxy/load balancers
+# Returns: 0 (healthy), 1 (unhealthy)
+
+PGDATA=${PGDATA:-/srv/pgsql/data}
+PGPORT=${PGPORT:-5432}
+PGUSER=${PGUSER:-postgres}
+
+# Check if PostgreSQL is running
+if ! /opt/hud/bin/pg_isready -h localhost -p ${PGPORT} -U ${PGUSER} -q; then
+    exit 1
+fi
+
+# Check if in recovery mode (standby)
+IS_IN_RECOVERY=$(/opt/hud/bin/psql -h localhost -p ${PGPORT} -U ${PGUSER} -d postgres -tAc "SELECT pg_is_in_recovery();")
+
+# For primary check (returns 0 if primary)
+if [ "$1" = "primary" ]; then
+    [ "$IS_IN_RECOVERY" = "f" ] && exit 0 || exit 1
+fi
+
+# For standby check (returns 0 if standby)
+if [ "$1" = "standby" ]; then
+    [ "$IS_IN_RECOVERY" = "t" ] && exit 0 || exit 1
+fi
+
+# General health check (any running instance)
+exit 0
+HEALTHEOF
+chmod +x $DESTDIR/opt/hud/bin/pg_health_check.sh
+
+# ============================================================
+# REPLICATION MANAGEMENT SCRIPTS
+# ============================================================
+cat > $DESTDIR/opt/hud/bin/pg_setup_primary.sh << 'PRIMARYEOF'
+#!/bin/bash
+# Setup PostgreSQL as primary (master) node
+set -e
+
+PGDATA=${PGDATA:-/srv/pgsql/data}
+REPL_USER=${REPL_USER:-replicator}
+REPL_PASSWORD=${REPL_PASSWORD:-changeme}
+
+echo "Setting up PostgreSQL primary node..."
+
+# Create replication user
+sudo -u postgres /opt/hud/bin/psql -c "CREATE ROLE ${REPL_USER} WITH REPLICATION LOGIN PASSWORD '${REPL_PASSWORD}';" 2>/dev/null || true
+
+# Configure pg_hba.conf for replication
+cat >> ${PGDATA}/pg_hba.conf << EOF
+
+# Replication connections
+host    replication     ${REPL_USER}     0.0.0.0/0               scram-sha-256
+host    replication     ${REPL_USER}     ::0/0                   scram-sha-256
+EOF
+
+# Configure postgresql.conf for replication
+cat >> ${PGDATA}/postgresql.auto.conf << EOF
+
+# === REPLICATION SETTINGS (PRIMARY) ===
+wal_level = replica
+max_wal_senders = 10
+max_replication_slots = 10
+wal_keep_size = 1024
+hot_standby = on
+synchronous_commit = remote_apply
+synchronous_standby_names = '*'
+
+# === ARCHIVE SETTINGS ===
+archive_mode = on
+archive_command = 'test ! -f /srv/pgsql/archive/%f && cp %p /srv/pgsql/archive/%f'
+restore_command = 'cp /srv/pgsql/archive/%f %p'
+
+# === CONNECTION SETTINGS ===
+listen_addresses = '*'
+max_connections = 200
+
+# === LOGGING ===
+log_destination = 'stderr'
+logging_collector = on
+log_directory = '/var/log/postgresql'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_rotation_age = 1d
+log_rotation_size = 100MB
+log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+log_timezone = 'UTC'
+
+# === PERFORMANCE TUNING (adjust for your hardware) ===
+shared_buffers = 256MB
+effective_cache_size = 1GB
+maintenance_work_mem = 64MB
+checkpoint_completion_target = 0.9
+wal_buffers = 16MB
+default_statistics_target = 100
+random_page_cost = 1.1
+effective_io_concurrency = 200
+work_mem = 4MB
+min_wal_size = 1GB
+max_wal_size = 4GB
+EOF
+
+echo "Primary setup complete. Restart PostgreSQL:"
+echo "  systemctl restart postgresql"
+echo ""
+echo "Create replication slot on standby with:"
+echo "  SELECT * FROM pg_create_physical_replication_slot('standby_slot');"
+PRIMARYEOF
+chmod +x $DESTDIR/opt/hud/bin/pg_setup_primary.sh
+
+cat > $DESTDIR/opt/hud/bin/pg_setup_standby.sh << 'STANDBYEOF'
+#!/bin/bash
+# Setup PostgreSQL as standby (replica) node
+set -e
+
+PRIMARY_HOST=${PRIMARY_HOST:-192.168.1.100}
+REPL_USER=${REPL_USER:-replicator}
+REPL_PASSWORD=${REPL_PASSWORD:-changeme}
+PGDATA=${PGDATA:-/srv/pgsql/data}
+
+echo "Setting up PostgreSQL standby node..."
+echo "Primary host: ${PRIMARY_HOST}"
+
+# Stop PostgreSQL if running
+systemctl stop postgresql 2>/dev/null || true
+
+# Backup existing data directory
+if [ -d "${PGDATA}" ] && [ "$(ls -A ${PGDATA})" ]; then
+    echo "Backing up existing data directory..."
+    mv ${PGDATA} ${PGDATA}.backup.$(date +%Y%m%d_%H%M%S)
+fi
+
+# Create fresh data directory
+mkdir -p ${PGDATA}
+chown postgres:postgres ${PGDATA}
+chmod 700 ${PGDATA}
+
+# Use pg_basebackup to clone from primary
+echo "Cloning data from primary (this may take a while)..."
+sudo -u postgres /opt/hud/bin/pg_basebackup \
+    -h ${PRIMARY_HOST} \
+    -U ${REPL_USER} \
+    -D ${PGDATA} \
+    -P \
+    -R \
+    -X stream \
+    -c fast
+
+# Create standby signal (PostgreSQL 12+)
+sudo -u postgres touch ${PGDATA}/standby.signal
+
+# Configure connection info
+cat >> ${PGDATA}/postgresql.auto.conf << EOF
+
+# === STANDBY CONFIGURATION ===
+primary_conninfo = 'host=${PRIMARY_HOST} port=5432 user=${REPL_USER} password=${REPL_PASSWORD} application_name=standby1'
+restore_command = 'cp /srv/pgsql/archive/%f %p'
+hot_standby = on
+hot_standby_feedback = on
+max_standby_streaming_delay = 30s
+wal_receiver_timeout = 60s
+
+# === LOGGING ===
+log_destination = 'stderr'
+logging_collector = on
+log_directory = '/var/log/postgresql'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+EOF
+
+echo "Standby setup complete. Start PostgreSQL:"
+echo "  systemctl start postgresql"
+echo ""
+echo "Verify replication status with:"
+echo "  sudo -u postgres psql -c 'SELECT * FROM pg_stat_replication;' (on primary)"
+echo "  sudo -u postgres psql -c 'SELECT pg_is_in_recovery();' (on standby - should return 't')"
+STANDBYEOF
+chmod +x $DESTDIR/opt/hud/bin/pg_setup_standby.sh
+
+# ============================================================
+# PROMOTION SCRIPT (STANDBY TO PRIMARY)
+# ============================================================
+cat > $DESTDIR/opt/hud/bin/pg_promote.sh << 'PROMOTEEOF'
+#!/bin/bash
+# Promote standby to primary
+set -e
+
+PGDATA=${PGDATA:-/srv/pgsql/data}
+
+echo "Promoting standby to primary..."
+
+# Check if in recovery mode
+IS_IN_RECOVERY=$(sudo -u postgres /opt/hud/bin/psql -d postgres -tAc "SELECT pg_is_in_recovery();")
+
+if [ "$IS_IN_RECOVERY" != "t" ]; then
+    echo "ERROR: This node is not a standby!"
+    exit 1
+fi
+
+# Promote using pg_ctl
+sudo -u postgres /opt/hud/bin/pg_ctl promote -D ${PGDATA}
+
+echo "Promotion initiated. Wait a few seconds..."
+sleep 5
+
+# Verify promotion
+IS_IN_RECOVERY=$(sudo -u postgres /opt/hud/bin/psql -d postgres -tAc "SELECT pg_is_in_recovery();")
+
+if [ "$IS_IN_RECOVERY" = "f" ]; then
+    echo "SUCCESS: Node is now PRIMARY!"
+else
+    echo "WARNING: Promotion may still be in progress. Check logs."
+fi
+
+echo ""
+echo "Next steps:"
+echo "1. Update your application connection strings"
+echo "2. Reconfigure old primary as standby if needed"
+echo "3. Update load balancer/VIP configuration"
+PROMOTEEOF
+chmod +x $DESTDIR/opt/hud/bin/pg_promote.sh
+
+# ============================================================
+# POSTGRESQL CONFIGURATION TEMPLATE
+# ============================================================
+install -vdm755 $DESTDIR/opt/hud/etc
+cat > $DESTDIR/opt/hud/etc/postgresql-ha.conf.example << 'CONFEOF'
+# PostgreSQL HA Configuration Example
+# This file demonstrates key settings for HA deployment
+# Copy to postgresql.conf or include in postgresql.auto.conf
+
+# === REPLICATION SETTINGS ===
+# For PRIMARY:
+wal_level = replica                    # Enable replication
+max_wal_senders = 10                   # Max concurrent standby connections
+max_replication_slots = 10             # Max replication slots
+wal_keep_size = 1024                   # Keep 1GB of WAL for standbys
+synchronous_commit = remote_apply      # Wait for standby confirmation
+synchronous_standby_names = '*'        # Sync to any standby
+
+# For STANDBY:
+hot_standby = on                       # Allow read queries on standby
+hot_standby_feedback = on              # Prevent query conflicts
+max_standby_streaming_delay = 30s      # Max delay before cancel
+
+# === ARCHIVE MODE ===
+archive_mode = on
+archive_command = 'test ! -f /srv/pgsql/archive/%f && cp %p /srv/pgsql/archive/%f'
+restore_command = 'cp /srv/pgsql/archive/%f %p'
+
+# === CONNECTIONS ===
+listen_addresses = '*'
+port = 5432
+max_connections = 200
+superuser_reserved_connections = 3
+
+# === AUTHENTICATION ===
+password_encryption = scram-sha-256
+
+# === MEMORY ===
+shared_buffers = 256MB                 # 25% of RAM (adjust)
+effective_cache_size = 1GB             # 50-75% of RAM (adjust)
+work_mem = 4MB                         # Per-operation memory
+maintenance_work_mem = 64MB            # For VACUUM, CREATE INDEX
+
+# === CHECKPOINTS ===
+checkpoint_completion_target = 0.9
+wal_buffers = 16MB
+max_wal_size = 4GB
+min_wal_size = 1GB
+
+# === LOGGING ===
+logging_collector = on
+log_directory = '/var/log/postgresql'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_rotation_age = 1d
+log_rotation_size = 100MB
+log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+log_timezone = 'UTC'
+
+# === STATISTICS ===
+track_activities = on
+track_counts = on
+track_io_timing = on
+track_functions = all
+CONFEOF
+
+# ============================================================
+# ENVIRONMENT PROFILE
+# ============================================================
+install -vdm755 $DESTDIR/etc/profile.d
+cat > $DESTDIR/etc/profile.d/postgresql.sh << 'ENVEOF'
+# PostgreSQL HA environment
+PGSQL_HOME=/opt/hud
+export PATH="${PGSQL_HOME}/bin:${PATH}"
+export LD_LIBRARY_PATH="${PGSQL_HOME}/lib:${LD_LIBRARY_PATH}"
+export PGDATA=/srv/pgsql/data
+export PGSOCKET=/run/postgresql
+ENVEOF
+
+[postinst]
+ldconfig
+
+# ============================================================
+# CREATE POSTGRES USER AND DIRECTORIES
+# ============================================================
+getent group postgres >/dev/null || groupadd -g 41 postgres
+getent passwd postgres >/dev/null || useradd -c "PostgreSQL Server" \
+    -g postgres -d /srv/pgsql -u 41 -s /bin/bash postgres
+
+# Create directory structure with proper ownership
+install -vdm700 -o postgres -g postgres /srv/pgsql/data 2>/dev/null || true
+install -vdm700 -o postgres -g postgres /srv/pgsql/archive 2>/dev/null || true
+install -vdm700 -o postgres -g postgres /srv/pgsql/backup 2>/dev/null || true
+install -vdm755 -o postgres -g postgres /run/postgresql 2>/dev/null || true
+install -vdm755 -o postgres -g postgres /var/log/postgresql 2>/dev/null || true
+chown -R postgres:postgres /srv/pgsql 2>/dev/null || true
+
+# Reload systemd
+systemctl daemon-reload 2>/dev/null || true
+
+echo ""
+echo "============================================"
+echo "PostgreSQL 17.6 HA Edition installed"
+echo "============================================"
+echo ""
+echo "=== NEXT STEPS ==="
+echo ""
+echo "1. Initialize database cluster (if new installation):"
+echo "   su - postgres -c '/opt/hud/bin/initdb -D /srv/pgsql/data'"
+echo ""
+echo "2. Choose deployment mode:"
+echo ""
+echo "   PRIMARY NODE:"
+echo "   /opt/hud/bin/pg_setup_primary.sh"
+echo "   systemctl enable --now postgresql"
+echo ""
+echo "   STANDBY NODE:"
+echo "   Edit /opt/hud/bin/pg_setup_standby.sh (set PRIMARY_HOST)"
+echo "   /opt/hud/bin/pg_setup_standby.sh"
+echo "   systemctl enable --now postgresql"
+echo ""
+echo "3. Verify replication:"
+echo "   PRIMARY: sudo -u postgres psql -c 'SELECT * FROM pg_stat_replication;'"
+echo "   STANDBY: sudo -u postgres psql -c 'SELECT pg_is_in_recovery();'"
+echo ""
+echo "4. Health checks (for load balancers):"
+echo "   /opt/hud/bin/pg_health_check.sh primary   # Check if primary"
+echo "   /opt/hud/bin/pg_health_check.sh standby   # Check if standby"
+echo "   /opt/hud/bin/pg_health_check.sh           # General health"
+echo ""
+echo "5. Failover (promote standby to primary):"
+echo "   /opt/hud/bin/pg_promote.sh"
+echo ""
+echo "=== CONFIGURATION FILES ==="
+echo "   Example config: /opt/hud/etc/postgresql-ha.conf.example"
+echo "   Data directory: /srv/pgsql/data"
+echo "   Archive directory: /srv/pgsql/archive"
+echo "   Logs: /var/log/postgresql"
+echo ""
+echo "=== USEFUL COMMANDS ==="
+echo "   systemctl status postgresql"
+echo "   sudo -u postgres psql -l"
+echo "   tail -f /var/log/postgresql/postgresql-*.log"
+echo ""

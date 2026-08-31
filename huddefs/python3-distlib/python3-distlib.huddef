@@ -1,0 +1,21 @@
+# HUD Package Definition - Python distlib
+
+Package: python3-distlib
+Version: 0.3.9
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: Low-level components of distutils2/packaging
+Source: https://github.com/pypa/distlib/archive/refs/tags/0.3.9.tar.gz
+
+[configure]
+# Nothing to configure
+
+[build]
+# Nothing to build
+
+[install]
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR . --break-system-packages
+
+[postinst]
+echo "✓ Python distlib 0.3.9 installed"

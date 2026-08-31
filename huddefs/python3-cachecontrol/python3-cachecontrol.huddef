@@ -1,0 +1,19 @@
+# HUD Package Definition - cachecontrol 0.14.3
+# Based on BLFS 12.4
+Package: python3-cachecontrol
+Version: 0.14.3
+Architecture: x86_64
+Section: python
+Depends: python3,python3-msgpack,python3-requests
+Description: CacheControl-0.14.3 - caching algorithms for use with requests
+Source: https://github.com/psf/cachecontrol/archive/v0.14.3/cachecontrol-0.14.3.tar.gz
+[build]
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+[install]
+pip3 install --no-index --find-links dist --no-user cachecontrol
+[postinst]
+echo "python3-cachecontrol 0.14.3 installed"
+[prerm]
+pip3 uninstall -y cachecontrol 2>/dev/null || true
+[postrm]
+# Cleanup if needed
