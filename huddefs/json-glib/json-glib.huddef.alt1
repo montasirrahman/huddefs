@@ -1,0 +1,29 @@
+# HUD Package Definition - json-glib 1.10.6
+# Auto-generated for oVirt infrastructure
+
+Package: json-glib
+Version: 1.10.6
+Architecture: x86_64
+Section: libraries
+Depends: glib2,gobject-introspection
+Description: JSON library for GLib
+Source: https://download.gnome.org/sources/json-glib/1.10/json-glib-1.10.6.tar.xz
+
+[configure]
+meson setup build --prefix=/opt/hud
+
+[build]
+ninja -C build
+
+[install]
+DESTDIR=$DESTDIR ninja -C build install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "json-glib 1.10.6 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

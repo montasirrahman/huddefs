@@ -1,0 +1,29 @@
+# HUD Package Definition - libXdmcp 1.1.5
+# X Display Manager Control Protocol Library
+# XDMCP protocol library
+# Fixed: Added util-macros dependency and proper PKG_CONFIG_PATH
+
+Package: libXdmcp
+Version: 1.1.5
+Architecture: x86_64
+Section: xorg
+Depends: xorgproto, util-macros
+Description: X Display Manager Control Protocol library
+Source: https://www.x.org/pub/individual/lib/libXdmcp-1.1.5.tar.xz
+
+[configure]
+# Ensure pkg-config can find xorgproto and util-macros
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/opt/hud/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH}"
+export ACLOCAL_PATH="/opt/hud/share/aclocal:${ACLOCAL_PATH}"
+
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libXdmcp 1.1.5 installed to /opt/hud"

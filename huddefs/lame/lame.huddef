@@ -1,0 +1,19 @@
+# HUD Package Definition - LAME 3.100
+# MP3 encoder
+Package: lame
+Version: 3.100
+Architecture: x86_64
+Section: multimedia
+Depends:
+Description: LAME - High quality MP3 encoder
+Source: https://downloads.sourceforge.net/lame/lame-3.100.tar.gz
+[configure]
+sed -i -e 's/^\(\s*hardcode_libdir_flag_spec\s*=\).*/\1/' configure
+./configure --prefix=/opt/hud --enable-mp3rtp --disable-static
+[build]
+make
+[install]
+make pkghtmldir=/opt/hud/share/doc/lame-3.100 DESTDIR=$DESTDIR install
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ LAME 3.100 installed to /opt/hud"

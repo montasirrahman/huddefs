@@ -1,0 +1,24 @@
+# HUD Package Definition - Little CMS 2.17
+# Color Management System
+# Small-footprint color management engine using ICC standard
+
+Package: lcms2
+Version: 2.17
+Architecture: x86_64
+Section: graphics
+Depends: libjpeg-turbo, libtiff
+Description: Small-footprint color management engine with focus on accuracy and performance
+Source: https://github.com/mm2/Little-CMS/releases/download/lcms2.17/lcms2-2.17.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ Little CMS 2.17 installed to /opt/hud"

@@ -1,0 +1,35 @@
+# HUD Package Definition - libX11 1.8.12
+# X11 Client Library
+# Main client library for X Window System
+
+Package: libX11
+Version: 1.8.12
+Architecture: x86_64
+Section: xorg
+Depends: libxcb, xtrans, xorgproto, util-macros
+Description: Main X11 client library for X Window System applications
+Source: https://www.x.org/pub/individual/lib/libX11-1.8.12.tar.xz
+
+[configure]
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/opt/hud/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH}"
+export ACLOCAL_PATH="/opt/hud/share/aclocal:${ACLOCAL_PATH}"
+
+./configure --prefix=/opt/hud    \
+            --sysconfdir=/etc    \
+            --localstatedir=/var \
+            --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+
+# Create symlinks for compatibility
+ln -sfv /opt/hud/lib/X11 /usr/lib/X11 2>/dev/null || true
+ln -sfv /opt/hud/include/X11 /usr/include/X11 2>/dev/null || true
+
+echo "✓ libX11 1.8.12 installed to /opt/hud"

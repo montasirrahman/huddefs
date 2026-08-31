@@ -1,0 +1,42 @@
+# HUD Package Definition - iptables 1.8.11
+# Linux kernel packet filtering ruleset tool
+# Recommended by NetworkManager for firewall integration
+
+Package: iptables
+Version: 1.8.11
+Architecture: x86_64
+Section: networking
+Depends:
+Description: Userspace command line program for kernel packet filtering
+Source: https://www.netfilter.org/projects/iptables/files/iptables-1.8.11.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+./configure --prefix=/opt/hud \
+            --disable-nftables \
+            --enable-libipq
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig
+# Create symlinks for system integration
+if [ ! -e /sbin/iptables ]; then
+    ln -sf /opt/hud/sbin/iptables /sbin/iptables 2>/dev/null || true
+fi
+if [ ! -e /sbin/ip6tables ]; then
+    ln -sf /opt/hud/sbin/ip6tables /sbin/ip6tables 2>/dev/null || true
+fi
+echo "✓ iptables 1.8.11 installed to /opt/hud"
+echo "  Note: Configure kernel with CONFIG_NETFILTER for packet filtering"

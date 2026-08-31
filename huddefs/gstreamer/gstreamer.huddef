@@ -1,0 +1,23 @@
+# HUD Package Definition - GStreamer 1.26.2
+# Multimedia framework
+
+Package: gstreamer
+Version: 1.26.2
+Architecture: x86_64
+Section: multimedia
+Depends: glib2, meson, ninja, libxml2
+Description: GStreamer multimedia framework
+Source: https://gstreamer.freedesktop.org/src/gstreamer/gstreamer-1.26.2.tar.xz
+
+[configure]
+meson setup build --prefix=/opt/hud --buildtype=release
+
+[build]
+ninja -C build
+
+[install]
+DESTDIR=$DESTDIR ninja -C build install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ GStreamer 1.26.2 installed to /opt/hud"

@@ -1,0 +1,29 @@
+# HUD Package Definition - icu 77.1
+# Auto-generated for oVirt infrastructure
+
+Package: icu
+Version: 77.1
+Architecture: x86_64
+Section: misc
+Depends: 
+Description: icu-77.1
+Source: 
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "icu 77.1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,22 @@
+# HUD Package Definition - harfbuzz 11.4.1
+# OpenType text shaping engine
+Package: harfbuzz
+Version: 11.4.1
+Architecture: x86_64
+Section: graphics
+Depends: glib,freetype,icu,graphite2
+Description: OpenType text shaping engine
+Source: https://github.com/harfbuzz/harfbuzz/releases/download/11.4.1/harfbuzz-11.4.1.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup .. --prefix=/opt/hud --buildtype=release -D graphite2=enabled
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ harfbuzz 11.4.1 installed to /opt/hud"
+/sbin/ldconfig

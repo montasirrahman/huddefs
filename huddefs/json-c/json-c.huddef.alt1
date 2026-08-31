@@ -1,0 +1,22 @@
+# HUD Package Definition - json-c 0.18
+# JSON C library
+Package: json-c
+Version: 0.18
+Architecture: x86_64
+Section: libraries
+Depends: cmake
+Description: JSON implementation in C
+Source: https://s3.amazonaws.com/json-c_releases/releases/json-c-0.18.tar.gz
+[configure]
+mkdir -p build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/opt/hud -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC_LIBS=OFF ..
+[build]
+cd build
+make
+[install]
+cd build
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ json-c 0.18 installed to /opt/hud"
+/sbin/ldconfig

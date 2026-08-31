@@ -1,0 +1,25 @@
+# HUD Package Definition - jansson 2.14
+# C library for JSON data
+
+Package: jansson
+Version: 2.14
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: C library for encoding, decoding and manipulating JSON data
+Source: https://github.com/akheron/jansson/releases/download/v2.14/jansson-2.14.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ jansson 2.14 installed to /opt/hud"

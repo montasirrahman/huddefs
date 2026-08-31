@@ -1,0 +1,27 @@
+# HUD Package Definition - libSM 1.2.6
+# X Session Management Library
+# X11 Session Management library
+
+Package: libSM
+Version: 1.2.6
+Architecture: x86_64
+Section: xorg
+Depends: libICE, xorgproto, xtrans, util-macros
+Description: X11 Session Management library
+Source: https://www.x.org/pub/individual/lib/libSM-1.2.6.tar.xz
+
+[configure]
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/opt/hud/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH}"
+export ACLOCAL_PATH="/opt/hud/share/aclocal:${ACLOCAL_PATH}"
+
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libSM 1.2.6 installed to /opt/hud"

@@ -1,0 +1,22 @@
+# HUD Package Definition - kmod 34
+# Linux kernel module tools
+
+Package: kmod
+Version: 34
+Architecture: x86_64
+Section: core
+Description: Libraries and utilities for loading kernel modules
+Source: https://kernel.org/pub/linux/utils/kernel/kmod/kmod-34.tar.xz
+
+[configure]
+mkdir -p build && cd build && meson setup --prefix=/opt/hud --buildtype=release -Dmanpages=false ..
+
+[build]
+cd build && ninja -j$(nproc)
+
+[install]
+cd build && DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ kmod 34 installed to /opt/hud"

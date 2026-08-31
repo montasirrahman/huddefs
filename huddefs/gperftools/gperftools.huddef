@@ -1,0 +1,74 @@
+# HUD Package Definition - gperftools 2.16
+# Google Performance Tools (includes tcmalloc)
+# Required by: glusterfs (tcmalloc library)
+# Reference: https://github.com/gperftools/gperftools
+
+Package: gperftools
+Version: 2.16
+Architecture: x86_64
+Section: libraries
+Depends: 
+Description: Google Performance Tools (tcmalloc, heap profiler, etc)
+Source: https://github.com/gperftools/gperftools/releases/download/gperftools-2.16/gperftools-2.16.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export CXXFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+./configure --prefix=/opt/hud \
+            --libdir=/opt/hud/lib64 \
+            --enable-shared \
+            --enable-static \
+            --enable-frame-pointers
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# Create symlinks for common library names
+mkdir -p $DESTDIR/usr/lib64
+ln -sf /opt/hud/lib64/libtcmalloc.so.4 $DESTDIR/usr/lib64/libtcmalloc.so.4 2>/dev/null || true
+ln -sf /opt/hud/lib64/libtcmalloc_minimal.so.4 $DESTDIR/usr/lib64/libtcmalloc_minimal.so.4 2>/dev/null || true
+
+[postinst]
+# Add library paths
+echo "/opt/hud/lib64" > /etc/ld.so.conf.d/gperftools.conf
+ldconfig
+
+# Create system-wide symlinks
+ln -sf /opt/hud/lib64/libtcmalloc.so.4.6.16 /usr/lib64/libtcmalloc.so.4
+ln -sf /usr/lib64/libtcmalloc.so.4 /usr/lib64/libtcmalloc.so
+
+ln -sf /opt/hud/lib64/libtcmalloc_minimal.so.4.6.16 /usr/lib64/libtcmalloc_minimal.so.4
+ln -sf /usr/lib64/libtcmalloc_minimal.so.4 /usr/lib64/libtcmalloc_minimal.so
+
+ln -sf /opt/hud/lib64/libtcmalloc_and_profiler.so.4.6.16 /usr/lib64/libtcmalloc_and_profiler.so.4
+ln -sf /usr/lib64/libtcmalloc_and_profiler.so.4 /usr/lib64/libtcmalloc_and_profiler.so
+
+ldconfig
+
+echo ""
+echo "============================================"
+echo "gperftools 2.16 installed successfully"
+echo "============================================"
+echo ""
+echo "Libraries provided:"
+echo "  - libtcmalloc.so (high-performance malloc)"
+echo "  - libtcmalloc_minimal.so (minimal version)"
+echo "  - libtcmalloc_and_profiler.so (with profiling)"
+echo "  - libprofiler.so (CPU profiler)"
+echo "  - libtcmalloc_debug.so (debug version)"
+echo ""
+echo "Usage:"
+echo "  Link with: -ltcmalloc"
+echo "  Or preload: LD_PRELOAD=/opt/hud/lib64/libtcmalloc.so"
+echo ""

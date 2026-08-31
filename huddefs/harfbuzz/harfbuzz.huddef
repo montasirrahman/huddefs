@@ -1,0 +1,29 @@
+# HUD Package Definition - harfbuzz 11.4.1
+# Auto-generated for oVirt infrastructure
+
+Package: harfbuzz
+Version: 11.4.1
+Architecture: x86_64
+Section: misc
+Depends: graphite2,libreoffice,git,glib2,icu,texlive,gtk-doc,cairo
+Description: harfBuzz-11.4.1
+Source: https://github.com/harfbuzz/harfbuzz/releases/download/11.4.1/harfbuzz-11.4.1.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "harfbuzz 11.4.1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

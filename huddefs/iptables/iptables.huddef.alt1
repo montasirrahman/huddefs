@@ -1,0 +1,33 @@
+# HUD Package Definition - iptables 1.8.11
+# Packet filtering framework
+
+Package: iptables
+Version: 1.8.11
+Architecture: x86_64
+Section: network
+Depends: libmnl,libnftnl
+Description: Linux kernel packet filtering framework
+Source: https://www.netfilter.org/projects/iptables/files/iptables-1.8.11.tar.xz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --sysconfdir=/opt/hud/etc \
+    --enable-libipq \
+    --with-xtlibdir=/opt/hud/lib/xtables \
+    LDFLAGS="-L/opt/hud/lib -Wl,-rpath,/opt/hud/lib" \
+    CPPFLAGS="-I/opt/hud/include"
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+# Create symlinks for legacy commands
+for cmd in iptables iptables-save iptables-restore ip6tables ip6tables-save ip6tables-restore; do
+    ln -sf xtables-nft-multi $DESTDIR/opt/hud/sbin/$cmd 2>/dev/null || true
+done
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ iptables 1.8.11 installed to /opt/hud"

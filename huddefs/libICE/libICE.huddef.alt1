@@ -1,0 +1,18 @@
+# HUD Package Definition - libICE 1.1.2
+# X Inter Client Exchange Library
+Package: libICE
+Version: 1.1.2
+Architecture: x86_64
+Section: xorg
+Depends: xorgproto,xtrans
+Description: X Inter Client Exchange Library
+Source: https://www.x.org/pub/individual/lib/libICE-1.1.2.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libICE 1.1.2 installed to /opt/hud"
+/sbin/ldconfig

@@ -1,0 +1,22 @@
+# HUD Package Definition - gperf 3.1
+# Perfect hash function generator
+
+Package: gperf
+Version: 3.1
+Architecture: x86_64
+Section: development
+Depends:
+Description: Perfect hash function generator
+Source: https://ftp.gnu.org/gnu/gperf/gperf-3.1.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "✓ gperf 3.1 installed to /opt/hud"

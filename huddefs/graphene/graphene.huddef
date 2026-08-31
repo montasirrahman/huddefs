@@ -1,0 +1,22 @@
+# HUD Package Definition - graphene 1.10.8
+# Thin layer of graphic data types
+Package: graphene
+Version: 1.10.8
+Architecture: x86_64
+Section: graphics
+Depends: glib,meson,ninja
+Description: Thin layer of graphic data types for GTK4
+Source: https://download.gnome.org/sources/graphene/1.10/graphene-1.10.8.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Dinstalled_tests=false ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ graphene 1.10.8 installed to /opt/hud"
+/sbin/ldconfig

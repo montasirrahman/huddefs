@@ -1,0 +1,60 @@
+# HUD Package Definition - Java (OpenJDK Binary) 24.0.2
+# Java Development Kit Binary
+# Pre-built OpenJDK for bootstrapping or runtime use
+
+Package: java-bin
+Version: 24.0.2
+Architecture: x86_64
+Section: development
+Depends: alsa-lib, cups, giflib, lcms2, xorg-libs
+Description: Pre-built OpenJDK binary for Java development and runtime
+Source: https://anduin.linuxfromscratch.org/BLFS/OpenJDK/OpenJDK-24.0.2/OpenJDK-24.0.2+12-x86_64-bin.tar.xz
+
+[configure]
+# Binary package - no configuration needed
+
+[build]
+# Binary package - no build needed
+
+[install]
+install -vdm755 $DESTDIR/opt/OpenJDK-24.0.2-bin
+mv -v * $DESTDIR/opt/OpenJDK-24.0.2-bin/ 2>/dev/null || true
+
+# Create symlink
+ln -sfn OpenJDK-24.0.2-bin $DESTDIR/opt/jdk
+
+[postinst]
+chown -R root:root /opt/OpenJDK-24.0.2-bin
+
+# Create environment script
+cat > /etc/profile.d/openjdk.sh << "EOF"
+# Begin /etc/profile.d/openjdk.sh
+
+# Set JAVA_HOME directory
+JAVA_HOME=/opt/jdk
+
+# Adjust PATH
+pathappend() {
+    if ! echo "$PATH" | grep -qE "(^|:)$1($|:)"; then
+        PATH="${PATH:+$PATH:}$1"
+    fi
+}
+pathappend $JAVA_HOME/bin
+
+export JAVA_HOME
+
+# Disable performance data files
+_JAVA_OPTIONS="-XX:-UsePerfData"
+export _JAVA_OPTIONS
+
+# End /etc/profile.d/openjdk.sh
+EOF
+
+# Link cacerts if make-ca is installed
+if [ -f /etc/pki/tls/java/cacerts ]; then
+    ln -sfv /etc/pki/tls/java/cacerts /opt/jdk/lib/security/cacerts
+fi
+
+echo "✓ Java (OpenJDK Binary) 24.0.2 installed to /opt/jdk"
+echo "  Run 'source /etc/profile.d/openjdk.sh' or logout/login to set environment"
+echo "  Test with: java -version"

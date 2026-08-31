@@ -1,0 +1,18 @@
+# HUD Package Definition - libSM 1.2.6
+# X Session Management Library
+Package: libSM
+Version: 1.2.6
+Architecture: x86_64
+Section: xorg
+Depends: libICE
+Description: X Session Management Library
+Source: https://www.x.org/pub/individual/lib/libSM-1.2.6.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libSM 1.2.6 installed to /opt/hud"
+/sbin/ldconfig
