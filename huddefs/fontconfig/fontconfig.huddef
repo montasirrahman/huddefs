@@ -1,0 +1,29 @@
+# HUD Package Definition - fontconfig 2.17.1
+# Auto-generated for oVirt infrastructure
+
+Package: fontconfig
+Version: 2.17.1
+Architecture: x86_64
+Section: misc
+Depends: tl-installer,freetype2,curl,json-c,bubblewrap,make-ca,texlive,libxml2
+Description: Fontconfig-2.17.1
+Source: https://gitlab.freedesktop.org/api/v4/projects/890/packages/generic/fontconfig/2.17.1/fontconfig-2.17.1.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "fontconfig 2.17.1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

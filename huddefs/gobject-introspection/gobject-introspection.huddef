@@ -1,0 +1,75 @@
+# HUD Package Definition - GObject Introspection 1.84.0 (Rebuild)
+# Rebuild against the newly installed glib to fix circular dependency
+# This must be run AFTER glib-2.84.4-stage1.huddef
+
+Package: gobject-introspection
+Version: 1.84.0
+Architecture: x86_64
+Section: libraries
+Depends: glib, libffi, python3
+Description: GObject introspection tools and libraries (rebuilt against new glib)
+Source: https://download.gnome.org/sources/gobject-introspection/1.84/gobject-introspection-1.84.0.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share"
+
+# Verify glib is available
+if ! pkg-config --exists glib-2.0; then
+    echo "ERROR: glib-2.0 not found. Run glib-2.84.4-stage1.huddef first!"
+    exit 1
+fi
+
+echo "Found glib version: $(pkg-config --modversion glib-2.0)"
+
+mkdir -p build
+cd build
+
+meson setup ..                       \
+      --prefix=/opt/hud              \
+      --buildtype=release            \
+      -D cairo=disabled              \
+      -D doctool=disabled            \
+      -D gtk_doc=false
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share"
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig
+
+# Verify g-ir-scanner works now
+export PATH="/opt/hud/bin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+echo ""
+echo "Testing g-ir-scanner..."
+if /opt/hud/bin/g-ir-scanner --version; then
+    echo ""
+    echo "═══════════════════════════════════════════════════════════"
+    echo "  GObject Introspection 1.84.0 Rebuild Complete"
+    echo "═══════════════════════════════════════════════════════════"
+    echo ""
+    echo "g-ir-scanner is now functional!"
+    echo ""
+    echo "Next step:"
+    echo "  Run: hud-build glib-2.84.4-stage2.huddef"
+    echo ""
+else
+    echo ""
+    echo "WARNING: g-ir-scanner still not working!"
+    echo "Check LD_LIBRARY_PATH includes /opt/hud/lib"
+    exit 1
+fi

@@ -1,0 +1,32 @@
+# HUD Package Definition - glusterfs 11.1
+# Auto-generated for oVirt infrastructure
+
+Package: glusterfs
+Version: 11.1
+Architecture: x86_64
+Section: storage
+Depends: python3,glib2,openssl,libxml2,libaio,libuuid,fuse3,libibverbs,rdma-core
+Description: Distributed file system
+Source: https://download.gluster.org/pub/gluster/glusterfs/11/11.1/glusterfs-11.1.tar.gz
+Service: glusterd
+
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc --localstatedir=/opt/hud/var
+
+[build]
+make
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "glusterfs 11.1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-glusterd 2>/dev/null || true
+systemctl disable hud-glusterd 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

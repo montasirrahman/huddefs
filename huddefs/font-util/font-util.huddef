@@ -1,0 +1,17 @@
+# HUD Package Definition - font-util 1.4.1
+# Font utilities for X
+Package: font-util
+Version: 1.4.1
+Architecture: x86_64
+Section: xorg-fonts
+Depends: util-macros
+Description: Font utilities for X
+Source: https://www.x.org/pub/individual/font/font-util-1.4.1.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ font-util 1.4.1 installed to /opt/hud"

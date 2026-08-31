@@ -1,0 +1,29 @@
+# HUD Package Definition - giflib 5.2.2
+# Auto-generated for oVirt infrastructure
+
+Package: giflib
+Version: 5.2.2
+Architecture: x86_64
+Section: libraries
+Depends: 
+Description: giflib-5.2.2
+Source: https://sourceforge.net/projects/giflib/files/giflib-5.2.2.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "giflib 5.2.2 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

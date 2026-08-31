@@ -1,0 +1,36 @@
+# HUD Package Definition - duktape 2.7.0
+# Embeddable JavaScript engine
+
+Package: duktape
+Version: 2.7.0
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Embeddable JavaScript engine
+Source: https://duktape.org/duktape-2.7.0.tar.xz
+
+[build]
+# Build shared library
+sed -i 's/-Os/-O2/' Makefile.sharedlibrary
+make -f Makefile.sharedlibrary INSTALL_PREFIX=/opt/hud
+
+[install]
+make -f Makefile.sharedlibrary INSTALL_PREFIX=/opt/hud DESTDIR=$DESTDIR install
+# Create pkg-config file
+mkdir -p $DESTDIR/opt/hud/lib/pkgconfig
+cat > $DESTDIR/opt/hud/lib/pkgconfig/duktape.pc << 'DUKTAPEPC'
+prefix=/opt/hud
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: Duktape
+Description: Embeddable JavaScript engine
+Version: 2.7.0
+Libs: -L${libdir} -lduktape -lm
+Cflags: -I${includedir}
+DUKTAPEPC
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ duktape 2.7.0 installed to /opt/hud"

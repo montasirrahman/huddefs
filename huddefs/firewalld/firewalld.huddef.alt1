@@ -1,0 +1,50 @@
+# HUD Package Definition - firewalld 2.3.2
+# Dynamic firewall daemon with D-Bus interface
+# Reference: https://firewalld.org/
+
+Package: firewalld
+Version: 2.3.2
+Architecture: x86_64
+Section: network
+Depends: python3, dbus, dbus-python, pygobject, glib, iptables, polkit, libxml2
+Description: Dynamic firewall daemon with D-Bus interface
+Source: https://github.com/firewalld/firewalld/releases/download/v2.3.2/firewalld-2.3.2.tar.bz2
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export PYTHON=/usr/bin/python3
+./configure --prefix=/opt/hud           \
+            --sysconfdir=/etc           \
+            --localstatedir=/var        \
+            --disable-docs              \
+            --without-ebtables          \
+            --without-ipset
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make
+
+[install]
+DESTDIR=$DESTDIR make install
+
+[postinst]
+ldconfig
+install -vdm755 /etc/firewalld
+install -vdm755 /etc/firewalld/zones
+install -vdm755 /etc/firewalld/services
+install -vdm755 /var/lib/firewalld
+ln -sf /opt/hud/lib/firewalld /usr/lib/firewalld 2>/dev/null || true
+ln -sf /opt/hud/bin/firewall-cmd /usr/bin/firewall-cmd 2>/dev/null || true
+ln -sf /opt/hud/sbin/firewalld /usr/sbin/firewalld 2>/dev/null || true
+printf 'DefaultZone=public\nCleanupOnExit=yes\nCleanupModulesOnExit=no\nIPv6_rpfilter=no\nIndividualCalls=no\nLogDenied=off\nFirewallBackend=nftables\nFlushAllOnReload=yes\nRFC3964_IPv4=no\nNftablesTableOwner=no\nNftablesCounters=no\n' > /etc/firewalld/firewalld.conf
+printf '[Unit]\nDescription=firewalld - dynamic firewall daemon\nBefore=network-pre.target\nWants=network-pre.target\nAfter=dbus.service\nAfter=polkit.service\nConflicts=iptables.service ip6tables.service ebtables.service ipset.service nftables.service\nDocumentation=man:firewalld(1)\n\n[Service]\nEnvironment=PYTHONPATH=/opt/hud/lib/python3.13/site-packages\nEnvironment=LD_LIBRARY_PATH=/opt/hud/lib:/opt/hud/lib64\nEnvironment=PATH=/opt/hud/sbin:/opt/hud/bin:/usr/sbin:/usr/bin:/sbin:/bin\nEnvironmentFile=-/etc/sysconfig/firewalld\nExecStart=/opt/hud/sbin/firewalld --nofork --nopid $FIREWALLD_ARGS\nExecReload=/bin/kill -HUP $MAINPID\nType=dbus\nBusName=org.fedoraproject.FirewallD1\nKillMode=mixed\n\n[Install]\nWantedBy=multi-user.target\n' > /etc/systemd/system/firewalld.service
+systemctl daemon-reload
+systemctl enable firewalld.service || true
+systemctl start firewalld.service || true
+echo "firewalld 2.3.2 installed"
+echo "Commands: firewall-cmd, firewalld"
+echo "Status: firewall-cmd --state"
+echo "Service enabled and started automatically"

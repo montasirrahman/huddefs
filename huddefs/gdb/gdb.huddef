@@ -1,0 +1,29 @@
+# HUD Package Definition - gdb 16.3
+# Auto-generated for oVirt infrastructure
+
+Package: gdb
+Version: 16.3
+Architecture: x86_64
+Section: development
+Depends: valgrind,doxygen,six,guile,rust
+Description: GDB-16.3
+Source: https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "gdb 16.3 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

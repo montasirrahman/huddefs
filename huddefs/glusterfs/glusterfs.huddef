@@ -1,0 +1,166 @@
+# HUD Package Definition - GlusterFS 11.1
+# Distributed scalable network filesystem for cloud storage
+# Essential for: HA shared storage, VM live migration, storage replication
+# Reference: https://www.gluster.org/
+#
+# FIXES APPLIED:
+# - Replace broken config.sub/config.guess with system copies
+# - Explicit --build/--host triplets to avoid autoconf newline bug
+# - Disable io_uring (not available)
+# - TIRPC support via CFLAGS/LDFLAGS pointing to /opt/hud/include/tirpc
+# - Move mount.glusterfs from /sbin to /opt/hud/sbin to avoid wiping system /sbin
+# - Remove all non-/opt/hud system directories from package to prevent overwriting
+# - Symlinks for /sbin/mount.glusterfs created in postinst instead
+
+Package: glusterfs
+Version: 11.1
+Architecture: x86_64
+Section: storage
+Depends: python3, liburcu, libxml2, openssl, libaio, readline, ncurses, libtirpc, sqlite
+Description: Distributed scalable network filesystem
+Source: https://download.gluster.org/pub/gluster/glusterfs/11/11.1/glusterfs-11.1.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include -I/opt/hud/include/tirpc"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64 -ltirpc"
+export PYTHON=/usr/bin/python3
+
+# Install Python dependencies
+pip3 install pyxattr --break-system-packages -q 2>/dev/null || true
+
+# Replace broken config.sub and config.guess
+for f in config.sub config.guess; do
+    if [ -f /usr/share/automake-*/$f ]; then
+        cp /usr/share/automake-*/$f ./$f
+    elif [ -f /usr/share/libtool/build-aux/$f ]; then
+        cp /usr/share/libtool/build-aux/$f ./$f
+    fi
+    find . -name "$f" -exec cp ./$f {} \; 2>/dev/null || true
+done
+chmod +x config.sub config.guess
+
+./configure --prefix=/opt/hud \
+            --build=x86_64-unknown-linux-gnu \
+            --host=x86_64-unknown-linux-gnu \
+            --sysconfdir=/etc \
+            --localstatedir=/var \
+            --libdir=/opt/hud/lib64 \
+            --with-pkgconfigdir=/opt/hud/lib64/pkgconfig \
+            --enable-gnfs \
+            --disable-crypt-xlator \
+            --disable-georeplication \
+            --disable-linux-io_uring \
+            --with-libtirpc
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# CRITICAL: Move mount.glusterfs out of /sbin into /opt/hud/sbin
+# This prevents the .hud package from containing /sbin/ which would
+# overwrite the system /sbin directory when extracted via tar
+mkdir -p $DESTDIR/opt/hud/sbin
+mv $DESTDIR/sbin/mount.glusterfs $DESTDIR/opt/hud/sbin/mount.glusterfs 2>/dev/null || true
+
+# Remove ALL system directories from the package root
+# Only /opt/hud and /etc and /var should remain
+rm -rf $DESTDIR/sbin 2>/dev/null || true
+rm -rf $DESTDIR/bin 2>/dev/null || true
+rm -rf $DESTDIR/usr 2>/dev/null || true
+rm -rf $DESTDIR/lib 2>/dev/null || true
+rm -rf $DESTDIR/lib64 2>/dev/null || true
+
+# Install Python API
+cd extras/hook-scripts
+cp -a * $DESTDIR/opt/hud/share/glusterfs/scripts/ 2>/dev/null || true
+
+[postinst]
+# Add library paths
+echo "/opt/hud/lib64" > /etc/ld.so.conf.d/glusterfs.conf
+echo "/opt/hud/lib64/glusterfs" >> /etc/ld.so.conf.d/glusterfs.conf
+ldconfig
+
+# Create mount helper symlink (safe - only adds one file)
+ln -sf /opt/hud/sbin/mount.glusterfs /sbin/mount.glusterfs
+
+# Create gluster user and group
+groupadd -r gluster 2>/dev/null || true
+useradd -r -g gluster -d /var/lib/glusterd -s /sbin/nologin \
+    -c "GlusterFS user" gluster 2>/dev/null || true
+
+# Create directories
+mkdir -p /var/lib/glusterd
+mkdir -p /var/log/glusterfs
+mkdir -p /var/run/gluster
+mkdir -p /etc/glusterfs
+
+# Set ownership
+chown -R gluster:gluster /var/lib/glusterd
+chown -R gluster:gluster /var/log/glusterfs
+chown -R gluster:gluster /var/run/gluster
+
+# Create systemd service for glusterd
+cat > /etc/systemd/system/glusterd.service << 'EOFSVC'
+[Unit]
+Description=GlusterFS Management Daemon
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/glusterd.pid
+ExecStart=/opt/hud/sbin/glusterd -p /var/run/glusterd.pid
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# Create firewalld service definition
+mkdir -p /etc/firewalld/services
+cat > /etc/firewalld/services/glusterfs.xml << 'EOFXML'
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>GlusterFS</short>
+  <description>GlusterFS is a scalable network filesystem</description>
+  <port protocol="tcp" port="24007-24008"/>
+  <port protocol="tcp" port="49152-49251"/>
+</service>
+EOFXML
+
+# Enable and start service
+systemctl daemon-reload
+systemctl enable glusterd.service
+systemctl start glusterd.service || true
+
+# Add firewall rules if firewalld is running
+if systemctl is-active --quiet firewalld; then
+    firewall-cmd --permanent --add-service=glusterfs 2>/dev/null || true
+    firewall-cmd --reload 2>/dev/null || true
+fi
+
+echo ""
+echo "============================================"
+echo "GlusterFS 11.1 installed successfully"
+echo "============================================"
+echo ""
+echo "Service: systemctl status glusterd"
+echo "Commands:"
+echo "  gluster peer status"
+echo "  gluster volume list"
+echo "  gluster volume info"
+echo ""
+echo "Firewall ports opened: 24007-24008, 49152-49251"
+echo ""

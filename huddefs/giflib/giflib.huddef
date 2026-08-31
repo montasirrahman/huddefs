@@ -1,0 +1,35 @@
+# HUD Package Definition - giflib 5.2.2
+# GIF image library - Based on LFS 12.4
+# Note: Uses plain Makefile, requires patches
+
+Package: giflib
+Version: 5.2.2
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Library for reading and writing GIF images
+Source: https://sourceforge.net/projects/giflib/files/giflib-5.2.2.tar.gz
+
+[configure]
+# Download and apply required patches
+wget -q https://www.linuxfromscratch.org/patches/blfs/12.4/giflib-5.2.2-upstream_fixes-1.patch -O ../upstream_fixes.patch
+wget -q https://www.linuxfromscratch.org/patches/blfs/12.4/giflib-5.2.2-security_fixes-1.patch -O ../security_fixes.patch
+
+# Apply patches
+patch -Np1 -i ../upstream_fixes.patch
+patch -Np1 -i ../security_fixes.patch
+
+# Move file to expected location (removes ImageMagick dependency)
+cp pic/gifgrid.gif doc/giflib-logo.gif
+
+[build]
+make -j$(nproc)
+
+[install]
+make PREFIX=/opt/hud DESTDIR=$DESTDIR install
+# Remove static library
+rm -fv $DESTDIR/opt/hud/lib/libgif.a
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ giflib 5.2.2 installed to /opt/hud"

@@ -1,0 +1,29 @@
+# HUD Package Definition - gnutls 3.8.10
+# Auto-generated for oVirt infrastructure
+
+Package: gnutls
+Version: 3.8.10
+Architecture: x86_64
+Section: misc
+Depends: tl-installer,libunistring,valgrind,libtasn1,libidn2,make-ca,net-tools,p11-kit,brotli,gtk-doc,texlive,nettle
+Description: GnuTLS-3.8.10
+Source: https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-3.8.10.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "gnutls 3.8.10 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

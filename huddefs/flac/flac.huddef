@@ -1,0 +1,29 @@
+# HUD Package Definition - flac 1.5.0
+# Auto-generated for oVirt infrastructure
+
+Package: flac
+Version: 1.5.0
+Architecture: x86_64
+Section: misc
+Depends: 
+Description: FLAC-1.5.0
+Source: https://github.com/xiph/flac/releases/download/1.5.0/flac-1.5.0.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "flac 1.5.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

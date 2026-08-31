@@ -1,0 +1,51 @@
+# HUD Package Definition - GLib 2.84.4 (Stage 1)
+# Core library for GNOME/GTK applications
+# Stage 1: Build WITHOUT introspection to bootstrap the dependency chain
+
+Package: glib
+Version: 2.84.4
+Architecture: x86_64
+Section: libraries
+Depends: libffi, pcre2, python3
+Description: Low-level core library for GNOME/GTK (bootstrap without introspection)
+Source: https://download.gnome.org/sources/glib/2.84/glib-2.84.4.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share"
+
+mkdir -p build
+cd build
+
+meson setup ..                       \
+      --prefix=/opt/hud              \
+      --buildtype=release            \
+      -D introspection=disabled      \
+      -D man-pages=disabled          \
+      -D tests=false
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share"
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig
+echo "═══════════════════════════════════════════════════════════"
+echo "  GLib 2.84.4 Stage 1 Complete (without introspection)"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+echo "Next steps:"
+echo "  1. Run: hud-build gobject-introspection-1.84.0-rebuild.huddef"
+echo "  2. Run: hud-build glib-2.84.4-stage2.huddef"
+echo ""

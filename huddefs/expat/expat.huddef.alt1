@@ -1,0 +1,25 @@
+# HUD Package Definition - expat 2.6.4
+# XML parser library
+
+Package: expat
+Version: 2.6.4
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Stream-oriented XML parser library
+Source: https://github.com/libexpat/libexpat/releases/download/R_2_6_4/expat-2.6.4.tar.xz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ expat 2.6.4 installed to /opt/hud"

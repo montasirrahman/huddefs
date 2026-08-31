@@ -1,0 +1,129 @@
+# HUD Package Definition - firewalld 2.3.2
+# Dynamic firewall daemon with D-Bus interface
+# Uses nftables backend for libvirt compatibility
+# Reference: https://firewalld.org/
+#
+# FIXES APPLIED:
+# - Wrapper script for firewall-cmd with PYTHONPATH
+# - nftables backend configuration
+# - Disabled problematic options (NftablesTableOwner, RFC3964_IPv4, IPv6_rpfilter)
+# - Creates libvirt zone for virtual networking
+# - Proper systemd service with environment variables
+
+Package: firewalld
+Version: 2.3.2
+Architecture: x86_64
+Section: network
+Depends: python3, dbus, dbus-python, pygobject, glib, iptables, polkit, libxml2, nftables
+Description: Dynamic firewall daemon with D-Bus interface
+Source: https://github.com/firewalld/firewalld/releases/download/v2.3.2/firewalld-2.3.2.tar.bz2
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export PYTHON=/usr/bin/python3
+./configure --prefix=/opt/hud           \
+            --sysconfdir=/etc           \
+            --localstatedir=/var        \
+            --disable-docs              \
+            --without-ebtables          \
+            --without-ipset
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make
+
+[install]
+DESTDIR=$DESTDIR make install
+
+[postinst]
+ldconfig
+
+# Create directories
+install -vdm755 /etc/firewalld
+install -vdm755 /etc/firewalld/zones
+install -vdm755 /etc/firewalld/services
+install -vdm755 /var/lib/firewalld
+
+# Symlink firewalld data files
+ln -sf /opt/hud/lib/firewalld /usr/lib/firewalld 2>/dev/null || true
+ln -sf /opt/hud/sbin/firewalld /usr/sbin/firewalld 2>/dev/null || true
+
+# Create wrapper script for firewall-cmd with proper PYTHONPATH
+cat > /usr/bin/firewall-cmd << 'EOFWRAP'
+#!/bin/bash
+export PYTHONPATH=/opt/hud/lib/python3.13/site-packages
+exec /opt/hud/bin/firewall-cmd "$@"
+EOFWRAP
+chmod +x /usr/bin/firewall-cmd
+
+# Create firewalld config with nftables backend and disabled problematic options
+cat > /etc/firewalld/firewalld.conf << 'EOFCONF'
+# firewalld configuration
+DefaultZone=public
+CleanupOnExit=yes
+CleanupModulesOnExit=no
+IPv6_rpfilter=no
+IndividualCalls=no
+LogDenied=off
+FirewallBackend=nftables
+FlushAllOnReload=yes
+RFC3964_IPv4=no
+NftablesTableOwner=no
+NftablesCounters=no
+EOFCONF
+
+# Create libvirt zone for virtual networking
+cat > /etc/firewalld/zones/libvirt.xml << 'EOFXML'
+<?xml version="1.0" encoding="utf-8"?>
+<zone target="ACCEPT">
+  <short>libvirt</short>
+  <description>The libvirt zone for virtual networks. Used by libvirt for NAT and routed virtual networks.</description>
+</zone>
+EOFXML
+
+# Create systemd service with all required environment variables
+cat > /etc/systemd/system/firewalld.service << 'EOFSVC'
+[Unit]
+Description=firewalld - dynamic firewall daemon
+Before=network-pre.target
+Wants=network-pre.target
+After=dbus.service
+After=polkit.service
+After=local-fs.target
+Conflicts=iptables.service ip6tables.service ebtables.service ipset.service nftables.service
+Documentation=man:firewalld(1)
+
+[Service]
+Environment=PYTHONPATH=/opt/hud/lib/python3.13/site-packages
+Environment=LD_LIBRARY_PATH=/opt/hud/lib:/opt/hud/lib64
+Environment=PATH=/opt/hud/sbin:/opt/hud/bin:/usr/sbin:/usr/bin:/sbin:/bin
+EnvironmentFile=-/etc/sysconfig/firewalld
+ExecStart=/opt/hud/sbin/firewalld --nofork --nopid $FIREWALLD_ARGS
+ExecReload=/bin/kill -HUP $MAINPID
+Type=dbus
+BusName=org.fedoraproject.FirewallD1
+KillMode=mixed
+TimeoutStartSec=60
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+systemctl daemon-reload
+systemctl enable firewalld.service || true
+systemctl start firewalld.service || true
+
+echo ""
+echo "firewalld 2.3.2 installed"
+echo "Commands: firewall-cmd, firewalld"
+echo ""
+echo "Status: firewall-cmd --state"
+echo "Zones:  firewall-cmd --get-zones"
+echo "Reload: firewall-cmd --reload"
+echo ""
+echo "Service enabled and started automatically"

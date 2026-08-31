@@ -1,0 +1,29 @@
+# HUD Package Definition - DTC 1.7.2
+# Device Tree Compiler (required for QEMU)
+# Without this, QEMU build will attempt to download from Internet
+Package: dtc
+Version: 1.7.2
+Architecture: x86_64
+Section: development
+Depends: glib
+Description: Device Tree Compiler for producing device tree binary files
+Source: https://www.kernel.org/pub/software/utils/dtc/dtc-1.7.2.tar.xz
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+# DTC uses meson build system
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud ..
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+ldconfig
+echo "✓ DTC (Device Tree Compiler) 1.7.2 installed to /opt/hud"

@@ -1,0 +1,29 @@
+# HUD Package Definition - git 2.50.1
+# Auto-generated for oVirt infrastructure
+
+Package: git
+Version: 2.50.1
+Architecture: x86_64
+Section: development
+Depends: tk,curl,apache,xmlto,valgrind,openssh,fcron,perl-io-socket-ssl,pcre2,asciidoc
+Description: Git-2.50.1
+Source: https://www.kernel.org/pub/software/scm/git/git-2.50.1.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make prefix=/opt/hud all
+
+[install]
+make prefix=/opt/hud DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "git 2.50.1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

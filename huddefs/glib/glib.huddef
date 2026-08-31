@@ -1,0 +1,22 @@
+# HUD Package Definition - glib 2.84.4
+# Low-level core library for GTK+ and GNOME
+Package: glib
+Version: 2.84.4
+Architecture: x86_64
+Section: libraries
+Depends: pcre2,libffi,python3,meson,ninja
+Description: Low-level core library that forms the basis for GTK+ and GNOME
+Source: https://download.gnome.org/sources/glib/2.84/glib-2.84.4.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Dman-pages=disabled -Dtests=false ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ glib 2.84.4 installed to /opt/hud"
+/sbin/ldconfig

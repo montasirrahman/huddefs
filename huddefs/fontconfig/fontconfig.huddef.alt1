@@ -1,0 +1,18 @@
+# HUD Package Definition - fontconfig 2.17.1
+# Library for configuring and customizing font access
+Package: fontconfig
+Version: 2.17.1
+Architecture: x86_64
+Section: graphics
+Depends: freetype
+Description: Library and support programs for configuring and customizing font access
+Source: https://gitlab.freedesktop.org/api/v4/projects/890/packages/generic/fontconfig/2.17.1/fontconfig-2.17.1.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-docs --docdir=/opt/hud/share/doc/fontconfig-2.17.1
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ fontconfig 2.17.1 installed to /opt/hud"
+/sbin/ldconfig

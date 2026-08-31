@@ -1,0 +1,24 @@
+# HUD Package Definition - dtc 1.7.2
+# Device Tree Compiler
+
+Package: dtc
+Version: 1.7.2
+Architecture: x86_64
+Section: misc
+Description: Device Tree Compiler for working with device tree source and binary files
+Source: https://kernel.org/pub/software/utils/dtc/dtc-1.7.2.tar.xz
+MD5sum: 0f193be84172556027da22d4fe3464e0
+
+[configure]
+mkdir -p build && cd build && meson setup --prefix=/opt/hud --buildtype=release -Dpython=disabled ..
+
+[build]
+cd build && ninja -j$(nproc)
+
+[install]
+cd build && DESTDIR=$DESTDIR ninja install
+rm -f $DESTDIR/opt/hud/lib/libfdt.a
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ dtc 1.7.2 installed to /opt/hud"

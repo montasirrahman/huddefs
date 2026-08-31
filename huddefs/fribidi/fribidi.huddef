@@ -1,0 +1,22 @@
+# HUD Package Definition - fribidi 1.0.16
+# Unicode Bidirectional Algorithm library
+Package: fribidi
+Version: 1.0.16
+Architecture: x86_64
+Section: graphics
+Depends:
+Description: Implementation of the Unicode Bidirectional Algorithm
+Source: https://github.com/fribidi/fribidi/releases/download/v1.0.16/fribidi-1.0.16.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ fribidi 1.0.16 installed to /opt/hud"
+/sbin/ldconfig

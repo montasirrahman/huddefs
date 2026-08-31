@@ -1,0 +1,33 @@
+# HUD Package Definition - GMP 6.3.0
+# GNU Multiple Precision Arithmetic Library
+# Fixed for GCC 15: Use -std=gnu17 to allow K&R style function declarations
+
+Package: gmp
+Version: 6.3.0
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: GNU Multiple Precision Arithmetic Library
+Source: https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz
+
+[configure]
+# GCC 15 enforces strict C23 rules by default which breaks GMP's configure tests
+# The test uses void g(){} then calls g(a,b,c,d,e,f) - illegal in C23 but valid in C17
+# Solution: Force C17 standard and disable pedantic errors
+./configure \
+    --prefix=/opt/hud \
+    --enable-cxx \
+    --disable-static \
+    --build=x86_64-pc-linux-gnu \
+    CC="gcc" \
+    CFLAGS="-O2 -std=gnu17 -Wno-error=implicit-function-declaration -Wno-error=implicit-int -Wno-error=int-conversion"
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ GMP 6.3.0 installed to /opt/hud"

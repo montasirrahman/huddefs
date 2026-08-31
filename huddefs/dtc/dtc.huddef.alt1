@@ -1,0 +1,29 @@
+# HUD Package Definition - dtc 1.7.2
+# Auto-generated for oVirt infrastructure
+
+Package: dtc
+Version: 1.7.2
+Architecture: x86_64
+Section: misc
+Depends: 
+Description: dtc-1.7.2
+Source: https://kernel.org/pub/software/utils/dtc/dtc-1.7.2.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "dtc 1.7.2 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

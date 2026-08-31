@@ -1,0 +1,199 @@
+# HUD Package Definition - docbook-xml 4.5
+# DocBook XML DTD for XML document validation
+
+Package: docbook
+Version: 4.5
+Architecture: noarch
+Section: xml
+Depends: libarchive,libxml2
+Description: DocBook XML DTD 4.5 - document type definitions for XML validation
+Source: https://archive.docbook.org/xml/4.5/docbook-xml-4.5.zip
+# Note: This zip extracts flat (no subdirectory). hud-build may cd into 'ent/' subdir.
+ExtractDir: .
+
+[configure]
+# No configuration needed - this is a data-only package
+# Debug: show where we are and what's available
+echo "Current directory: $(pwd)"
+ls -la
+echo "Parent directory:"
+ls -la ..
+
+[build]
+# No build needed
+
+[install]
+# Create destination directories
+install -v -d -m755 ${DESTDIR}/opt/hud/share/xml/docbook/xml-dtd-4.5
+install -v -d -m755 ${DESTDIR}/opt/hud/etc/xml
+
+# The zip extracts flat, but hud-build may cd into 'ent/' subdirectory
+# We need to find where docbook.cat actually is
+
+# First, find the source root (where docbook.cat lives)
+SRCROOT=""
+if [ -f docbook.cat ]; then
+    SRCROOT="."
+elif [ -f ../docbook.cat ]; then
+    SRCROOT=".."
+elif [ -f ../../docbook.cat ]; then
+    SRCROOT="../.."
+else
+    # Search for it
+    echo "Searching for docbook.cat..."
+    FOUND=$(find /var/hud-build/staging -name "docbook.cat" -type f 2>/dev/null | head -1)
+    if [ -n "$FOUND" ]; then
+        SRCROOT=$(dirname "$FOUND")
+        echo "Found at: $SRCROOT"
+    fi
+fi
+
+if [ -z "$SRCROOT" ] || [ ! -f "$SRCROOT/docbook.cat" ]; then
+    echo "ERROR: Could not locate docbook.cat"
+    echo "Contents of current directory:"
+    ls -la
+    echo "Contents of parent directory:"
+    ls -la .. 2>/dev/null || true
+    exit 1
+fi
+
+echo "Using source root: $SRCROOT"
+
+# Copy all DTD files
+cp -v -af --no-preserve=ownership "$SRCROOT/docbook.cat" \
+    ${DESTDIR}/opt/hud/share/xml/docbook/xml-dtd-4.5/
+
+cp -v -af --no-preserve=ownership "$SRCROOT"/*.dtd \
+    ${DESTDIR}/opt/hud/share/xml/docbook/xml-dtd-4.5/
+
+cp -v -af --no-preserve=ownership "$SRCROOT"/*.mod \
+    ${DESTDIR}/opt/hud/share/xml/docbook/xml-dtd-4.5/
+
+cp -v -af --no-preserve=ownership "$SRCROOT/ent" \
+    ${DESTDIR}/opt/hud/share/xml/docbook/xml-dtd-4.5/
+
+echo "Files installed:"
+ls -la ${DESTDIR}/opt/hud/share/xml/docbook/xml-dtd-4.5/
+
+[postinst]
+# Create XML catalog entries
+if [ ! -e /opt/hud/etc/xml/docbook ]; then
+    xmlcatalog --noout --create /opt/hud/etc/xml/docbook
+fi
+
+xmlcatalog --noout --add "public" \
+    "-//OASIS//DTD DocBook XML V4.5//EN" \
+    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" \
+    /opt/hud/etc/xml/docbook
+
+xmlcatalog --noout --add "public" \
+    "-//OASIS//DTD DocBook XML CALS Table Model V4.5//EN" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5/calstblx.dtd" \
+    /opt/hud/etc/xml/docbook
+
+xmlcatalog --noout --add "public" \
+    "-//OASIS//DTD XML Exchange Table Model 19990315//EN" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5/soextblx.dtd" \
+    /opt/hud/etc/xml/docbook
+
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ELEMENTS DocBook XML Information Pool V4.5//EN" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5/dbpoolx.mod" \
+    /opt/hud/etc/xml/docbook
+
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ELEMENTS DocBook XML Document Hierarchy V4.5//EN" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5/dbhierx.mod" \
+    /opt/hud/etc/xml/docbook
+
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ELEMENTS DocBook XML HTML Tables V4.5//EN" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5/htmltblx.mod" \
+    /opt/hud/etc/xml/docbook
+
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ENTITIES DocBook XML Notations V4.5//EN" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5/dbnotnx.mod" \
+    /opt/hud/etc/xml/docbook
+
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ENTITIES DocBook XML Character Entities V4.5//EN" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5/dbcentx.mod" \
+    /opt/hud/etc/xml/docbook
+
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ENTITIES DocBook XML Additional General Entities V4.5//EN" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5/dbgenent.mod" \
+    /opt/hud/etc/xml/docbook
+
+xmlcatalog --noout --add "rewriteSystem" \
+    "http://www.oasis-open.org/docbook/xml/4.5" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5" \
+    /opt/hud/etc/xml/docbook
+
+xmlcatalog --noout --add "rewriteURI" \
+    "http://www.oasis-open.org/docbook/xml/4.5" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5" \
+    /opt/hud/etc/xml/docbook
+
+# Create/update main catalog
+if [ ! -e /opt/hud/etc/xml/catalog ]; then
+    xmlcatalog --noout --create /opt/hud/etc/xml/catalog
+fi
+
+xmlcatalog --noout --add "delegatePublic" \
+    "-//OASIS//ENTITIES DocBook XML" \
+    "file:///opt/hud/etc/xml/docbook" \
+    /opt/hud/etc/xml/catalog
+
+xmlcatalog --noout --add "delegatePublic" \
+    "-//OASIS//DTD DocBook XML" \
+    "file:///opt/hud/etc/xml/docbook" \
+    /opt/hud/etc/xml/catalog
+
+xmlcatalog --noout --add "delegateSystem" \
+    "http://www.oasis-open.org/docbook/" \
+    "file:///opt/hud/etc/xml/docbook" \
+    /opt/hud/etc/xml/catalog
+
+xmlcatalog --noout --add "delegateURI" \
+    "http://www.oasis-open.org/docbook/" \
+    "file:///opt/hud/etc/xml/docbook" \
+    /opt/hud/etc/xml/catalog
+
+# Add compatibility entries for older DTD versions
+for DTDVERSION in 4.1.2 4.2 4.3 4.4; do
+  xmlcatalog --noout --add "public" \
+    "-//OASIS//DTD DocBook XML V$DTDVERSION//EN" \
+    "http://www.oasis-open.org/docbook/xml/$DTDVERSION/docbookx.dtd" \
+    /opt/hud/etc/xml/docbook
+
+  xmlcatalog --noout --add "rewriteSystem" \
+    "http://www.oasis-open.org/docbook/xml/$DTDVERSION" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5" \
+    /opt/hud/etc/xml/docbook
+
+  xmlcatalog --noout --add "rewriteURI" \
+    "http://www.oasis-open.org/docbook/xml/$DTDVERSION" \
+    "file:///opt/hud/share/xml/docbook/xml-dtd-4.5" \
+    /opt/hud/etc/xml/docbook
+
+  xmlcatalog --noout --add "delegateSystem" \
+    "http://www.oasis-open.org/docbook/xml/$DTDVERSION/" \
+    "file:///opt/hud/etc/xml/docbook" \
+    /opt/hud/etc/xml/catalog
+
+  xmlcatalog --noout --add "delegateURI" \
+    "http://www.oasis-open.org/docbook/xml/$DTDVERSION/" \
+    "file:///opt/hud/etc/xml/docbook" \
+    /opt/hud/etc/xml/catalog
+done
+
+echo "docbook-xml 4.5 installed to /opt/hud"
+
+[prerm]
+# Nothing to do
+
+[postrm]
+# Note: Catalog cleanup would require careful handling
+echo "docbook-xml 4.5 removed - manual catalog cleanup may be required"

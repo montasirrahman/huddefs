@@ -1,0 +1,97 @@
+# HUD Package Definition - GLib 2.84.4 (Stage 2 - Final)
+# Core library for GNOME/GTK applications
+# Stage 2: Build WITH introspection support (full build)
+# Run this AFTER gobject-introspection-1.84.0-rebuild.huddef
+
+Package: glib
+Version: 2.84.4
+Architecture: x86_64
+Section: libraries
+Depends: libffi, pcre2, python3, gobject-introspection
+Description: Low-level core library for GNOME/GTK with full introspection support
+Source: https://download.gnome.org/sources/glib/2.84/glib-2.84.4.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share"
+
+# GObject Introspection environment
+export GI_TYPELIB_PATH="/opt/hud/lib/girepository-1.0:/opt/hud/lib64/girepository-1.0"
+export GI_GIR_PATH="/opt/hud/share/gir-1.0"
+
+# Verify g-ir-scanner works before proceeding
+echo "Verifying g-ir-scanner..."
+if ! /opt/hud/bin/g-ir-scanner --version; then
+    echo "ERROR: g-ir-scanner not working!"
+    echo "Run gobject-introspection-1.84.0-rebuild.huddef first!"
+    exit 1
+fi
+echo "g-ir-scanner OK: $(/opt/hud/bin/g-ir-scanner --version)"
+
+mkdir -p build
+cd build
+
+meson setup ..                       \
+      --prefix=/opt/hud              \
+      --buildtype=release            \
+      -D introspection=enabled       \
+      -D man-pages=disabled          \
+      -D tests=false
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="/opt/hud/share:/usr/local/share:/usr/share"
+export GI_TYPELIB_PATH="/opt/hud/lib/girepository-1.0:/opt/hud/lib64/girepository-1.0"
+export GI_GIR_PATH="/opt/hud/share/gir-1.0"
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig
+
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "  GLib 2.84.4 Stage 2 Complete (WITH introspection)"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+
+# Verify GIR files are installed
+if [ -f /opt/hud/share/gir-1.0/GLib-2.0.gir ]; then
+    echo "✓ GLib-2.0.gir installed"
+else
+    echo "⚠ GLib-2.0.gir NOT found"
+fi
+
+if [ -f /opt/hud/share/gir-1.0/GObject-2.0.gir ]; then
+    echo "✓ GObject-2.0.gir installed"
+else
+    echo "⚠ GObject-2.0.gir NOT found"
+fi
+
+if [ -f /opt/hud/share/gir-1.0/Gio-2.0.gir ]; then
+    echo "✓ Gio-2.0.gir installed"
+else
+    echo "⚠ Gio-2.0.gir NOT found"
+fi
+
+if [ -f /opt/hud/lib/girepository-1.0/GLib-2.0.typelib ]; then
+    echo "✓ GLib-2.0.typelib installed"
+else
+    echo "⚠ GLib-2.0.typelib NOT found"
+fi
+
+echo ""
+echo "GIR files location: /opt/hud/share/gir-1.0/"
+echo "Typelib location:   /opt/hud/lib/girepository-1.0/"
+echo ""
+echo "GLib 2.84.4 with introspection is ready for NetworkManager!"
+echo ""
