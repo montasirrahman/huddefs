@@ -1,0 +1,46 @@
+# HUD Package Definition - elogind 255.17
+# Standalone logind from systemd
+
+Package: elogind
+Version: 255.17
+Architecture: x86_64
+Section: system
+Depends: dbus,linux-pam,libcap,acl
+Description: Standalone logind extracted from systemd
+Source: https://github.com/elogind/elogind/archive/refs/tags/v255.17.tar.gz
+
+[configure]
+mkdir -p build && cd build && meson setup .. \
+    --prefix=/opt/hud \
+    --sysconfdir=/opt/hud/etc \
+    -Dcgroup-controller=elogind \
+    -Ddbuspolicydir=/opt/hud/etc/dbus-1/system.d \
+    -Ddefault-hierarchy=hybrid \
+    -Dman=disabled \
+    -Dhtml=disabled
+
+[build]
+cd build && ninja -j$(nproc)
+
+[install]
+cd build && DESTDIR=$DESTDIR ninja install
+# Create necessary symlinks for compatibility
+mkdir -p $DESTDIR/opt/hud/lib/pkgconfig
+if [ ! -f $DESTDIR/opt/hud/lib/pkgconfig/libsystemd.pc ]; then
+    ln -sf libelogind.pc $DESTDIR/opt/hud/lib/pkgconfig/libsystemd.pc 2>/dev/null || true
+fi
+
+[postinst]
+ldconfig 2>/dev/null || true
+mkdir -p /run/systemd 2>/dev/null || true
+mkdir -p /run/elogind 2>/dev/null || true
+echo "✓ elogind 255.17 installed to /opt/hud"
+
+[prerm]
+systemctl stop hud-elogind 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true
+
+[service]
+elogind

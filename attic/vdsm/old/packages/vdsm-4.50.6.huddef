@@ -1,0 +1,32 @@
+# HUD Package Definition - vdsm 4.50.6
+# Auto-generated for oVirt infrastructure
+
+Package: vdsm
+Version: 4.50.6
+Architecture: x86_64
+Section: virtualization
+Depends: python3,libvirt,qemu,sanlock,glusterfs,ovirt-imageio
+Description: Virtual Desktop Server Manager - oVirt host agent
+Source: https://github.com/oVirt/vdsm/archive/refs/tags/v4.50.6.tar.gz
+Service: vdsmd
+
+[configure]
+./autogen.sh --prefix=/opt/hud --sysconfdir=/opt/hud/etc
+
+[build]
+make
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "vdsm 4.50.6 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-vdsmd 2>/dev/null || true
+systemctl disable hud-vdsmd 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

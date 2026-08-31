@@ -1,0 +1,31 @@
+# HUD Package Definition - PyAtSpi2 2.46.1
+# Python bindings for GNOME accessibility
+# AT-SPI2 accessibility toolkit bindings
+
+Package: python-pyatspi2
+Version: 2.46.1
+Architecture: x86_64
+Section: python
+Depends: python, python-pygobject, at-spi2-core
+Description: Python bindings for GNOME Accessibility
+Source: https://download.gnome.org/sources/pyatspi/2.46/pyatspi-2.46.1.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+./configure --prefix=/opt/hud --with-python=/usr/bin/python3
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "✓ Python PyAtSpi2 2.46.1 installed to /opt/hud"

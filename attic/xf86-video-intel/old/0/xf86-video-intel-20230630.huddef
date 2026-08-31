@@ -1,0 +1,17 @@
+# HUD Package Definition - xf86-video-intel 20230630
+# Xorg Intel video driver
+Package: xf86-video-intel
+Version: 20230630
+Architecture: x86_64
+Section: xorg-drivers
+Depends: xorg-server,libdrm,mesa,libXfixes,libXrender
+Description: Xorg video driver for Intel integrated graphics
+Source: https://gitlab.freedesktop.org/xorg/driver/xf86-video-intel/-/archive/master/xf86-video-intel-master.tar.bz2
+[configure]
+./autogen.sh --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static --enable-kms-only --enable-uxa --enable-sna
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ xf86-video-intel 20230630 installed to /opt/hud"

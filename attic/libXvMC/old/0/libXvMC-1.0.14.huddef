@@ -1,0 +1,18 @@
+# HUD Package Definition - libXvMC 1.0.14
+# X-Video Motion Compensation Library
+Package: libXvMC
+Version: 1.0.14
+Architecture: x86_64
+Section: xorg
+Depends: libXv
+Description: X-Video Motion Compensation Library
+Source: https://www.x.org/pub/individual/lib/libXvMC-1.0.14.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXvMC 1.0.14 installed to /opt/hud"
+/sbin/ldconfig

@@ -1,0 +1,29 @@
+# HUD Package Definition - ovirt-ansible-collection 3.2.0
+# Auto-generated for oVirt infrastructure
+
+Package: ovirt-ansible-collection
+Version: 3.2.0
+Architecture: x86_64
+Section: virtualization
+Depends: ansible,ovirt-engine-sdk-python
+Description: oVirt Ansible Collection
+Source: https://github.com/oVirt/ovirt-ansible-collection/archive/refs/tags/3.2.0.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+ansible-galaxy collection build
+
+[install]
+ansible-galaxy collection install ovirt-ovirt-*.tar.gz -p $DESTDIR/opt/hud/share/ansible/collections
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "ovirt-ansible-collection 3.2.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

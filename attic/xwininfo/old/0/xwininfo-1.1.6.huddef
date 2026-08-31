@@ -1,0 +1,17 @@
+# HUD Package Definition - xwininfo 1.1.6
+# Window information utility for X
+Package: xwininfo
+Version: 1.1.6
+Architecture: x86_64
+Section: xorg-apps
+Depends: libX11,libxcb
+Description: Window information utility for X
+Source: https://www.x.org/pub/individual/app/xwininfo-1.1.6.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ xwininfo 1.1.6 installed to /opt/hud"

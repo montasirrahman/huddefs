@@ -1,0 +1,29 @@
+# HUD Package Definition - cryptography 44.0.3
+# Auto-generated for oVirt infrastructure
+
+Package: cryptography
+Version: 44.0.3
+Architecture: x86_64
+Section: python
+Depends: python3,openssl,rust
+Description: Cryptographic recipes and primitives for Python
+Source: https://files.pythonhosted.org/packages/source/c/cryptography/cryptography-44.0.3.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+python3 -m build --wheel
+
+[install]
+pip3 install --prefix=/opt/hud --root=$DESTDIR dist/*.whl
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "cryptography 44.0.3 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

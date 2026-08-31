@@ -1,0 +1,29 @@
+# HUD Package Definition - ovirt-engine-sdk-python 4.6.0
+# Auto-generated for oVirt infrastructure
+
+Package: ovirt-engine-sdk-python
+Version: 4.6.0
+Architecture: x86_64
+Section: virtualization
+Depends: python3,libxml2,curl
+Description: oVirt Python SDK
+Source: https://github.com/oVirt/ovirt-engine-sdk/archive/refs/tags/4.6.0.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+cd sdk && python3 setup.py build
+
+[install]
+cd sdk && python3 setup.py install --prefix=/opt/hud --root=$DESTDIR
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "ovirt-engine-sdk-python 4.6.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

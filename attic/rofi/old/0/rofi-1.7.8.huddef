@@ -1,0 +1,21 @@
+# HUD Package Definition - rofi 1.7.8
+# Window switcher, application launcher
+Package: rofi
+Version: 1.7.8
+Architecture: x86_64
+Section: xorg-apps
+Depends: libX11,libXft,libXinerama,pango,cairo,glib,gdk-pixbuf,libxcb,xcb-util,xcb-util-wm,xcb-util-cursor,startup-notification,libxkbcommon
+Description: Window switcher, application launcher and dmenu replacement
+Source: https://github.com/davatorium/rofi/releases/download/1.7.8/rofi-1.7.8.tar.gz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ rofi 1.7.8 installed to /opt/hud"

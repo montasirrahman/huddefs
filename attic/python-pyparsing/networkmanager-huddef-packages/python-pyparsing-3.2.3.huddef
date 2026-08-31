@@ -1,0 +1,26 @@
+# HUD Package Definition - pyparsing 3.2.3
+# Python parsing module
+# Alternative to lex/yacc for grammar parsing
+
+Package: python-pyparsing
+Version: 3.2.3
+Architecture: x86_64
+Section: python
+Depends: python
+Description: Python module for creating and executing simple grammars
+Source: https://files.pythonhosted.org/packages/source/p/pyparsing/pyparsing-3.2.3.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR pyparsing
+
+[postinst]
+echo "✓ Python pyparsing 3.2.3 installed"

@@ -1,0 +1,18 @@
+# HUD Package Definition - libXft 2.3.9
+# X FreeType interface library
+Package: libXft
+Version: 2.3.9
+Architecture: x86_64
+Section: xorg
+Depends: libXrender,fontconfig,freetype
+Description: X FreeType interface library
+Source: https://www.x.org/pub/individual/lib/libXft-2.3.9.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXft 2.3.9 installed to /opt/hud"
+/sbin/ldconfig

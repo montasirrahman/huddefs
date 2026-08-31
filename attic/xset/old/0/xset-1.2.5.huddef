@@ -1,0 +1,17 @@
+# HUD Package Definition - xset 1.2.5
+# User preference utility for X
+Package: xset
+Version: 1.2.5
+Architecture: x86_64
+Section: xorg-apps
+Depends: libX11,libXmu,libXext
+Description: User preference utility for X
+Source: https://www.x.org/pub/individual/app/xset-1.2.5.tar.bz2
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ xset 1.2.5 installed to /opt/hud"

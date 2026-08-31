@@ -1,0 +1,17 @@
+# HUD Package Definition - dmenu 5.3
+# Dynamic menu for X
+Package: dmenu
+Version: 5.3
+Architecture: x86_64
+Section: xorg-apps
+Depends: libX11,libXft,libXinerama,freetype,fontconfig
+Description: Dynamic menu for X - fast and lightweight
+Source: https://dl.suckless.org/tools/dmenu-5.3.tar.gz
+[configure]
+sed -i 's|/usr/local|/opt/hud|g' config.mk
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ dmenu 5.3 installed to /opt/hud"

@@ -1,0 +1,18 @@
+# HUD Package Definition - libxkbfile 1.1.3
+# xkbfile library
+Package: libxkbfile
+Version: 1.1.3
+Architecture: x86_64
+Section: xorg
+Depends: libX11
+Description: xkbfile library for X keyboard handling
+Source: https://www.x.org/pub/individual/lib/libxkbfile-1.1.3.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libxkbfile 1.1.3 installed to /opt/hud"
+/sbin/ldconfig

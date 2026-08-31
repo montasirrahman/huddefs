@@ -1,0 +1,303 @@
+# HUD Package Definition - oVirt Engine 4.5.7
+# Central management server for oVirt virtualization platform
+# MASSIVE PACKAGE: Java-based, requires PostgreSQL, takes 2-3 days to build
+# Reference: https://www.ovirt.org/
+
+Package: ovirt-engine
+Version: 4.5.7
+Architecture: x86_64
+Section: virtualization
+Depends: postgresql, java-bin, maven, otopi, python3, python3-pyyaml, python3-jinja2, python3-six, ansible-core
+Description: oVirt Engine - Virtualization management server
+Source: https://resources.ovirt.org/pub/ovirt-4.5/src/ovirt-engine/ovirt-engine-4.5.7.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export JAVA_HOME=/opt/hud/lib/java
+export M2_HOME=/opt/hud/share/maven
+export MAVEN_HOME=/opt/hud/share/maven
+export PYTHON=/usr/bin/python3
+
+# Install Python dependencies
+pip3 install --break-system-packages \
+    pyyaml jinja2 six ansible-core netaddr \
+    python-daemon lockfile psycopg2-binary \
+    otopi ovirt-engine-sdk-python
+
+# This is a Maven project - no traditional configure
+echo "oVirt Engine uses Maven build system"
+echo "Build will take 2-3 hours on modern hardware"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export JAVA_HOME=/opt/hud/lib/java
+export MAVEN_HOME=/opt/hud/share/maven
+
+# Maven build - this will take a LONG time
+echo "Starting Maven build - this will take 2-3 hours..."
+
+mvn clean install \
+    -DskipTests \
+    -Dgwt.compiler.localWorkers=2 \
+    -Dgwt.compiler.skip=false \
+    -Dmaven.repo.local=$HOME/.m2/repository
+
+[install]
+# Install to DESTDIR
+make PREFIX=/opt/hud DESTDIR=$DESTDIR install
+
+# Create required directories
+mkdir -p $DESTDIR/etc/ovirt-engine
+mkdir -p $DESTDIR/var/lib/ovirt-engine
+mkdir -p $DESTDIR/var/log/ovirt-engine
+mkdir -p $DESTDIR/var/cache/ovirt-engine
+mkdir -p $DESTDIR/var/tmp/ovirt-engine
+mkdir -p $DESTDIR/usr/share/ovirt-engine
+
+# Copy built artifacts
+cp -r packaging/target/ovirt-engine-*/* $DESTDIR/usr/share/ovirt-engine/
+
+# Install configurations
+cp -r packaging/etc/* $DESTDIR/etc/ovirt-engine/
+
+# Install setup tools
+mkdir -p $DESTDIR/opt/hud/bin
+cp -r packaging/bin/* $DESTDIR/opt/hud/bin/
+
+# Install systemd services
+mkdir -p $DESTDIR/etc/systemd/system
+cp -r packaging/systemd/*.service $DESTDIR/etc/systemd/system/
+
+[postinst]
+# Create ovirt-engine user and group
+groupadd -r ovirt 2>/dev/null || true
+useradd -r -g ovirt -d /var/lib/ovirt-engine \
+    -s /sbin/nologin -c "oVirt Engine User" ovirt 2>/dev/null || true
+
+# Set ownership
+chown -R ovirt:ovirt /var/lib/ovirt-engine
+chown -R ovirt:ovirt /var/log/ovirt-engine
+chown -R ovirt:ovirt /var/cache/ovirt-engine
+chown -R ovirt:ovirt /var/tmp/ovirt-engine
+
+# Create engine database configuration
+cat > /etc/ovirt-engine/engine.conf.d/10-setup-database.conf << 'EOFCONF'
+# Database configuration
+# Will be configured by engine-setup
+ENGINE_DB_HOST=localhost
+ENGINE_DB_PORT=5432
+ENGINE_DB_USER=engine
+ENGINE_DB_PASSWORD=
+ENGINE_DB_DATABASE=engine
+ENGINE_DB_DRIVER=org.postgresql.Driver
+ENGINE_DB_URL=jdbc:postgresql://${ENGINE_DB_HOST}:${ENGINE_DB_PORT}/${ENGINE_DB_DATABASE}
+EOFCONF
+
+# Create main engine service
+cat > /etc/systemd/system/ovirt-engine.service << 'EOFSVC'
+[Unit]
+Description=oVirt Engine
+Requires=postgresql.service
+After=postgresql.service network.target
+
+[Service]
+Type=simple
+User=ovirt
+Group=ovirt
+EnvironmentFile=/etc/ovirt-engine/ovirt-engine.conf
+ExecStart=/usr/share/ovirt-engine/services/ovirt-engine/ovirt-engine.py \
+    --redirect-output start
+ExecStop=/usr/share/ovirt-engine/services/ovirt-engine/ovirt-engine.py stop
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# Create engine-notifier service
+cat > /etc/systemd/system/ovirt-engine-notifier.service << 'EOFSVC'
+[Unit]
+Description=oVirt Engine Notifier
+Requires=ovirt-engine.service
+After=ovirt-engine.service
+
+[Service]
+Type=simple
+User=ovirt
+Group=ovirt
+ExecStart=/usr/share/ovirt-engine/services/ovirt-engine-notifier/ovirt-engine-notifier.py start
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# Create engine-dwhd service (data warehouse)
+cat > /etc/systemd/system/ovirt-engine-dwhd.service << 'EOFSVC'
+[Unit]
+Description=oVirt Engine Data Warehouse
+Requires=ovirt-engine.service
+After=ovirt-engine.service
+
+[Service]
+Type=simple
+User=ovirt
+Group=ovirt
+ExecStart=/usr/share/ovirt-engine-dwh/services/ovirt-engine-dwhd/ovirt-engine-dwhd.py start
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# Create engine-health-check service
+cat > /etc/systemd/system/ovirt-engine-healthcheck.service << 'EOFSVC'
+[Unit]
+Description=oVirt Engine Health Check
+Requires=ovirt-engine.service
+After=ovirt-engine.service
+
+[Service]
+Type=oneshot
+User=ovirt
+ExecStart=/usr/share/ovirt-engine/services/ovirt-engine-healthcheck/ovirt-engine-healthcheck.py
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# Create firewalld service
+mkdir -p /etc/firewalld/services
+cat > /etc/firewalld/services/ovirt-engine.xml << 'EOFXML'
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>oVirt Engine</short>
+  <description>oVirt Virtualization Management Engine</description>
+  <port protocol="tcp" port="80"/>
+  <port protocol="tcp" port="443"/>
+  <port protocol="tcp" port="6100"/>
+</service>
+EOFXML
+
+# Add firewall rules
+if systemctl is-active --quiet firewalld; then
+    firewall-cmd --permanent --add-service=ovirt-engine 2>/dev/null || true
+    firewall-cmd --permanent --add-service=http 2>/dev/null || true
+    firewall-cmd --permanent --add-service=https 2>/dev/null || true
+    firewall-cmd --reload 2>/dev/null || true
+fi
+
+# Create PostgreSQL database setup script
+cat > /tmp/setup-engine-db.sh << 'EOFDBSETUP'
+#!/bin/bash
+# oVirt Engine Database Setup
+
+set -e
+
+echo "Setting up PostgreSQL for oVirt Engine..."
+
+# Switch to postgres user and create database
+sudo -u postgres psql << EOFSQL
+-- Create engine database user
+CREATE USER engine WITH PASSWORD 'engine123';
+
+-- Create engine database
+CREATE DATABASE engine OWNER engine TEMPLATE template0 
+  ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8';
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON DATABASE engine TO engine;
+
+-- Create extensions
+\c engine
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+\q
+EOFSQL
+
+echo "Database 'engine' created successfully"
+echo "User: engine"
+echo "Password: engine123"
+echo ""
+echo "IMPORTANT: Change the default password for production!"
+EOFDBSETUP
+
+chmod +x /tmp/setup-engine-db.sh
+
+# Reload systemd
+systemctl daemon-reload
+
+echo ""
+echo "============================================"
+echo "oVirt Engine 4.5.7 installed successfully"
+echo "============================================"
+echo ""
+echo "██████╗ ██╗      █████╗  ██████╗██╗  ██╗███████╗██╗      █████╗  ██████╗ "
+echo "██╔══██╗██║     ██╔══██╗██╔════╝██║ ██╔╝██╔════╝██║     ██╔══██╗██╔════╝ "
+echo "██████╔╝██║     ███████║██║     █████╔╝ █████╗  ██║     ███████║██║  ███╗"
+echo "██╔══██╗██║     ██╔══██║██║     ██╔═██╗ ██╔══╝  ██║     ██╔══██║██║   ██║"
+echo "██████╔╝███████╗██║  ██║╚██████╗██║  ██╗██║     ███████╗██║  ██║╚██████╔╝"
+echo "╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝ ╚═════╝ "
+echo ""
+echo "        VIRTUALIZATION MANAGEMENT PLATFORM"
+echo ""
+echo "============================================"
+echo ""
+echo "NEXT STEPS:"
+echo ""
+echo "1. Setup PostgreSQL database:"
+echo "   sudo bash /tmp/setup-engine-db.sh"
+echo ""
+echo "2. Run engine-setup (interactive configuration):"
+echo "   sudo engine-setup"
+echo ""
+echo "3. Answer setup questions:"
+echo "   - Configure database connection"
+echo "   - Set admin password"
+echo "   - Configure firewall"
+echo "   - Setup SSL certificates"
+echo ""
+echo "4. After setup completes, access web interface:"
+echo "   https://$(hostname):443/ovirt-engine"
+echo ""
+echo "   Default login: admin@internal"
+echo "   Password: (set during engine-setup)"
+echo ""
+echo "Services installed:"
+echo "  - ovirt-engine.service (main engine)"
+echo "  - ovirt-engine-notifier.service (notifications)"
+echo "  - ovirt-engine-dwhd.service (data warehouse)"
+echo ""
+echo "Firewall ports opened:"
+echo "  - 80/443 (HTTP/HTTPS web interface)"
+echo "  - 6100 (WebSocket proxy)"
+echo ""
+echo "Configuration: /etc/ovirt-engine/"
+echo "Logs: /var/log/ovirt-engine/"
+echo ""
+echo "============================================"
+echo "IMPORTANT SECURITY NOTES:"
+echo "============================================"
+echo ""
+echo "1. The default database password is 'engine123'"
+echo "   Change it immediately for production!"
+echo ""
+echo "2. Configure firewall properly - only allow"
+echo "   access from trusted networks"
+echo ""
+echo "3. Use strong passwords for admin account"
+echo ""
+echo "4. Consider using Let's Encrypt for SSL"
+echo ""
+echo "5. Regular backups with: engine-backup"
+echo ""
+echo "============================================"
+echo ""
+echo "For full documentation, visit:"
+echo "https://www.ovirt.org/documentation/"
+echo ""

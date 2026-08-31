@@ -1,0 +1,22 @@
+# HUD Package Definition - pip 25.0.1
+# Python package installer
+
+Package: python-pip
+Version: 25.0.1
+Architecture: x86_64
+Section: python-modules
+Depends: python3, python-setuptools
+Description: Python package installer
+Source: https://files.pythonhosted.org/packages/source/p/pip/pip-25.0.1.tar.gz
+
+[configure]
+# No configure needed
+
+[build]
+/opt/hud/bin/python3 -m build --wheel --no-isolation
+
+[install]
+/opt/hud/bin/pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR dist/*.whl
+
+[postinst]
+echo "✓ pip 25.0.1 installed to /opt/hud"

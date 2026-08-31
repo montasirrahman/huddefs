@@ -1,0 +1,38 @@
+# HUD Package Definition - apache 2.4.65
+# Auto-generated for oVirt infrastructure
+
+Package: apache
+Version: 2.4.65
+Architecture: x86_64
+Section: network
+Depends: openldap,bootscripts,lynx,apr-util,lua,links,jansson,brotli
+Description: Apache-2.4.65
+Source: https://archive.apache.org/dist/httpd/httpd-2.4.65.tar.bz2
+Service: httpd
+
+[configure]
+./configure --prefix=/opt/hud --enable-mods-shared=all --enable-ssl --enable-proxy
+
+[build]
+make -j$(nproc)
+
+[install]
+make install  &&
+
+mv -v /usr/sbin/suexec /usr/lib/httpd/suexec &&
+chgrp apache           /usr/lib/httpd/suexec &&
+chmod 4754             /usr/lib/httpd/suexec &&
+
+chown -v -R apache:apache /srv/www
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "apache 2.4.65 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-httpd 2>/dev/null || true
+systemctl disable hud-httpd 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

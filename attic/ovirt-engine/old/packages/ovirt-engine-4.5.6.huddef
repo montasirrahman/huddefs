@@ -1,0 +1,32 @@
+# HUD Package Definition - ovirt-engine 4.5.6
+# Auto-generated for oVirt infrastructure
+
+Package: ovirt-engine
+Version: 4.5.6
+Architecture: x86_64
+Section: virtualization
+Depends: postgresql,openjdk,apache,wildfly,ansible,python3,ovirt-engine-sdk-python
+Description: oVirt Engine - Central management server for oVirt infrastructure
+Source: https://github.com/oVirt/ovirt-engine/archive/refs/tags/ovirt-engine-4.5.6.tar.gz
+Service: ovirt-engine
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make BUILD_ENV=build PREFIX=/opt/hud
+
+[install]
+make install PREFIX=/opt/hud DESTDIR=$DESTDIR
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "ovirt-engine 4.5.6 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-ovirt-engine 2>/dev/null || true
+systemctl disable hud-ovirt-engine 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,27 @@
+# HUD Package Definition - cachecontrol 0.14.3
+# HTTP caching library for requests
+# Port of httplib2 caching algorithms
+
+Package: python-cachecontrol
+Version: 0.14.3
+Architecture: x86_64
+Section: python
+Depends: python, python-msgpack, python-requests
+Description: HTTP caching for requests library
+Source: https://github.com/psf/cachecontrol/archive/v0.14.3/cachecontrol-0.14.3.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR cachecontrol
+
+[postinst]
+echo "✓ Python cachecontrol 0.14.3 installed"
+echo "  Program: doesitcache"

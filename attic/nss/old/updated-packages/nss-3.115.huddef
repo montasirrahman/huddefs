@@ -1,0 +1,50 @@
+# HUD Package Definition - nss 3.115
+# Based on BLFS 12.4 documentation
+
+Package: nss
+Version: 3.115
+Architecture: x86_64
+Section: security
+Depends: nspr,sqlite
+Description: Network Security Services - libraries for cross-platform security-enabled client/server applications
+Source: https://archive.mozilla.org/pub/security/nss/releases/NSS_3_115_RTM/src/nss-3.115.tar.gz
+
+[configure]
+# NSS does not use autotools - apply standalone patch if available
+# patch -Np1 -i ../nss-standalone-1.patch 2>/dev/null || true
+
+[build]
+cd nss &&
+make BUILD_OPT=1                      \
+  NSPR_INCLUDE_DIR=/usr/include/nspr  \
+  USE_SYSTEM_ZLIB=1                   \
+  ZLIB_LIBS=-lz                       \
+  NSS_ENABLE_WERROR=0                 \
+  $([ $(uname -m) = x86_64 ] && echo USE_64=1) \
+  $([ -f /usr/include/sqlite3.h ] && echo NSS_USE_SYSTEM_SQLITE=1)
+
+[install]
+cd dist &&
+install -v -m755 -d $DESTDIR/opt/hud/lib              &&
+install -v -m755 -d $DESTDIR/opt/hud/include/nss      &&
+install -v -m755 -d $DESTDIR/opt/hud/bin              &&
+install -v -m755 -d $DESTDIR/opt/hud/lib/pkgconfig    &&
+install -v -m755 Linux*/lib/*.so              $DESTDIR/opt/hud/lib              &&
+install -v -m644 Linux*/lib/{*.chk,libcrmf.a} $DESTDIR/opt/hud/lib              &&
+cp -v -RL {public,private}/nss/*              $DESTDIR/opt/hud/include/nss      &&
+install -v -m755 Linux*/bin/{certutil,nss-config,pk12util} $DESTDIR/opt/hud/bin &&
+install -v -m644 Linux*/lib/pkgconfig/nss.pc  $DESTDIR/opt/hud/lib/pkgconfig
+
+[postinst]
+ldconfig 2>/dev/null || true
+# Configure p11-kit trust module as drop-in replacement if p11-kit is installed
+if [ -f /opt/hud/lib/pkcs11/p11-kit-trust.so ]; then
+    ln -sfv ./pkcs11/p11-kit-trust.so /opt/hud/lib/libnssckbi.so
+fi
+echo "nss 3.115 installed to /opt/hud"
+
+[prerm]
+# No services to stop
+
+[postrm]
+ldconfig 2>/dev/null || true

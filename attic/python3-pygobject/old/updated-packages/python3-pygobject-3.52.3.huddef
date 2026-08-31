@@ -1,0 +1,23 @@
+# HUD Package Definition - PyGObject 3.52.3
+# Based on BLFS 12.4
+Package: python3-pygobject
+Version: 3.52.3
+Architecture: x86_64
+Section: python
+Depends: python3,glib,python3-pycairo
+Description: PyGObject-3.52.3 - Python bindings to the GObject class from GLib
+Source: https://download.gnome.org/sources/pygobject/3.52/pygobject-3.52.3.tar.gz
+[configure]
+mv -v tests/test_gdbus.py{,.nouse} 2>/dev/null || true
+mv -v tests/test_overrides_gtk.py{,.nouse} 2>/dev/null || true
+mkdir -p build && cd build && meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build && ninja
+[install]
+cd build && ninja install
+[postinst]
+echo "python3-pygobject 3.52.3 installed"
+[prerm]
+# Manual removal if needed
+[postrm]
+# Cleanup if needed

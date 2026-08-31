@@ -1,0 +1,26 @@
+# HUD Package Definition - html5lib 1.1
+# HTML5 parser for Python
+# Implements WHATWG HTML specification
+
+Package: python-html5lib
+Version: 1.1
+Architecture: x86_64
+Section: python
+Depends: python, python-six, python-webencodings
+Description: Pure-python HTML5 parser
+Source: https://files.pythonhosted.org/packages/source/h/html5lib/html5lib-1.1.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR html5lib
+
+[postinst]
+echo "✓ Python html5lib 1.1 installed"

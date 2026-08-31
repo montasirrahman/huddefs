@@ -1,0 +1,29 @@
+# HUD Package Definition - libssh 0.11.1
+# Auto-generated for oVirt infrastructure
+
+Package: libssh
+Version: 0.11.1
+Architecture: x86_64
+Section: security
+Depends: cmake,openssl,zlib
+Description: SSH library
+Source: https://www.libssh.org/files/0.11/libssh-0.11.1.tar.xz
+
+[configure]
+cmake -DCMAKE_INSTALL_PREFIX=/opt/hud -DWITH_GCRYPT=OFF -DWITH_PCAP=OFF .
+
+[build]
+make
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libssh 0.11.1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

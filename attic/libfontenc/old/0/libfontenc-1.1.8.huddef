@@ -1,0 +1,18 @@
+# HUD Package Definition - libfontenc 1.1.8
+# X11 font encoding library
+Package: libfontenc
+Version: 1.1.8
+Architecture: x86_64
+Section: xorg
+Depends: xorgproto,zlib
+Description: X11 font encoding library
+Source: https://www.x.org/pub/individual/lib/libfontenc-1.1.8.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libfontenc 1.1.8 installed to /opt/hud"
+/sbin/ldconfig

@@ -1,0 +1,29 @@
+# HUD Package Definition - jinja2 3.1.5
+# Auto-generated for oVirt infrastructure
+
+Package: jinja2
+Version: 3.1.5
+Architecture: x86_64
+Section: python
+Depends: python3,markupsafe
+Description: Python templating engine
+Source: https://files.pythonhosted.org/packages/source/J/Jinja2/jinja2-3.1.5.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+python3 -m build --wheel
+
+[install]
+pip3 install --prefix=/opt/hud --root=$DESTDIR dist/*.whl
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "jinja2 3.1.5 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

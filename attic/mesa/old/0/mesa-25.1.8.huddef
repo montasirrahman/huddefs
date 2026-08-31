@@ -1,0 +1,33 @@
+# HUD Package Definition - mesa 25.1.8
+# OpenGL compatible 3D graphics library
+Package: mesa
+Version: 25.1.8
+Architecture: x86_64
+Section: graphics
+Depends: libdrm,libX11,libXext,libXfixes,libXxf86vm,libxcb,libxshmfence,wayland,wayland-protocols,libxml2,llvm,python3-mako,glslang
+Description: Open source implementation of OpenGL and Vulkan
+Source: https://mesa.freedesktop.org/archive/mesa-25.1.8.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release \
+    -Dplatforms=x11,wayland \
+    -Dgallium-drivers=radeonsi,nouveau,virgl,svga,swrast,iris,crocus,zink \
+    -Dvulkan-drivers=amd,intel,intel_hasvk,swrast \
+    -Dglx=dri \
+    -Degl=enabled \
+    -Dgles1=enabled \
+    -Dgles2=enabled \
+    -Dshared-glapi=enabled \
+    -Dgbm=enabled \
+    -Dvalgrind=disabled \
+    ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ mesa 25.1.8 installed to /opt/hud"
+/sbin/ldconfig

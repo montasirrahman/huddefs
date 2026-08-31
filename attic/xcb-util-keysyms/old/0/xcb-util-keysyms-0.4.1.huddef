@@ -1,0 +1,18 @@
+# HUD Package Definition - xcb-util-keysyms 0.4.1
+# XCB keysyms library
+Package: xcb-util-keysyms
+Version: 0.4.1
+Architecture: x86_64
+Section: xorg
+Depends: libxcb
+Description: XCB standard X key constants and keycodes-to-keysyms conversion
+Source: https://xorg.freedesktop.org/archive/individual/lib/xcb-util-keysyms-0.4.1.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ xcb-util-keysyms 0.4.1 installed to /opt/hud"
+/sbin/ldconfig

@@ -1,0 +1,29 @@
+# HUD Package Definition - cairo 1.18.4
+# Auto-generated for oVirt infrastructure
+
+Package: cairo
+Version: 1.18.4
+Architecture: x86_64
+Section: graphics
+Depends: gs,glib2,poppler,fontconfig,librsvg,xorg7-lib,lzo,gtk-doc,libpng
+Description: Cairo-1.18.4
+Source: https://www.cairographics.org/releases/cairo-1.18.4.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "cairo 1.18.4 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

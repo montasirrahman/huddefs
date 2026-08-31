@@ -1,0 +1,46 @@
+# HUD Package Definition - libvirt-python 10.10.0
+# Python bindings for libvirt
+# Required by VDSM and other management tools
+# Reference: https://libvirt.org/
+
+Package: libvirt-python
+Version: 10.10.0
+Architecture: x86_64
+Section: virtualization
+Depends: libvirt, python3
+Description: Python bindings for libvirt virtualization API
+Source: https://download.libvirt.org/python/libvirt-python-10.10.0.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+# No configure step - uses setup.py
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+python3 setup.py build
+
+[install]
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+python3 setup.py install --root=$DESTDIR --prefix=/opt/hud
+
+[postinst]
+ldconfig
+
+# Test import
+python3 -c "import libvirt; print('libvirt-python version:', libvirt.getVersion())" 2>/dev/null || true
+
+echo ""
+echo "libvirt-python 10.10.0 installed"
+echo ""
+echo "Test: python3 -c 'import libvirt; print(libvirt.getVersion())'"
+echo ""
+echo "Example usage:"
+echo "  import libvirt"
+echo "  conn = libvirt.open('qemu:///system')"
+echo "  print(conn.listAllDomains())"

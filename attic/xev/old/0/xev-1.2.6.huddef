@@ -1,0 +1,17 @@
+# HUD Package Definition - xev 1.2.6
+# Print contents of X events
+Package: xev
+Version: 1.2.6
+Architecture: x86_64
+Section: xorg-apps
+Depends: libX11,libXrandr,libXi
+Description: Print contents of X events
+Source: https://www.x.org/pub/individual/app/xev-1.2.6.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ xev 1.2.6 installed to /opt/hud"

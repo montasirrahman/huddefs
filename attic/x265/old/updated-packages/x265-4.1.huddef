@@ -1,0 +1,23 @@
+# HUD Package Definition - x265 4.1
+# H.265/HEVC video encoder
+
+Package: x265
+Version: 4.1
+Architecture: x86_64
+Section: multimedia
+Depends: cmake, nasm
+Description: H.265/HEVC video encoder library
+Source: https://bitbucket.org/multicoreware/x265_git/downloads/x265_4.1.tar.gz
+
+[configure]
+cd source && cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/hud -DCMAKE_BUILD_TYPE=Release -DENABLE_SHARED=ON
+
+[build]
+cd source && cmake --build build -j$(nproc)
+
+[install]
+cd source && DESTDIR=$DESTDIR cmake --install build
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ x265 4.1 installed to /opt/hud"

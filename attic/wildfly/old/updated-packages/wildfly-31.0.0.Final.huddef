@@ -1,0 +1,32 @@
+# HUD Package Definition - wildfly 31.0.0.Final
+# Auto-generated for oVirt infrastructure
+
+Package: wildfly
+Version: 31.0.0.Final
+Architecture: x86_64
+Section: java
+Depends: openjdk
+Description: WildFly Application Server
+Source: https://github.com/wildfly/wildfly/releases/download/31.0.0.Final/wildfly-31.0.0.Final.tar.gz
+Service: wildfly
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+
+
+[install]
+mkdir -p $DESTDIR/opt/hud/wildfly && cp -r * $DESTDIR/opt/hud/wildfly/
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "wildfly 31.0.0.Final installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-wildfly 2>/dev/null || true
+systemctl disable hud-wildfly 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

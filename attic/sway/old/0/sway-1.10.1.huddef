@@ -1,0 +1,21 @@
+# HUD Package Definition - sway 1.10.1
+# i3-compatible Wayland compositor
+Package: sway
+Version: 1.10.1
+Architecture: x86_64
+Section: window-managers
+Depends: wlroots,wayland,wayland-protocols,libxkbcommon,cairo,pango,gdk-pixbuf,json-c,pcre2
+Description: i3-compatible Wayland compositor
+Source: https://github.com/swaywm/sway/releases/download/1.10.1/sway-1.10.1.tar.gz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Ddefault-wallpaper=false ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ sway 1.10.1 installed to /opt/hud"

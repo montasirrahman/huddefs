@@ -1,0 +1,29 @@
+# HUD Package Definition - D-Bus Python 1.4.0
+# Python bindings for D-Bus
+# Required by NetworkManager D-Bus interface
+
+Package: python-dbus
+Version: 1.4.0
+Architecture: x86_64
+Section: python
+Depends: python, dbus, glib, python-meson-python, patchelf
+Description: Python bindings for D-Bus message bus system
+Source: https://dbus.freedesktop.org/releases/dbus-python/dbus-python-1.4.0.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR dbus-python
+
+[postinst]
+echo "✓ Python D-Bus 1.4.0 installed"

@@ -1,0 +1,28 @@
+# HUD Package Definition - Gi-DocGen 2025.4
+# Documentation generator for GObject-based libraries
+# API reference documentation tool for GNOME
+
+Package: python-gi-docgen
+Version: 2025.4
+Architecture: x86_64
+Section: python
+Depends: python, python-markdown, python-pygments, python-typogrify
+Recommends: graphviz
+Description: Documentation generator for GObject libraries
+Source: https://files.pythonhosted.org/packages/source/g/gi-docgen/gi_docgen-2025.4.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR gi-docgen
+
+[postinst]
+echo "✓ Python Gi-DocGen 2025.4 installed"
+echo "  Program: gi-docgen"

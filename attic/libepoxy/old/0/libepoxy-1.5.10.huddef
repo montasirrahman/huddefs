@@ -1,0 +1,22 @@
+# HUD Package Definition - libepoxy 1.5.10
+# OpenGL function pointer management library
+Package: libepoxy
+Version: 1.5.10
+Architecture: x86_64
+Section: graphics
+Depends: mesa,meson,ninja
+Description: Library for handling OpenGL function pointer management
+Source: https://github.com/anholt/libepoxy/releases/download/1.5.10/libepoxy-1.5.10.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ libepoxy 1.5.10 installed to /opt/hud"
+/sbin/ldconfig

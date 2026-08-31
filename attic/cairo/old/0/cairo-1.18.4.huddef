@@ -1,0 +1,22 @@
+# HUD Package Definition - cairo 1.18.4
+# 2D graphics library
+Package: cairo
+Version: 1.18.4
+Architecture: x86_64
+Section: graphics
+Depends: libpng,pixman,fontconfig,freetype,glib,libX11,libXext,libXrender
+Description: 2D graphics library with support for multiple output devices
+Source: https://www.cairographics.org/releases/cairo-1.18.4.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Dtee=enabled -Dxcb=enabled -Dxlib=enabled ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ cairo 1.18.4 installed to /opt/hud"
+/sbin/ldconfig

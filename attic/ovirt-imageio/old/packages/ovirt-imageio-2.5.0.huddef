@@ -1,0 +1,32 @@
+# HUD Package Definition - ovirt-imageio 2.5.0
+# Auto-generated for oVirt infrastructure
+
+Package: ovirt-imageio
+Version: 2.5.0
+Architecture: x86_64
+Section: virtualization
+Depends: python3
+Description: oVirt Image I/O - Image transfer daemon
+Source: https://github.com/oVirt/ovirt-imageio/archive/refs/tags/v2.5.0.tar.gz
+Service: ovirt-imageio
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+python3 setup.py build
+
+[install]
+python3 setup.py install --prefix=/opt/hud --root=$DESTDIR
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "ovirt-imageio 2.5.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-ovirt-imageio 2>/dev/null || true
+systemctl disable hud-ovirt-imageio 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

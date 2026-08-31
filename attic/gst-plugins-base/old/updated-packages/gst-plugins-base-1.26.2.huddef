@@ -1,0 +1,23 @@
+# HUD Package Definition - gst-plugins-base 1.26.2
+# GStreamer base plugins
+
+Package: gst-plugins-base
+Version: 1.26.2
+Architecture: x86_64
+Section: multimedia
+Depends: gstreamer, alsa-lib, libogg, libvorbis, opus, pango, libpng, libjpeg
+Description: GStreamer base plugins
+Source: https://gstreamer.freedesktop.org/src/gst-plugins-base/gst-plugins-base-1.26.2.tar.xz
+
+[configure]
+meson setup build --prefix=/opt/hud --buildtype=release -Dtests=disabled -Dexamples=disabled
+
+[build]
+ninja -C build
+
+[install]
+DESTDIR=$DESTDIR ninja -C build install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ gst-plugins-base 1.26.2 installed to /opt/hud"

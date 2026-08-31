@@ -1,0 +1,22 @@
+# HUD Package Definition - at-spi2-core 2.54.2
+# Assistive Technology Service Provider Interface
+Package: at-spi2-core
+Version: 2.54.2
+Architecture: x86_64
+Section: graphics
+Depends: glib,dbus,libXtst,libXi
+Description: Assistive Technology Service Provider Interface
+Source: https://download.gnome.org/sources/at-spi2-core/2.54/at-spi2-core-2.54.2.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Dsystemd_user_dir=/tmp ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ at-spi2-core 2.54.2 installed to /opt/hud"
+/sbin/ldconfig

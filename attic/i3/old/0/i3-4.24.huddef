@@ -1,0 +1,21 @@
+# HUD Package Definition - i3 4.24
+# Improved tiling window manager
+Package: i3
+Version: 4.24
+Architecture: x86_64
+Section: window-managers
+Depends: libxcb,xcb-util,xcb-util-keysyms,xcb-util-wm,xcb-util-cursor,xcb-util-xrm,libev,yajl,pango,cairo,libX11,startup-notification,libxkbcommon
+Description: Improved tiling window manager
+Source: https://github.com/i3/i3/releases/download/4.24/i3-4.24.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ i3 4.24 installed to /opt/hud"

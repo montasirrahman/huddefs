@@ -1,0 +1,18 @@
+# HUD Package Definition - startup-notification 0.12
+# Application startup notification library
+Package: startup-notification
+Version: 0.12
+Architecture: x86_64
+Section: libraries
+Depends: libxcb,xcb-util
+Description: Library for tracking application startup
+Source: https://www.freedesktop.org/software/startup-notification/releases/startup-notification-0.12.tar.gz
+[configure]
+./configure --prefix=/opt/hud --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ startup-notification 0.12 installed to /opt/hud"
+/sbin/ldconfig

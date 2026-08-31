@@ -1,0 +1,22 @@
+# HUD Package Definition - certifi 2025.1.31
+# Python SSL certificates
+
+Package: python-certifi
+Version: 2025.1.31
+Architecture: x86_64
+Section: python-modules
+Depends: python3
+Description: Python package for providing Mozilla CA Bundle
+Source: https://files.pythonhosted.org/packages/source/c/certifi/certifi-2025.1.31.tar.gz
+
+[configure]
+# No configure needed
+
+[build]
+/opt/hud/bin/python3 -m build --wheel --no-isolation
+
+[install]
+/opt/hud/bin/pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR dist/*.whl
+
+[postinst]
+echo "✓ certifi 2025.1.31 installed to /opt/hud"

@@ -1,0 +1,29 @@
+# HUD Package Definition - gdk-pixbuf 2.42.12
+# Auto-generated for oVirt infrastructure
+
+Package: gdk-pixbuf
+Version: 2.42.12
+Architecture: x86_64
+Section: misc
+Depends: gi-docgen,libtiff,glib2,libjxl,docutils,libjpeg,libpng,libavif
+Description: gdk-pixbuf-2.42.12
+Source: https://download.gnome.org/sources/gdk-pixbuf/2.42/gdk-pixbuf-2.42.12.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "gdk-pixbuf 2.42.12 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

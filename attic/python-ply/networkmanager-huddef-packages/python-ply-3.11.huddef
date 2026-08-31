@@ -1,0 +1,26 @@
+# HUD Package Definition - ply 3.11
+# Python lex/yacc implementation
+# Used by various parsing tools
+
+Package: python-ply
+Version: 3.11
+Architecture: x86_64
+Section: python
+Depends: python
+Description: Python implementation of lex and yacc parsing tools
+Source: https://files.pythonhosted.org/packages/source/p/ply/ply-3.11.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR ply
+
+[postinst]
+echo "✓ Python ply 3.11 installed"

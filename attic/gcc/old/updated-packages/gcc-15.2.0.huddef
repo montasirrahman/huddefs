@@ -1,0 +1,72 @@
+# HUD Package Definition - GCC 15.2.0
+# GNU Compiler Collection
+
+Package: gcc
+Version: 15.2.0
+Architecture: x86_64
+Section: development
+Depends: gmp,mpfr,mpc,zlib,binutils
+Description: GNU Compiler Collection - C, C++, Fortran compilers
+Source: https://ftp.gnu.org/gnu/gcc/gcc-15.2.0/gcc-15.2.0.tar.xz
+
+[configure]
+# Fix for x86_64: change default directory name for 64-bit libraries to "lib"
+case $(uname -m) in
+  x86_64)
+    sed -e '/m64=/s/lib64/lib/' \
+        -i.orig gcc/config/i386/t-linux64
+  ;;
+esac
+
+mkdir -v build
+cd build
+
+../configure \
+    --prefix=/opt/hud \
+    LD=ld \
+    --enable-languages=c,c++,fortran \
+    --disable-multilib \
+    --disable-bootstrap \
+    --with-system-zlib \
+    --enable-default-pie \
+    --enable-default-ssp \
+    --enable-host-pie \
+    --disable-fixincludes \
+    --with-gmp=/opt/hud \
+    --with-mpfr=/opt/hud \
+    --with-mpc=/opt/hud
+
+[build]
+cd build && make -j$(nproc)
+
+[install]
+cd build && make DESTDIR=${DESTDIR} install
+
+# Create cc symlink
+ln -sfv gcc ${DESTDIR}/opt/hud/bin/cc
+
+# Create cpp symlink (FHS compatibility)
+ln -svr ${DESTDIR}/opt/hud/bin/cpp ${DESTDIR}/opt/hud/lib/cpp
+
+# Create cc man page symlink
+ln -sv gcc.1 ${DESTDIR}/opt/hud/share/man/man1/cc.1
+
+# Create LTO plugin symlink for linker
+mkdir -pv ${DESTDIR}/opt/hud/lib/bfd-plugins
+ln -sfv ../../libexec/gcc/$(gcc -dumpmachine)/15.2.0/liblto_plugin.so \
+        ${DESTDIR}/opt/hud/lib/bfd-plugins/
+
+# Move GDB auto-load files to proper location
+mkdir -pv ${DESTDIR}/opt/hud/share/gdb/auto-load/opt/hud/lib
+mv -v ${DESTDIR}/opt/hud/lib/*gdb.py \
+      ${DESTDIR}/opt/hud/share/gdb/auto-load/opt/hud/lib/ 2>/dev/null || true
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "GCC 15.2.0 installed to /opt/hud"
+
+[prerm]
+# Nothing to do
+
+[postrm]
+ldconfig 2>/dev/null || true

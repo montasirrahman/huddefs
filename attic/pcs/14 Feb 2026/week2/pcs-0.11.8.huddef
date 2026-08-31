@@ -1,0 +1,65 @@
+# HUD Package Definition - pcs 0.11.8
+# Pacemaker/Corosync configuration system
+# Section: clustering
+
+Package: pcs
+Version: 0.11.8
+Architecture: x86_64
+Section: clustering
+Depends: pacemaker, corosync, python3
+Description: Pacemaker/Corosync configuration system
+Source: https://github.com/ClusterLabs/pcs/archive/refs/tags/v0.11.8.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+./configure --prefix=/opt/hud
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc) PREFIX=/opt/hud
+
+[install]
+make PREFIX=/opt/hud DESTDIR=$DESTDIR install
+
+
+
+[postinst]
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/pcs.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/pcs.conf
+ldconfig
+
+
+cat > /etc/systemd/system/pcsd.service << 'EOFSVC'
+[Unit]
+Description=PCS GUI and remote configuration interface
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/hud/sbin/pcsd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+systemctl daemon-reload
+systemctl enable pcsd
+systemctl start pcsd || true
+
+echo "PCS installed. Web UI: https://localhost:2224"
+echo "Set hacluster password: passwd hacluster"
+
+
+echo ""
+echo "============================================"
+echo "pcs 0.11.8 installed"
+echo "============================================"
+echo ""

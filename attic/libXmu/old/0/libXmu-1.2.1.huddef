@@ -1,0 +1,18 @@
+# HUD Package Definition - libXmu 1.2.1
+# X Miscellaneous Utilities Library
+Package: libXmu
+Version: 1.2.1
+Architecture: x86_64
+Section: xorg
+Depends: libXt,libXext
+Description: X interface library for miscellaneous utilities
+Source: https://www.x.org/pub/individual/lib/libXmu-1.2.1.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXmu 1.2.1 installed to /opt/hud"
+/sbin/ldconfig

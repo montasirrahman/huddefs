@@ -1,0 +1,26 @@
+# HUD Package Definition - PyXDG 0.28
+# Python library for freedesktop.org standards
+# Desktop integration utilities
+
+Package: python-pyxdg
+Version: 0.28
+Architecture: x86_64
+Section: python
+Depends: python
+Description: Python library for freedesktop.org standards
+Source: https://files.pythonhosted.org/packages/b0/25/7998cd2dec731acbd438fbf91bc619603fc5188de0a9a17699a781840452/pyxdg-0.28.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR pyxdg
+
+[postinst]
+echo "✓ Python PyXDG 0.28 installed"

@@ -1,0 +1,22 @@
+# HUD Package Definition - libxkbcommon 1.9.0
+# Keyboard keymap compilation library
+Package: libxkbcommon
+Version: 1.9.0
+Architecture: x86_64
+Section: graphics
+Depends: xkeyboard-config,libxcb,wayland,wayland-protocols,libxml2
+Description: Library for handling keyboard keymaps
+Source: https://xkbcommon.org/download/libxkbcommon-1.9.0.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Denable-docs=false ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ libxkbcommon 1.9.0 installed to /opt/hud"
+/sbin/ldconfig

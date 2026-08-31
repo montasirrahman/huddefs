@@ -1,0 +1,24 @@
+# HUD Package Definition - python3 3.11.1
+# Based on BLFS 12.4 - Only needed for SeaMonkey
+Package: python3-legacy
+Version: 3.11.1
+Architecture: x86_64
+Section: development
+Depends: sqlite
+Description: Python-3.11.1 - older Python version for SeaMonkey build compatibility
+Source: https://www.python.org/ftp/python/3.11.1/Python-3.11.1.tar.xz
+[configure]
+./configure --prefix=/opt/hud/python3.11 \
+            --disable-shared         \
+            --with-system-expat      \
+            --without-static-libpython
+[build]
+make -j$(nproc)
+[install]
+make install
+[postinst]
+echo "python3 3.11.1 installed to /opt/hud/python3.11"
+[prerm]
+# No service to stop
+[postrm]
+# Cleanup if needed

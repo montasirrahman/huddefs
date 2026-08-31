@@ -1,0 +1,17 @@
+# HUD Package Definition - xprop 1.2.7
+# Property displayer for X
+Package: xprop
+Version: 1.2.7
+Architecture: x86_64
+Section: xorg-apps
+Depends: libX11
+Description: Property displayer for X
+Source: https://www.x.org/pub/individual/app/xprop-1.2.7.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ xprop 1.2.7 installed to /opt/hud"

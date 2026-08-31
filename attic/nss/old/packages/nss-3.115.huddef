@@ -1,0 +1,29 @@
+# HUD Package Definition - nss 3.115
+# Auto-generated for oVirt infrastructure
+
+Package: nss
+Version: 3.115
+Architecture: x86_64
+Section: security
+Depends: nspr,make-ca,p11-kit,sqlite
+Description: NSS-3.115
+Source: https://archive.mozilla.org/pub/security/nss/releases/NSS_3_115_RTM/src/nss-3.115.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+cd nss && make BUILD_OPT=1 USE_64=1 NSS_USE_SYSTEM_SQLITE=1 NSS_ENABLE_WERROR=0
+
+[install]
+cd dist && mkdir -p $DESTDIR/opt/hud/lib $DESTDIR/opt/hud/include/nss && cp Linux*/lib/*.so $DESTDIR/opt/hud/lib/ && cp -r public/nss/* $DESTDIR/opt/hud/include/nss/
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "nss 3.115 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

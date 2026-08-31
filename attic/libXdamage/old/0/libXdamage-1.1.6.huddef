@@ -1,0 +1,18 @@
+# HUD Package Definition - libXdamage 1.1.6
+# X Damage Extension Library
+Package: libXdamage
+Version: 1.1.6
+Architecture: x86_64
+Section: xorg
+Depends: libXfixes
+Description: X Damage Extension Library
+Source: https://www.x.org/pub/individual/lib/libXdamage-1.1.6.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXdamage 1.1.6 installed to /opt/hud"
+/sbin/ldconfig

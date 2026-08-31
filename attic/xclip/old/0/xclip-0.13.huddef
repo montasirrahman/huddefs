@@ -1,0 +1,18 @@
+# HUD Package Definition - xclip 0.13
+# Command line interface to X selections
+Package: xclip
+Version: 0.13
+Architecture: x86_64
+Section: xorg-apps
+Depends: libX11,libXmu
+Description: Command line interface to X selections (clipboard)
+Source: https://github.com/astrand/xclip/archive/refs/tags/0.13.tar.gz
+[configure]
+autoreconf -fiv
+./configure --prefix=/opt/hud
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ xclip 0.13 installed to /opt/hud"

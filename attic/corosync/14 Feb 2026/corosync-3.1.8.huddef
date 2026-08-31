@@ -1,0 +1,153 @@
+# HUD Package Definition - Corosync 3.1.8
+# Cluster communication engine for high availability
+# Reference: https://corosync.github.io/corosync/
+
+Package: corosync
+Version: 3.1.8
+Architecture: x86_64
+Section: clustering
+Depends: libqb, nss, openssl, zlib
+Description: Cluster communication engine for high availability
+Source: https://github.com/corosync/corosync/releases/download/v3.1.8/corosync-3.1.8.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+./configure --prefix=/opt/hud \
+            --sysconfdir=/etc \
+            --localstatedir=/var \
+            --libdir=/opt/hud/lib64 \
+            --enable-systemd \
+            --enable-nss \
+            --enable-monitoring \
+            --enable-snmp \
+            --enable-xmlconf
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# Create configuration directory
+mkdir -p $DESTDIR/etc/corosync
+mkdir -p $DESTDIR/var/lib/corosync
+mkdir -p $DESTDIR/var/log/cluster
+
+[postinst]
+# Add library paths
+echo "/opt/hud/lib64" > /etc/ld.so.conf.d/corosync.conf
+ldconfig
+
+# Create corosync user/group
+groupadd -r haclient 2>/dev/null || true
+useradd -r -g haclient -d /var/lib/corosync -s /sbin/nologin \
+    -c "Corosync Cluster Engine" hacluster 2>/dev/null || true
+
+# Set ownership
+chown -R hacluster:haclient /etc/corosync
+chown -R hacluster:haclient /var/lib/corosync
+chown -R hacluster:haclient /var/log/cluster
+
+# Create default corosync.conf template
+cat > /etc/corosync/corosync.conf.example << 'EOFCONF'
+totem {
+    version: 2
+    cluster_name: blackflag-cluster
+    transport: knet
+    crypto_cipher: aes256
+    crypto_hash: sha256
+}
+
+nodelist {
+    node {
+        ring0_addr: node1.example.com
+        name: node1
+        nodeid: 1
+    }
+    node {
+        ring0_addr: node2.example.com
+        name: node2
+        nodeid: 2
+    }
+    node {
+        ring0_addr: node3.example.com
+        name: node3
+        nodeid: 3
+    }
+}
+
+quorum {
+    provider: corosync_votequorum
+    expected_votes: 3
+    two_node: 0
+}
+
+logging {
+    to_logfile: yes
+    logfile: /var/log/cluster/corosync.log
+    to_syslog: yes
+    timestamp: on
+}
+EOFCONF
+
+chmod 640 /etc/corosync/corosync.conf.example
+
+# Create systemd service
+cat > /etc/systemd/system/corosync.service << 'EOFSVC'
+[Unit]
+Description=Corosync Cluster Engine
+ConditionKernelCommandLine=!nocluster
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/opt/hud/sbin/corosync -f
+KillMode=process
+SendSIGKILL=no
+SuccessExitStatus=SIGTERM
+Type=notify
+NotifyAccess=main
+TimeoutStartSec=60
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# Create firewalld service
+mkdir -p /etc/firewalld/services
+cat > /etc/firewalld/services/corosync.xml << 'EOFXML'
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>Corosync Cluster</short>
+  <description>Corosync Cluster Engine</description>
+  <port protocol="udp" port="5404-5405"/>
+</service>
+EOFXML
+
+systemctl daemon-reload
+
+echo ""
+echo "============================================"
+echo "Corosync 3.1.8 installed successfully"
+echo "============================================"
+echo ""
+echo "IMPORTANT: Configure cluster nodes in:"
+echo "  /etc/corosync/corosync.conf"
+echo ""
+echo "Example config: /etc/corosync/corosync.conf.example"
+echo ""
+echo "After configuration:"
+echo "  systemctl enable corosync"
+echo "  systemctl start corosync"
+echo ""
+echo "Verify: corosync-quorumtool"
+echo ""

@@ -1,0 +1,25 @@
+# HUD Package Definition - Ghostscript 10.05.0
+# PostScript/PDF interpreter
+
+Package: ghostscript
+Version: 10.05.0
+Architecture: x86_64
+Section: misc
+Depends: freetype, fontconfig, libpng, libjpeg, libtiff, zlib, cups
+Description: PostScript and PDF interpreter
+Source: https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10050/ghostscript-10.05.0.tar.xz
+
+[configure]
+rm -rf freetype lcms2mt jpeg libpng openjpeg tiff zlib
+./configure --prefix=/opt/hud --disable-compile-inits --enable-dynamic --with-system-libtiff --with-drivers=ALL
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+make DESTDIR=$DESTDIR install-so
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ Ghostscript 10.05.0 installed to /opt/hud"

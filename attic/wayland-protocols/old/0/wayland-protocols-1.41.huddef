@@ -1,0 +1,21 @@
+# HUD Package Definition - wayland-protocols 1.41
+# Wayland protocol extensions
+Package: wayland-protocols
+Version: 1.41
+Architecture: x86_64
+Section: graphics
+Depends: wayland,meson,ninja
+Description: Additional Wayland protocol definitions
+Source: https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/1.41/downloads/wayland-protocols-1.41.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ wayland-protocols 1.41 installed to /opt/hud"

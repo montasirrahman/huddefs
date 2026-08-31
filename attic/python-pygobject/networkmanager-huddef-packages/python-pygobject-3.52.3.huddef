@@ -1,0 +1,40 @@
+# HUD Package Definition - PyGObject 3.52.3
+# Python bindings for GObject/GLib
+# Required by NetworkManager and GNOME applications
+
+Package: python-pygobject
+Version: 3.52.3
+Architecture: x86_64
+Section: python
+Depends: python, glib, python-pycairo, meson, ninja, gobject-introspection
+Description: Python bindings for GObject-based libraries
+Source: https://download.gnome.org/sources/pygobject/3.52/pygobject-3.52.3.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+# Remove faulty tests
+mv -v tests/test_gdbus.py{,.nouse} 2>/dev/null || true
+mv -v tests/test_overrides_gtk.py{,.nouse} 2>/dev/null || true
+
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig
+echo "✓ Python PyGObject 3.52.3 installed to /opt/hud"

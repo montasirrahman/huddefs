@@ -1,0 +1,17 @@
+# HUD Package Definition - hicolor-icon-theme 0.18
+# Freedesktop.org default icon theme
+Package: hicolor-icon-theme
+Version: 0.18
+Architecture: x86_64
+Section: graphics
+Depends:
+Description: Freedesktop.org default icon theme
+Source: https://icon-theme.freedesktop.org/releases/hicolor-icon-theme-0.18.tar.xz
+[configure]
+./configure --prefix=/opt/hud
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ hicolor-icon-theme 0.18 installed to /opt/hud"

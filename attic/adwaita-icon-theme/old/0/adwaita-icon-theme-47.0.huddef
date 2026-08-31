@@ -1,0 +1,22 @@
+# HUD Package Definition - adwaita-icon-theme 47.0
+# GNOME default icon theme
+Package: adwaita-icon-theme
+Version: 47.0
+Architecture: x86_64
+Section: graphics
+Depends: gtk3,hicolor-icon-theme,librsvg
+Description: GNOME default icon theme
+Source: https://download.gnome.org/sources/adwaita-icon-theme/47/adwaita-icon-theme-47.0.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ adwaita-icon-theme 47.0 installed to /opt/hud"
+gtk-update-icon-cache -f /opt/hud/share/icons/Adwaita 2>/dev/null || true

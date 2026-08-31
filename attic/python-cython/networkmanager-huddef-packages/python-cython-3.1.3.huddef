@@ -1,0 +1,27 @@
+# HUD Package Definition - Cython 3.1.3
+# C-Extensions for Python
+# Compiler for writing C extensions in Python-like syntax
+
+Package: python-cython
+Version: 3.1.3
+Architecture: x86_64
+Section: python
+Depends: python, gcc
+Description: Compiler for writing C extensions for Python
+Source: https://github.com/cython/cython/releases/download/3.1.3/cython-3.1.3.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR Cython
+
+[postinst]
+echo "✓ Python Cython 3.1.3 installed"
+echo "  Programs: cygdb, cython, cythonize"

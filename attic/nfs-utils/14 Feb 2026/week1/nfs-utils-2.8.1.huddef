@@ -1,0 +1,70 @@
+# HUD Package Definition - nfs-utils 2.8.1
+# NFS client and server utilities
+# Section: storage
+
+Package: nfs-utils
+Version: 2.8.1
+Architecture: x86_64
+Section: storage
+Depends: libtirpc, sqlite, libcap, libevent
+Description: NFS client and server utilities
+Source: https://www.kernel.org/pub/linux/utils/nfs-utils/2.8.1/nfs-utils-2.8.1.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+--prefix=/opt/hud --sysconfdir=/etc --with-statedir=/var/lib/nfs
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+
+# Create NFS directories
+mkdir -p $DESTDIR/var/lib/nfs/rpc_pipefs
+mkdir -p $DESTDIR/var/lib/nfs/v4recovery
+mkdir -p $DESTDIR/var/lib/nfs/statd
+
+
+[postinst]
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/nfs-utils.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/nfs-utils.conf
+ldconfig
+
+
+groupadd -r nfs 2>/dev/null || true
+useradd -r -g nfs -d /var/lib/nfs -s /sbin/nologin nfs 2>/dev/null || true
+
+cat > /etc/systemd/system/nfs-server.service << 'EOFSVC'
+[Unit]
+Description=NFS server
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/opt/hud/sbin/rpc.nfsd
+ExecStop=/opt/hud/sbin/rpc.nfsd 0
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+systemctl daemon-reload
+echo "NFS utilities installed. Configure /etc/exports for NFS server."
+
+
+echo ""
+echo "============================================"
+echo "nfs-utils 2.8.1 installed"
+echo "============================================"
+echo ""

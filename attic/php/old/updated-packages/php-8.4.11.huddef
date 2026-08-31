@@ -1,0 +1,34 @@
+# HUD Package Definition - PHP 8.4.11
+# PHP Hypertext Preprocessor
+
+Package: php
+Version: 8.4.11
+Architecture: x86_64
+Section: development
+Depends: libxml2, openssl, sqlite, zlib, bzip2, curl, libpng, libjpeg, icu, oniguruma, libxslt, libzip
+Description: PHP Hypertext Preprocessor
+Source: https://www.php.net/distributions/php-8.4.11.tar.xz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --sysconfdir=/opt/hud/etc/php \
+    --enable-bcmath --enable-calendar --enable-exif --enable-fpm \
+    --enable-ftp --enable-gd --enable-intl --enable-mbstring \
+    --enable-opcache --enable-pcntl --enable-shmop --enable-soap \
+    --enable-sockets --enable-sysvsem --enable-sysvshm \
+    --with-bz2=/opt/hud --with-curl=/opt/hud --with-openssl=/opt/hud \
+    --with-pdo-mysql --with-pdo-pgsql=/opt/hud --with-pdo-sqlite=/opt/hud \
+    --with-readline=/opt/hud --with-xsl=/opt/hud --with-zip --with-zlib=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+mkdir -p $DESTDIR/opt/hud/etc/php/conf.d
+cp php.ini-production $DESTDIR/opt/hud/etc/php/php.ini
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ PHP 8.4.11 installed to /opt/hud"

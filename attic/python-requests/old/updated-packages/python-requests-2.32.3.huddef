@@ -1,0 +1,22 @@
+# HUD Package Definition - requests 2.32.3
+# Python HTTP library
+
+Package: python-requests
+Version: 2.32.3
+Architecture: x86_64
+Section: python-modules
+Depends: python3, python-urllib3, python-certifi, python-charset-normalizer, python-idna
+Description: Python HTTP library for humans
+Source: https://files.pythonhosted.org/packages/source/r/requests/requests-2.32.3.tar.gz
+
+[configure]
+# No configure needed
+
+[build]
+/opt/hud/bin/python3 -m build --wheel --no-isolation
+
+[install]
+/opt/hud/bin/pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR dist/*.whl
+
+[postinst]
+echo "✓ requests 2.32.3 installed to /opt/hud"

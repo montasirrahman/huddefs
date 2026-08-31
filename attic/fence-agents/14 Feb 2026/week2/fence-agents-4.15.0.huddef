@@ -1,0 +1,49 @@
+# HUD Package Definition - fence-agents 4.15.0
+# Fencing agents for cluster node isolation
+# Section: clustering
+
+Package: fence-agents
+Version: 4.15.0
+Architecture: x86_64
+Section: clustering
+Depends: python3, pacemaker
+Description: Fencing agents for cluster node isolation
+Source: https://github.com/ClusterLabs/fence-agents/archive/refs/tags/v4.15.0.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+--prefix=/opt/hud --sysconfdir=/etc
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+
+
+[postinst]
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/fence-agents.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/fence-agents.conf
+ldconfig
+
+
+echo "Fence agents installed."
+echo "Available agents:"
+ls -1 /opt/hud/sbin/fence_* | head -10
+echo "Configure fencing in cluster: pcs stonith create ..."
+
+
+echo ""
+echo "============================================"
+echo "fence-agents 4.15.0 installed"
+echo "============================================"
+echo ""

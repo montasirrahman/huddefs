@@ -1,0 +1,47 @@
+# HUD Package Definition - resource-agents 4.15.0
+# OCF resource agents for Pacemaker
+# Section: clustering
+
+Package: resource-agents
+Version: 4.15.0
+Architecture: x86_64
+Section: clustering
+Depends: pacemaker
+Description: OCF resource agents for Pacemaker
+Source: https://github.com/ClusterLabs/resource-agents/releases/download/v4.15.0/resource-agents-4.15.0.tar.bz2
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+--prefix=/opt/hud --sysconfdir=/etc --libdir=/opt/hud/lib64 --with-ocf-root=/opt/hud/lib/ocf
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+
+
+[postinst]
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/resource-agents.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/resource-agents.conf
+ldconfig
+
+
+echo "Resource agents installed."
+echo "OCF agents location: /opt/hud/lib/ocf/resource.d/"
+
+
+echo ""
+echo "============================================"
+echo "resource-agents 4.15.0 installed"
+echo "============================================"
+echo ""

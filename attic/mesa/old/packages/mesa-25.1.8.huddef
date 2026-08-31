@@ -1,0 +1,29 @@
+# HUD Package Definition - mesa 25.1.8
+# Auto-generated for oVirt infrastructure
+
+Package: mesa
+Version: 25.1.8
+Architecture: x86_64
+Section: graphics
+Depends: pyyaml,rust-bindgen,xorg7-lib,cbindgen,llvm,plasma-build,glslang,wayland-protocols,pciutils,libunwind,mesa-gallium-drivers,libva,gtk3,libdrm,libclc,vulkan-loader,ply,qemu,libgcrypt,make-ca,nettle,postlfs-firmware,libvdpau
+Description: Mesa-25.1.8
+Source: https://mesa.freedesktop.org/archive/mesa-25.1.8.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "mesa 25.1.8 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,21 @@
+# HUD Package Definition - PyCairo 1.28.0
+# Based on BLFS 12.4
+Package: python3-pycairo
+Version: 1.28.0
+Architecture: x86_64
+Section: python
+Depends: python3,cairo
+Description: PyCairo-1.28.0 - Python bindings to Cairo
+Source: https://github.com/pygobject/pycairo/releases/download/v1.28.0/pycairo-1.28.0.tar.gz
+[configure]
+mkdir -p build && cd build && meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build && ninja
+[install]
+cd build && ninja install
+[postinst]
+echo "python3-pycairo 1.28.0 installed"
+[prerm]
+# Manual removal if needed
+[postrm]
+# Cleanup if needed

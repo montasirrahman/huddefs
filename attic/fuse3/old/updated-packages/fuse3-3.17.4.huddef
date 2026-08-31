@@ -1,0 +1,29 @@
+# HUD Package Definition - fuse3 3.17.4
+# Auto-generated for oVirt infrastructure
+
+Package: fuse3
+Version: 3.17.4
+Architecture: x86_64
+Section: misc
+Depends: 
+Description: Fuse-3.17.4
+Source: https://github.com/libfuse/libfuse/releases/download/fuse-3.17.4/fuse-3.17.4.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "fuse3 3.17.4 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

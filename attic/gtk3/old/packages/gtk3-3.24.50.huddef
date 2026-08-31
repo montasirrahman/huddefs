@@ -1,0 +1,29 @@
+# HUD Package Definition - gtk3 3.24.50
+# Auto-generated for oVirt infrastructure
+
+Package: gtk3
+Version: 3.24.50
+Architecture: x86_64
+Section: graphics
+Depends: oxygen-icons,adwaita-icon-theme,iso-codes,libepoxy,libxslt,pango,tinysparql,libxkbcommon,gtk-doc,libcloudproviders,wayland-protocols,glib2,dejavu-fonts,pyatspi2,colord,wayland,docbook-xsl,cups,at-spi2-core,gdk-pixbuf,sassc
+Description: GTK-3.24.50
+Source: https://download.gnome.org/sources/gtk/3.24/gtk-3.24.50.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "gtk3 3.24.50 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

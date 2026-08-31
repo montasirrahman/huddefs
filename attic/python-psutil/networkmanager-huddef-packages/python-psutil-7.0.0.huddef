@@ -1,0 +1,26 @@
+# HUD Package Definition - psutil 7.0.0
+# Cross-platform process and system utilities
+# System monitoring and process management
+
+Package: python-psutil
+Version: 7.0.0
+Architecture: x86_64
+Section: python
+Depends: python
+Description: Cross-platform process and system utilities
+Source: https://files.pythonhosted.org/packages/source/p/psutil/psutil-7.0.0.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR psutil
+
+[postinst]
+echo "✓ Python psutil 7.0.0 installed"

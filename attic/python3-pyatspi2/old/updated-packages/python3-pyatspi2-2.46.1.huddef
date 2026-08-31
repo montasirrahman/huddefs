@@ -1,0 +1,19 @@
+# HUD Package Definition - PyAtSpi2 2.46.1
+# Based on BLFS 12.4
+Package: python3-pyatspi2
+Version: 2.46.1
+Architecture: x86_64
+Section: python
+Depends: python3,python3-pygobject
+Description: PyAtSpi2-2.46.1 - Python bindings for GNOME Accessibility
+Source: https://download.gnome.org/sources/pyatspi/2.46/pyatspi-2.46.1.tar.xz
+[configure]
+./configure --prefix=/opt/hud --with-python=/opt/hud/bin/python3
+[install]
+make install
+[postinst]
+echo "python3-pyatspi2 2.46.1 installed"
+[prerm]
+# Manual removal if needed
+[postrm]
+# Cleanup if needed

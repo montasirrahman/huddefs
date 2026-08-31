@@ -1,0 +1,18 @@
+# HUD Package Definition - xcb-util-renderutil 0.3.10
+# XCB render utility library
+Package: xcb-util-renderutil
+Version: 0.3.10
+Architecture: x86_64
+Section: xorg
+Depends: libxcb
+Description: XCB convenience functions for the Render extension
+Source: https://xorg.freedesktop.org/archive/individual/lib/xcb-util-renderutil-0.3.10.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ xcb-util-renderutil 0.3.10 installed to /opt/hud"
+/sbin/ldconfig

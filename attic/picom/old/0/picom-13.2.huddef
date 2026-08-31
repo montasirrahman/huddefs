@@ -1,0 +1,21 @@
+# HUD Package Definition - picom 13.2
+# X compositor
+Package: picom
+Version: 13.2
+Architecture: x86_64
+Section: xorg-apps
+Depends: libX11,libXext,libXcomposite,libXdamage,libXfixes,libXrender,libXrandr,libxcb,xcb-util-image,xcb-util-renderutil,mesa,libev,pcre2,dbus,libconfig
+Description: Standalone X compositor (fork of compton)
+Source: https://github.com/yshui/picom/archive/refs/tags/v13.2.tar.gz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ picom 13.2 installed to /opt/hud"

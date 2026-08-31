@@ -1,0 +1,26 @@
+# HUD Package Definition - Mako 1.3.10
+# Python template library
+# Used by various documentation and web frameworks
+
+Package: python-mako
+Version: 1.3.10
+Architecture: x86_64
+Section: python
+Depends: python
+Description: Hyperfast templating library for Python
+Source: https://files.pythonhosted.org/packages/source/M/Mako/mako-1.3.10.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR Mako
+
+[postinst]
+echo "✓ Python Mako 1.3.10 installed"

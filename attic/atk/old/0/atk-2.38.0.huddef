@@ -1,0 +1,22 @@
+# HUD Package Definition - atk 2.38.0
+# Accessibility Toolkit
+Package: atk
+Version: 2.38.0
+Architecture: x86_64
+Section: graphics
+Depends: glib
+Description: Accessibility Toolkit for GNOME
+Source: https://download.gnome.org/sources/atk/2.38/atk-2.38.0.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ atk 2.38.0 installed to /opt/hud"
+/sbin/ldconfig

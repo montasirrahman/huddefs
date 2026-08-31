@@ -1,0 +1,18 @@
+# HUD Package Definition - mkfontscale 1.2.3
+# Create an index of scalable font files for X
+Package: mkfontscale
+Version: 1.2.3
+Architecture: x86_64
+Section: xorg-fonts
+Depends: libfontenc,freetype,xorgproto
+Description: Create an index of scalable font files for X
+Source: https://www.x.org/pub/individual/app/mkfontscale-1.2.3.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+ln -sfv mkfontscale $DESTDIR/opt/hud/bin/mkfontdir
+[postinst]
+echo "✓ mkfontscale 1.2.3 installed to /opt/hud"

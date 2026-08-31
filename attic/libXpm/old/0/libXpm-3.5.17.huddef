@@ -1,0 +1,18 @@
+# HUD Package Definition - libXpm 3.5.17
+# X Pixmap Library
+Package: libXpm
+Version: 3.5.17
+Architecture: x86_64
+Section: xorg
+Depends: libX11
+Description: X Pixmap Library
+Source: https://www.x.org/pub/individual/lib/libXpm-3.5.17.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static --disable-open-zfile
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXpm 3.5.17 installed to /opt/hud"
+/sbin/ldconfig

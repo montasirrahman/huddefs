@@ -1,0 +1,60 @@
+# HUD Package Definition - MIT Kerberos V5 1.22.1
+# Network Authentication Protocol
+# Optional for: openldap, postgresql
+
+Package: mit-kerberos
+Version: 1.22.1
+Architecture: x86_64
+Section: security
+Depends: openssl
+Description: MIT Kerberos V5 - Network Authentication Protocol implementation
+Source: https://kerberos.org/dist/krb5/1.22/krb5-1.22.1.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export CFLAGS="${CFLAGS} -I/opt/hud/include"
+export LDFLAGS="${LDFLAGS} -L/opt/hud/lib -L/opt/hud/lib64"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+cd src
+
+# Fix test that is known to fail
+sed -i -e '/eq 0/{N;s/12 //}' plugins/kdb/db2/libdb2/test/run.test
+
+./configure --prefix=/opt/hud              \
+            --sysconfdir=/opt/hud/etc      \
+            --localstatedir=/var/lib       \
+            --runstatedir=/run             \
+            --with-system-et               \
+            --with-system-ss               \
+            --with-system-verto=no         \
+            --enable-dns-for-realm         \
+            --disable-rpath
+
+[build]
+cd src
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make
+
+[install]
+cd src
+make DESTDIR=$DESTDIR install
+
+# Install documentation
+install -vdm755 $DESTDIR/opt/hud/share/doc/krb5-1.22.1
+cp -vfr ../doc/* $DESTDIR/opt/hud/share/doc/krb5-1.22.1/ 2>/dev/null || true
+
+[postinst]
+ldconfig
+
+# Create directories for KDC
+install -vdm755 /var/lib/krb5kdc 2>/dev/null || true
+install -vdm755 /run/krb5kdc 2>/dev/null || true
+
+echo "✓ MIT Kerberos V5 1.22.1 installed to /opt/hud"
+echo ""
+echo "To configure Kerberos:"
+echo "  1. Edit /opt/hud/etc/krb5.conf"
+echo "  2. See /opt/hud/share/doc/krb5-1.22.1 for documentation"

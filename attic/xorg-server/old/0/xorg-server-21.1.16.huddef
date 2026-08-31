@@ -1,0 +1,31 @@
+# HUD Package Definition - xorg-server 21.1.16
+# X.Org X Server
+Package: xorg-server
+Version: 21.1.16
+Architecture: x86_64
+Section: xorg
+Depends: libX11,libXext,libXau,libxcb,libXfont2,libxkbfile,libpciaccess,libdrm,mesa,pixman,xorgproto,xtrans,libepoxy,libinput,xkeyboard-config,xkbcomp
+Description: X.Org X Server
+Source: https://www.x.org/pub/individual/xserver/xorg-server-21.1.16.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release \
+    -Dglamor=true \
+    -Dxorg=true \
+    -Dxephyr=true \
+    -Dxnest=true \
+    -Dxvfb=true \
+    -Dxwayland=true \
+    -Dsystemd_logind=true \
+    -Dsuid_wrapper=true \
+    ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ xorg-server 21.1.16 installed to /opt/hud"
+/sbin/ldconfig

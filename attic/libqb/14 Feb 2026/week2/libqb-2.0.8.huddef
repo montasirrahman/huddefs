@@ -1,0 +1,47 @@
+# HUD Package Definition - libqb 2.0.8
+# Library providing high-performance logging, IPC, and poll
+# Section: libraries
+
+Package: libqb
+Version: 2.0.8
+Architecture: x86_64
+Section: libraries
+Depends: 
+Description: Library providing high-performance logging, IPC, and poll
+Source: https://github.com/ClusterLabs/libqb/releases/download/v2.0.8/libqb-2.0.8.tar.xz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+--prefix=/opt/hud --libdir=/opt/hud/lib64
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+
+
+[postinst]
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/libqb.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/libqb.conf
+ldconfig
+
+
+echo "/opt/hud/lib64" > /etc/ld.so.conf.d/libqb.conf
+ldconfig
+
+
+echo ""
+echo "============================================"
+echo "libqb 2.0.8 installed"
+echo "============================================"
+echo ""

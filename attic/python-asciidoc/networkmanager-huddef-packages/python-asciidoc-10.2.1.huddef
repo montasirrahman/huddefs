@@ -1,0 +1,28 @@
+# HUD Package Definition - asciidoc 10.2.1
+# Text document format converter
+# Converts AsciiDoc to HTML, PDF, EPUB, man pages
+
+Package: python-asciidoc
+Version: 10.2.1
+Architecture: x86_64
+Section: python
+Depends: python
+Recommends: docbook-xsl-nons, fop, libxslt, lynx
+Description: Text document format for documentation and articles
+Source: https://files.pythonhosted.org/packages/source/a/asciidoc/asciidoc-10.2.1.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR asciidoc
+
+[postinst]
+echo "✓ Python asciidoc 10.2.1 installed"
+echo "  Programs: a2x, asciidoc"

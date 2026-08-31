@@ -1,0 +1,66 @@
+# HUD Package Definition - iscsi-initiator-utils 6.2.1.9
+# iSCSI initiator utilities for block storage
+# Section: storage
+
+Package: iscsi-initiator-utils
+Version: 6.2.1.9
+Architecture: x86_64
+Section: storage
+Depends: openssl, kmod, systemd
+Description: iSCSI initiator utilities for block storage
+Source: https://github.com/open-iscsi/open-iscsi/archive/refs/tags/2.1.9.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+# Uses Makefile only
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc) PREFIX=/opt/hud user
+
+[install]
+make PREFIX=/opt/hud DESTDIR=$DESTDIR install
+
+
+
+[postinst]
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/iscsi-initiator-utils.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/iscsi-initiator-utils.conf
+ldconfig
+
+
+# Create iSCSI directories
+mkdir -p /etc/iscsi
+mkdir -p /var/lib/iscsi/nodes
+mkdir -p /var/lib/iscsi/send_targets
+
+cat > /etc/systemd/system/iscsid.service << 'EOFSVC'
+[Unit]
+Description=iSCSI initiator daemon
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/opt/hud/sbin/iscsid
+PIDFile=/var/run/iscsid.pid
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+systemctl daemon-reload
+echo "iSCSI initiator installed. Use 'iscsiadm' to discover targets."
+
+
+echo ""
+echo "============================================"
+echo "iscsi-initiator-utils 6.2.1.9 installed"
+echo "============================================"
+echo ""

@@ -1,0 +1,18 @@
+# HUD Package Definition - libconfig 1.7.3
+# C/C++ configuration file library
+Package: libconfig
+Version: 1.7.3
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: C/C++ library for processing configuration files
+Source: https://github.com/hyperrealm/libconfig/releases/download/v1.7.3/libconfig-1.7.3.tar.gz
+[configure]
+./configure --prefix=/opt/hud --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libconfig 1.7.3 installed to /opt/hud"
+/sbin/ldconfig

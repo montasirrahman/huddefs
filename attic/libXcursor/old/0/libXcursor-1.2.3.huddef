@@ -1,0 +1,18 @@
+# HUD Package Definition - libXcursor 1.2.3
+# X Cursor Management Library
+Package: libXcursor
+Version: 1.2.3
+Architecture: x86_64
+Section: xorg
+Depends: libXrender,libXfixes
+Description: X Cursor management library
+Source: https://www.x.org/pub/individual/lib/libXcursor-1.2.3.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXcursor 1.2.3 installed to /opt/hud"
+/sbin/ldconfig

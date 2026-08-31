@@ -1,0 +1,29 @@
+# HUD Package Definition - pango 1.56.4
+# Auto-generated for oVirt infrastructure
+
+Package: pango
+Version: 1.56.4
+Architecture: x86_64
+Section: misc
+Depends: freetype2,gi-docgen,glib2,fontconfig,harfbuzz,xorg7-lib,cairo
+Description: Pango-1.56.4
+Source: https://download.gnome.org/sources/pango/1.56/pango-1.56.4.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "pango 1.56.4 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

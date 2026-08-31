@@ -1,0 +1,17 @@
+# HUD Package Definition - encodings 1.1.0
+# Font encoding files for X
+Package: encodings
+Version: 1.1.0
+Architecture: x86_64
+Section: xorg-fonts
+Depends: font-util,mkfontscale
+Description: Font encoding files for X
+Source: https://www.x.org/pub/individual/font/encodings-1.1.0.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ encodings 1.1.0 installed to /opt/hud"

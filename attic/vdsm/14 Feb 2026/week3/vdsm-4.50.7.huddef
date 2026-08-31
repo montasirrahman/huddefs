@@ -1,0 +1,229 @@
+# HUD Package Definition - VDSM 4.50.7
+# Virtual Desktop and Server Manager - oVirt node management daemon
+# CRITICAL COMPONENT: This is the core hypervisor management agent
+# Reference: https://github.com/oVirt/vdsm
+
+Package: vdsm
+Version: 4.50.7
+Architecture: x86_64
+Section: virtualization
+Depends: python3, libvirt, qemu, sanlock, mom, python3-six, python3-yaml, python3-decorator, python3-netaddr, iproute2
+Description: Virtual Desktop and Server Manager for oVirt
+Source: https://resources.ovirt.org/pub/ovirt-4.5/src/vdsm/vdsm-4.50.7.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export PYTHON=/usr/bin/python3
+
+# Install Python dependencies
+pip3 install --break-system-packages \
+    six pyyaml decorator netaddr requests \
+    libvirt-python ioprocess cpopen
+
+./configure --prefix=/opt/hud \
+            --sysconfdir=/etc \
+            --localstatedir=/var \
+            --with-qemu-user=qemu \
+            --with-qemu-group=qemu \
+            --with-vdsm-user=vdsm \
+            --with-vdsm-group=kvm
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+# Install Python modules
+cd lib/vdsm
+python3 setup.py install --prefix=/opt/hud --root=$DESTDIR
+
+[postinst]
+# Create vdsm user and group
+groupadd -r vdsm 2>/dev/null || true
+useradd -r -g vdsm -G kvm,qemu,sanlock,disk -d /var/lib/vdsm \
+    -s /sbin/nologin -c "oVirt VDSM User" vdsm 2>/dev/null || true
+
+# Create directories
+mkdir -p /var/lib/vdsm
+mkdir -p /var/log/vdsm
+mkdir -p /var/run/vdsm
+mkdir -p /var/run/vdsm/storage
+mkdir -p /var/run/vdsm/payload
+mkdir -p /etc/vdsm
+
+# Set ownership
+chown -R vdsm:kvm /var/lib/vdsm
+chown -R vdsm:kvm /var/log/vdsm
+chown -R vdsm:kvm /var/run/vdsm
+
+# Create VDSM configuration
+cat > /etc/vdsm/vdsm.conf << 'EOFCONF'
+[vars]
+trust_store_path = /etc/pki/vdsm
+ssl_enabled = true
+
+[addresses]
+management_port = 54321
+
+[mom]
+conf = /etc/vdsm/mom.conf
+
+[irs]
+irs_enable = true
+
+[sampling]
+enable = true
+EOFCONF
+
+# Create MOM configuration for VDSM
+cat > /etc/vdsm/mom.conf << 'EOFMOM'
+[main]
+controllers = KSM, Balloon
+
+[KSM]
+enabled = 1
+
+[Balloon]
+enabled = 1
+EOFMOM
+
+# Create systemd services
+
+# Main VDSM service
+cat > /etc/systemd/system/vdsmd.service << 'EOFSVC'
+[Unit]
+Description=Virtual Desktop Server Manager
+Requires=multipathd.service libvirtd.service time-sync.target \
+         iscsid.service sanlock.service supervdsmd.service mom.service
+After=multipathd.service libvirtd.service sanlock.service supervdsmd.service
+Before=libvirt-guests.service
+
+[Service]
+Type=simple
+LimitCORE=infinity
+LimitNOFILE=4096
+EnvironmentFile=-/etc/sysconfig/vdsm
+ExecStartPre=/opt/hud/libexec/vdsm/vdsmd_init_common.sh --pre-start
+ExecStart=/opt/hud/share/vdsm/vdsmd --run
+ExecStopPost=/opt/hud/libexec/vdsm/vdsmd_init_common.sh --post-stop
+Restart=always
+RestartSec=5
+KillMode=process
+User=vdsm
+Group=kvm
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# Supervisor service
+cat > /etc/systemd/system/supervdsmd.service << 'EOFSVC'
+[Unit]
+Description=Auxiliary vdsm service required by vdsmd
+PartOf=vdsmd.service
+
+[Service]
+Type=simple
+ExecStart=/opt/hud/bin/supervdsmd
+Restart=always
+User=vdsm
+Group=kvm
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# Network service
+cat > /etc/systemd/system/vdsm-network.service << 'EOFSVC'
+[Unit]
+Description=VDSM network restoration
+Before=vdsmd.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/hud/libexec/vdsm/vdsm-restore-net-config
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOFSVC
+
+# Configure libvirt for VDSM
+cat > /etc/libvirt/qemu.conf.d/vdsm.conf << 'EOFLIBVIRT'
+# VDSM libvirt configuration
+user = "vdsm"
+group = "kvm"
+dynamic_ownership = 1
+save_image_format = "lzop"
+dump_image_format = "lzop"
+stdio_handler = "file"
+EOFLIBVIRT
+
+# Configure libvirt daemon for VDSM
+cat > /etc/libvirt/libvirtd.conf.d/vdsm.conf << 'EOFLIBVIRT'
+# VDSM libvirtd configuration
+listen_tls = 0
+listen_tcp = 1
+tcp_port = "16509"
+auth_tcp = "none"
+listen_addr = "0.0.0.0"
+mdns_adv = 0
+EOFLIBVIRT
+
+# Create firewalld service
+mkdir -p /etc/firewalld/services
+cat > /etc/firewalld/services/vdsm.xml << 'EOFXML'
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>VDSM</short>
+  <description>oVirt Virtual Desktop and Server Manager</description>
+  <port protocol="tcp" port="54321"/>
+  <port protocol="tcp" port="16514"/>
+  <port protocol="tcp" port="49152-49216"/>
+</service>
+EOFXML
+
+# Add firewall rules if firewalld is running
+if systemctl is-active --quiet firewalld; then
+    firewall-cmd --permanent --add-service=vdsm 2>/dev/null || true
+    firewall-cmd --reload 2>/dev/null || true
+fi
+
+# Enable services
+systemctl daemon-reload
+systemctl enable supervdsmd.service
+systemctl enable vdsm-network.service
+systemctl enable vdsmd.service
+
+echo ""
+echo "============================================"
+echo "VDSM 4.50.7 installed successfully"
+echo "============================================"
+echo ""
+echo "CRITICAL: This is the core oVirt hypervisor agent"
+echo ""
+echo "Services created:"
+echo "  - vdsmd.service (main daemon)"
+echo "  - supervdsmd.service (supervisor)"
+echo "  - vdsm-network.service (network restore)"
+echo ""
+echo "Configuration: /etc/vdsm/vdsm.conf"
+echo ""
+echo "IMPORTANT: Do NOT start services yet"
+echo "Wait for oVirt Engine installation and setup"
+echo ""
+echo "The engine will configure and start VDSM when"
+echo "you add this host to the cluster"
+echo ""
+echo "Firewall ports opened:"
+echo "  - 54321 (VDSM management)"
+echo "  - 16514 (libvirt TLS)"
+echo "  - 49152-49216 (VM migration)"
+echo ""

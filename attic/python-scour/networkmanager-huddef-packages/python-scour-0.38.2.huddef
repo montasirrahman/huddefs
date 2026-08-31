@@ -1,0 +1,27 @@
+# HUD Package Definition - Scour 0.38.2
+# SVG optimizer/cleaner
+# Reduces SVG file sizes
+
+Package: python-scour
+Version: 0.38.2
+Architecture: x86_64
+Section: python
+Depends: python, python-six
+Description: SVG optimizer and cleaner
+Source: https://github.com/scour-project/scour/archive/v0.38.2/scour-0.38.2.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR scour
+
+[postinst]
+echo "✓ Python Scour 0.38.2 installed"
+echo "  Program: scour"

@@ -1,0 +1,22 @@
+# HUD Package Definition - libinput 1.28.1
+# Input device management library
+Package: libinput
+Version: 1.28.1
+Architecture: x86_64
+Section: system
+Depends: libevdev,mtdev,eudev,meson,ninja
+Description: Library to handle input devices in Wayland compositors
+Source: https://gitlab.freedesktop.org/libinput/libinput/-/archive/1.28.1/libinput-1.28.1.tar.bz2
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Ddocumentation=false -Dtests=false -Ddebug-gui=false ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ libinput 1.28.1 installed to /opt/hud"
+/sbin/ldconfig

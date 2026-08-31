@@ -1,0 +1,31 @@
+# HUD Package Definition - Py3c 1.4
+# Python 2/3 compatibility C headers
+# Helps port C extensions to Python 3
+
+Package: python-py3c
+Version: 1.4
+Architecture: x86_64
+Section: python
+Depends: python
+Description: Python 2/3 compatibility headers for C extensions
+Source: https://github.com/encukou/py3c/archive/v1.4/py3c-1.4.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+# Headers-only package - no build needed
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[check]
+make test-python3
+make test-python3-cpp
+
+[install]
+make prefix=/opt/hud DESTDIR=$DESTDIR install
+
+[postinst]
+echo "✓ Python Py3c 1.4 installed to /opt/hud"
+echo "  Headers: /opt/hud/include/py3c"

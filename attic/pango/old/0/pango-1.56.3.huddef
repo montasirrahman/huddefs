@@ -1,0 +1,22 @@
+# HUD Package Definition - pango 1.56.3
+# Text layout and rendering library
+Package: pango
+Version: 1.56.3
+Architecture: x86_64
+Section: graphics
+Depends: glib,harfbuzz,fontconfig,fribidi,cairo
+Description: Library for layout and rendering of text
+Source: https://download.gnome.org/sources/pango/1.56/pango-1.56.3.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ pango 1.56.3 installed to /opt/hud"
+/sbin/ldconfig

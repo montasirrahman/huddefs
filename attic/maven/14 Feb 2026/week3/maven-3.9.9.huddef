@@ -1,0 +1,52 @@
+# HUD Package Definition - maven 3.9.9
+# Java project build tool
+# Section: development
+
+Package: maven
+Version: 3.9.9
+Architecture: x86_64
+Section: development
+Depends: java-bin
+Description: Java project build tool
+Source: https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+# Binary distribution - no configure needed
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+# No build needed
+
+[install]
+
+mkdir -p $DESTDIR/opt/hud/share/maven
+cp -r * $DESTDIR/opt/hud/share/maven/
+mkdir -p $DESTDIR/opt/hud/bin
+ln -s /opt/hud/share/maven/bin/mvn $DESTDIR/opt/hud/bin/mvn
+
+
+
+
+[postinst]
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/maven.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/maven.conf
+ldconfig
+
+
+echo "Maven 3.9.9 installed"
+echo "Verify: mvn --version"
+
+
+echo ""
+echo "============================================"
+echo "maven 3.9.9 installed"
+echo "============================================"
+echo ""

@@ -1,0 +1,26 @@
+# HUD Package Definition - sphinx_rtd_theme 3.0.2
+# Read the Docs Sphinx theme
+# Popular documentation theme for Sphinx
+
+Package: python-sphinx-rtd-theme
+Version: 3.0.2
+Architecture: x86_64
+Section: python
+Depends: python, python-sphinx, python-sphinxcontrib-jquery
+Description: Read the Docs theme for Sphinx documentation
+Source: https://files.pythonhosted.org/packages/source/s/sphinx_rtd_theme/sphinx_rtd_theme-3.0.2.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR sphinx_rtd_theme
+
+[postinst]
+echo "✓ Python sphinx_rtd_theme 3.0.2 installed"

@@ -1,0 +1,27 @@
+# HUD Package Definition - pySerial 3.5
+# Serial port access for Python
+# Cross-platform serial communication
+
+Package: python-pyserial
+Version: 3.5
+Architecture: x86_64
+Section: python
+Depends: python, python-setuptools-scm
+Description: Serial port access library for Python
+Source: https://files.pythonhosted.org/packages/source/p/pyserial/pyserial-3.5.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR pyserial
+
+[postinst]
+echo "✓ Python pySerial 3.5 installed"
+echo "  Programs: pyserial-miniterm, pyserial-ports"

@@ -1,0 +1,17 @@
+# HUD Package Definition - xf86-video-vmware 13.4.0
+# Xorg VMware video driver
+Package: xf86-video-vmware
+Version: 13.4.0
+Architecture: x86_64
+Section: xorg-drivers
+Depends: xorg-server,libdrm,mesa
+Description: Xorg video driver for VMware virtual machines
+Source: https://www.x.org/pub/individual/driver/xf86-video-vmware-13.4.0.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ xf86-video-vmware 13.4.0 installed to /opt/hud"

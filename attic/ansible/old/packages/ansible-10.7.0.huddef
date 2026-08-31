@@ -1,0 +1,29 @@
+# HUD Package Definition - ansible 10.7.0
+# Auto-generated for oVirt infrastructure
+
+Package: ansible
+Version: 10.7.0
+Architecture: x86_64
+Section: automation
+Depends: python3,openssh,pyyaml,jinja2,cryptography
+Description: Ansible automation platform
+Source: https://files.pythonhosted.org/packages/source/a/ansible/ansible-10.7.0.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+python3 setup.py build
+
+[install]
+python3 setup.py install --prefix=/opt/hud --root=$DESTDIR
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "ansible 10.7.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

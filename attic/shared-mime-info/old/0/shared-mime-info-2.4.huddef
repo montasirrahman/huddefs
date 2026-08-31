@@ -1,0 +1,22 @@
+# HUD Package Definition - shared-mime-info 2.4
+# Shared MIME database
+Package: shared-mime-info
+Version: 2.4
+Architecture: x86_64
+Section: system
+Depends: glib,libxml2,meson,ninja
+Description: Core database of common MIME types
+Source: https://gitlab.freedesktop.org/xdg/shared-mime-info/-/archive/2.4/shared-mime-info-2.4.tar.bz2
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Dupdate-mimedb=false ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ shared-mime-info 2.4 installed to /opt/hud"
+/opt/hud/bin/update-mime-database /opt/hud/share/mime 2>/dev/null || true

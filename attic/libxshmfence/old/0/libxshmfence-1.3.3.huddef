@@ -1,0 +1,18 @@
+# HUD Package Definition - libxshmfence 1.3.3
+# Shared memory fence library
+Package: libxshmfence
+Version: 1.3.3
+Architecture: x86_64
+Section: xorg
+Depends: xorgproto
+Description: Library exposing event API on top of Linux futexes
+Source: https://www.x.org/pub/individual/lib/libxshmfence-1.3.3.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libxshmfence 1.3.3 installed to /opt/hud"
+/sbin/ldconfig

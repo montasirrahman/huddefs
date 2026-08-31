@@ -1,0 +1,22 @@
+# HUD Package Definition - urllib3 2.3.0
+# HTTP client library
+
+Package: python-urllib3
+Version: 2.3.0
+Architecture: x86_64
+Section: python-modules
+Depends: python3
+Description: HTTP library with thread-safe connection pooling
+Source: https://files.pythonhosted.org/packages/source/u/urllib3/urllib3-2.3.0.tar.gz
+
+[configure]
+# No configure needed
+
+[build]
+/opt/hud/bin/python3 -m build --wheel --no-isolation
+
+[install]
+/opt/hud/bin/pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR dist/*.whl
+
+[postinst]
+echo "✓ urllib3 2.3.0 installed to /opt/hud"

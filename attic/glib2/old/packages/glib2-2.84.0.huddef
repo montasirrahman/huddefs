@@ -1,0 +1,34 @@
+# HUD Package Definition - glib2 2.84.0
+# Low-level core library for GNOME
+
+Package: glib2
+Version: 2.84.0
+Architecture: x86_64
+Section: libraries
+Depends: pcre2,libffi,zlib,meson,ninja
+Description: Low-level core library that forms the basis of GTK+ and GNOME
+Source: https://download.gnome.org/sources/glib/2.84/glib-2.84.0.tar.xz
+
+[configure]
+mkdir -p build && cd build && meson setup .. \
+    --prefix=/opt/hud \
+    --buildtype=release \
+    -Dintrospection=disabled \
+    -Dman-pages=disabled \
+    -Ddtrace=false \
+    -Dsystemtap=false \
+    -Dinstalled_tests=false
+
+[build]
+cd build && ninja -j$(nproc)
+
+[install]
+cd build && DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig 2>/dev/null || true
+# Compile GLib schemas if any exist
+if [ -d /opt/hud/share/glib-2.0/schemas ]; then
+    /opt/hud/bin/glib-compile-schemas /opt/hud/share/glib-2.0/schemas 2>/dev/null || true
+fi
+echo "✓ glib2 2.84.0 installed to /opt/hud"

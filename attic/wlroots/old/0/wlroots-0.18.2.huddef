@@ -1,0 +1,22 @@
+# HUD Package Definition - wlroots 0.18.2
+# Modular Wayland compositor library
+Package: wlroots
+Version: 0.18.2
+Architecture: x86_64
+Section: graphics
+Depends: wayland,wayland-protocols,mesa,libdrm,libinput,libxkbcommon,pixman,libseat,xorg-server
+Description: Modular Wayland compositor library
+Source: https://gitlab.freedesktop.org/wlroots/wlroots/-/releases/0.18.2/downloads/wlroots-0.18.2.tar.gz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ wlroots 0.18.2 installed to /opt/hud"
+/sbin/ldconfig

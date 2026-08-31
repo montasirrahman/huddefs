@@ -1,0 +1,46 @@
+# HUD Package Definition - otopi 1.11.1
+# oVirt Task Oriented Pluggable Installer/Implementation
+# Section: virtualization
+
+Package: otopi
+Version: 1.11.1
+Architecture: x86_64
+Section: virtualization
+Depends: python3
+Description: oVirt Task Oriented Pluggable Installer/Implementation
+Source: https://resources.ovirt.org/pub/ovirt-4.5/src/otopi/otopi-1.11.1.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+--prefix=/opt/hud
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+
+
+[postinst]
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/otopi.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/otopi.conf
+ldconfig
+
+
+echo "otopi (oVirt installer framework) installed"
+
+
+echo ""
+echo "============================================"
+echo "otopi 1.11.1 installed"
+echo "============================================"
+echo ""

@@ -1,0 +1,18 @@
+# HUD Package Definition - libXxf86dga 1.1.6
+# XFree86-DGA extension client library
+Package: libXxf86dga
+Version: 1.1.6
+Architecture: x86_64
+Section: xorg
+Depends: libXext
+Description: Client library for the XFree86-DGA extension
+Source: https://www.x.org/pub/individual/lib/libXxf86dga-1.1.6.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXxf86dga 1.1.6 installed to /opt/hud"
+/sbin/ldconfig

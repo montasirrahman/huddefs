@@ -1,0 +1,29 @@
+# HUD Package Definition - markupsafe 3.0.2
+# Auto-generated for oVirt infrastructure
+
+Package: markupsafe
+Version: 3.0.2
+Architecture: x86_64
+Section: python
+Depends: python3
+Description: Safely add untrusted strings to HTML/XML markup
+Source: https://files.pythonhosted.org/packages/source/M/MarkupSafe/markupsafe-3.0.2.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+python3 -m build --wheel
+
+[install]
+pip3 install --prefix=/opt/hud --root=$DESTDIR dist/*.whl
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "markupsafe 3.0.2 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

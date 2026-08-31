@@ -1,0 +1,29 @@
+# HUD Package Definition - glib2 2.84.4
+# Auto-generated for oVirt infrastructure
+
+Package: glib2
+Version: 2.84.4
+Architecture: x86_64
+Section: libraries
+Depends: fuse3,gdb,dbus,gi-docgen,shared-mime-info,docbook-xsl,docutils,mako,glib-networking,gtk-doc,cairo,pcre2,docbook,desktop-file-utils
+Description: GLib-2.84.4
+Source: https://download.gnome.org/sources/glib/2.84/glib-2.84.4.tar.xz
+
+[configure]
+meson setup build --prefix=/opt/hud --buildtype=release
+
+[build]
+ninja -C build
+
+[install]
+DESTDIR=$DESTDIR ninja -C build install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "glib2 2.84.4 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

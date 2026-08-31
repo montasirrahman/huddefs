@@ -1,0 +1,33 @@
+# HUD Package Definition - requests 2.32.5
+# HTTP library for Python
+# Elegant and simple HTTP library
+
+Package: python-requests
+Version: 2.32.5
+Architecture: x86_64
+Section: python
+Depends: python, python-charset-normalizer, python-idna, python-urllib3, make-ca
+Description: HTTP library for Python - simple and elegant
+Source: https://files.pythonhosted.org/packages/source/r/requests/requests-2.32.5.tar.gz
+Patch: https://www.linuxfromscratch.org/patches/blfs/12.4/requests-use_system_certs-1.patch
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+# Apply patch to use system certificates
+if [ -f ../requests-use_system_certs-1.patch ]; then
+    patch -Np1 -i ../requests-use_system_certs-1.patch
+fi
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR requests
+
+[postinst]
+echo "✓ Python requests 2.32.5 installed"
+echo "  Note: Uses system certificates via make-ca"

@@ -1,0 +1,26 @@
+# HUD Package Definition - dbusmock 0.36.0
+# Mock D-Bus objects for testing
+# Unit testing library for D-Bus services
+
+Package: python-dbusmock
+Version: 0.36.0
+Architecture: x86_64
+Section: python
+Depends: python, python-dbus
+Description: Mock D-Bus objects for testing
+Source: https://files.pythonhosted.org/packages/source/p/python-dbusmock/python_dbusmock-0.36.0.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR python-dbusmock
+
+[postinst]
+echo "✓ Python dbusmock 0.36.0 installed"

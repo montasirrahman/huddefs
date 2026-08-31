@@ -1,0 +1,32 @@
+# HUD Package Definition - ovirt-dwh 4.5.6
+# Auto-generated for oVirt infrastructure
+
+Package: ovirt-dwh
+Version: 4.5.6
+Architecture: x86_64
+Section: virtualization
+Depends: postgresql,openjdk,ovirt-engine
+Description: oVirt Data Warehouse - Reporting and analytics
+Source: https://github.com/oVirt/ovirt-dwh/archive/refs/tags/ovirt-dwh-4.5.6.tar.gz
+Service: ovirt-engine-dwhd
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "ovirt-dwh 4.5.6 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-ovirt-engine-dwhd 2>/dev/null || true
+systemctl disable hud-ovirt-engine-dwhd 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

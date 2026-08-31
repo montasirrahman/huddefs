@@ -1,0 +1,18 @@
+# HUD Package Definition - openbox 3.6.1
+# Standards compliant window manager
+Package: openbox
+Version: 3.6.1
+Architecture: x86_64
+Section: window-managers
+Depends: libX11,libXft,libXrandr,libXcursor,libXinerama,pango,glib,libxml2,startup-notification
+Description: Standards compliant, lightweight, and extensible window manager
+Source: http://openbox.org/dist/openbox/openbox-3.6.1.tar.gz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ openbox 3.6.1 installed to /opt/hud"
+/sbin/ldconfig

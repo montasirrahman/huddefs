@@ -1,0 +1,22 @@
+# HUD Package Definition - libevdev 1.13.4
+# Wrapper library for evdev devices
+Package: libevdev
+Version: 1.13.4
+Architecture: x86_64
+Section: system
+Depends: python3
+Description: Wrapper library for evdev devices
+Source: https://gitlab.freedesktop.org/libevdev/libevdev/-/archive/libevdev-1.13.4/libevdev-libevdev-1.13.4.tar.bz2
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ libevdev 1.13.4 installed to /opt/hud"
+/sbin/ldconfig

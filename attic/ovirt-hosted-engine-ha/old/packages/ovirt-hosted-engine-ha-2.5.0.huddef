@@ -1,0 +1,32 @@
+# HUD Package Definition - ovirt-hosted-engine-ha 2.5.0
+# Auto-generated for oVirt infrastructure
+
+Package: ovirt-hosted-engine-ha
+Version: 2.5.0
+Architecture: x86_64
+Section: virtualization
+Depends: python3,vdsm,sanlock
+Description: oVirt Hosted Engine High Availability
+Source: https://github.com/oVirt/ovirt-hosted-engine-ha/archive/refs/tags/v2.5.0.tar.gz
+Service: ovirt-ha-broker
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+python3 setup.py build
+
+[install]
+python3 setup.py install --prefix=/opt/hud --root=$DESTDIR
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "ovirt-hosted-engine-ha 2.5.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-ovirt-ha-broker 2>/dev/null || true
+systemctl disable hud-ovirt-ha-broker 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

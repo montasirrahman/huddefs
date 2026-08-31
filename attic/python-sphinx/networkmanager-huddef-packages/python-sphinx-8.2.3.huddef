@@ -1,0 +1,27 @@
+# HUD Package Definition - Sphinx 8.2.3
+# Python documentation generator
+# Standard documentation tool for Python projects
+
+Package: python-sphinx
+Version: 8.2.3
+Architecture: x86_64
+Section: python
+Depends: python, python-alabaster, python-babel, python-docutils, python-imagesize, python-pygments, python-requests, python-snowballstemmer, python-sphinxcontrib-applehelp, python-sphinxcontrib-devhelp, python-sphinxcontrib-htmlhelp, python-sphinxcontrib-jsmath, python-sphinxcontrib-qthelp, python-sphinxcontrib-serializinghtml
+Description: Python documentation generator
+Source: https://files.pythonhosted.org/packages/source/s/sphinx/sphinx-8.2.3.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR sphinx
+
+[postinst]
+echo "✓ Python Sphinx 8.2.3 installed"
+echo "  Programs: sphinx-apidoc, sphinx-autogen, sphinx-build, sphinx-quickstart"

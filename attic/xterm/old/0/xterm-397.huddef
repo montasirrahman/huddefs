@@ -1,0 +1,20 @@
+# HUD Package Definition - xterm 397
+# Terminal emulator for X
+Package: xterm
+Version: 397
+Architecture: x86_64
+Section: xorg-apps
+Depends: libX11,libXft,libXaw,libXt,libXmu,libXext,libXinerama,libxkbfile,ncurses,freetype,fontconfig
+Description: Terminal emulator for the X Window System
+Source: https://invisible-mirror.net/archives/xterm/xterm-397.tgz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --enable-wide-chars --enable-256-color --enable-luit --with-app-defaults=/etc/X11/app-defaults
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+mkdir -p $DESTDIR/etc/X11/app-defaults
+cp -v XTerm $DESTDIR/etc/X11/app-defaults/ 2>/dev/null || true
+cp -v UXTerm $DESTDIR/etc/X11/app-defaults/ 2>/dev/null || true
+[postinst]
+echo "✓ xterm 397 installed to /opt/hud"

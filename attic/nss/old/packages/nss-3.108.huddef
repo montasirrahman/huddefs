@@ -1,0 +1,56 @@
+# HUD Package Definition - nss 3.108
+# Network Security Services
+
+Package: nss
+Version: 3.108
+Architecture: x86_64
+Section: security
+Depends: nspr,sqlite,zlib,perl
+Description: Network Security Services libraries
+Source: https://archive.mozilla.org/pub/security/nss/releases/NSS_3_108_RTM/src/nss-3.108.tar.gz
+
+[build]
+cd nss && make -j$(nproc) \
+    BUILD_OPT=1 \
+    NSPR_INCLUDE_DIR=/opt/hud/include/nspr \
+    NSPR_LIB_DIR=/opt/hud/lib \
+    USE_SYSTEM_ZLIB=1 \
+    ZLIB_LIBS=-lz \
+    NSS_USE_SYSTEM_SQLITE=1 \
+    USE_64=1 \
+    NSS_ENABLE_WERROR=0
+
+[install]
+cd dist
+mkdir -p $DESTDIR/opt/hud/lib/pkgconfig
+mkdir -p $DESTDIR/opt/hud/include/nss
+mkdir -p $DESTDIR/opt/hud/bin
+# Install libraries
+install -m 755 Linux*/lib/*.so $DESTDIR/opt/hud/lib/
+install -m 644 Linux*/lib/*.chk $DESTDIR/opt/hud/lib/ 2>/dev/null || true
+install -m 644 Linux*/lib/libcrmf.a $DESTDIR/opt/hud/lib/ 2>/dev/null || true
+# Install headers
+cp -RL public/nss/* $DESTDIR/opt/hud/include/nss/
+cp -RL private/nss/* $DESTDIR/opt/hud/include/nss/ 2>/dev/null || true
+# Install tools
+for tool in certutil cmsutil crlutil modutil pk12util signtool signver ssltap; do
+    install -m 755 Linux*/bin/$tool $DESTDIR/opt/hud/bin/ 2>/dev/null || true
+done
+# Create pkg-config file
+cat > $DESTDIR/opt/hud/lib/pkgconfig/nss.pc << 'NSSPC'
+prefix=/opt/hud
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include/nss
+
+Name: NSS
+Description: Network Security Services
+Version: 3.108
+Requires: nspr >= 4.35
+Libs: -L${libdir} -lnss3 -lnssutil3 -lsmime3 -lssl3
+Cflags: -I${includedir}
+NSSPC
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ nss 3.108 installed to /opt/hud"

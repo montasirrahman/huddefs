@@ -1,0 +1,28 @@
+# HUD Package Definition - recommonmark 0.7.1
+# Docutils/Sphinx CommonMark bridge
+# Write Markdown in Sphinx projects (deprecated but still needed)
+
+Package: python-recommonmark
+Version: 0.7.1
+Architecture: x86_64
+Section: python
+Depends: python, python-commonmark, python-sphinx
+Description: Docutils-compatibility bridge to CommonMark (deprecated)
+Source: https://files.pythonhosted.org/packages/source/r/recommonmark/recommonmark-0.7.1.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR recommonmark
+
+[postinst]
+echo "✓ Python recommonmark 0.7.1 installed"
+echo "  Note: Deprecated in favor of MyST-Parser"
+echo "  Programs: cm2html, cm2latex, cm2man, cm2pseudoxml, cm2xetex, cm2xml"

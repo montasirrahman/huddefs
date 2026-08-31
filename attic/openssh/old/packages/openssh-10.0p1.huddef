@@ -1,0 +1,37 @@
+# HUD Package Definition - openssh 10.0p1
+# Auto-generated for oVirt infrastructure
+
+Package: openssh
+Version: 10.0p1
+Architecture: x86_64
+Section: security
+Depends: 
+Description: OpenSSH-10.0p1
+Source: https://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-10.0p1.tar.gz
+Service: sshd
+
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc/ssh --with-privsep-path=/opt/hud/var/empty/sshd
+
+[build]
+make -j$(nproc)
+
+[install]
+make install &&
+install -v -m755    contrib/ssh-copy-id /usr/bin     &&
+
+install -v -m644    contrib/ssh-copy-id.1 \
+                    /usr/share/man/man1              &&
+install -v -m755 -d /usr/sh
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "openssh 10.0p1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-sshd 2>/dev/null || true
+systemctl disable hud-sshd 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

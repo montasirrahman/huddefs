@@ -1,0 +1,29 @@
+# HUD Package Definition - shadow 4.18.0
+# Auto-generated for oVirt infrastructure
+
+Package: shadow
+Version: 4.18.0
+Architecture: x86_64
+Section: security
+Depends: linux-pam
+Description: Shadow-4.18.0
+Source: https://github.com/shadow-maint/shadow/releases/download/4.18.0/shadow-4.18.0.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "shadow 4.18.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

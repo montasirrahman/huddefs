@@ -1,0 +1,18 @@
+# HUD Package Definition - xcb-util-image 0.4.1
+# XCB image library
+Package: xcb-util-image
+Version: 0.4.1
+Architecture: x86_64
+Section: xorg
+Depends: libxcb,xcb-util
+Description: XCB port of Xlib's XImage and XShmImage functions
+Source: https://xorg.freedesktop.org/archive/individual/lib/xcb-util-image-0.4.1.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ xcb-util-image 0.4.1 installed to /opt/hud"
+/sbin/ldconfig

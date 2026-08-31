@@ -1,0 +1,29 @@
+# HUD Package Definition - ovirt-hosted-engine-setup 2.6.0
+# Auto-generated for oVirt infrastructure
+
+Package: ovirt-hosted-engine-setup
+Version: 2.6.0
+Architecture: x86_64
+Section: virtualization
+Depends: python3,ovirt-hosted-engine-ha,ansible,ovirt-engine-sdk-python
+Description: oVirt Hosted Engine Setup Tools
+Source: https://github.com/oVirt/ovirt-hosted-engine-setup/archive/refs/tags/v2.6.0.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+python3 setup.py build
+
+[install]
+python3 setup.py install --prefix=/opt/hud --root=$DESTDIR
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "ovirt-hosted-engine-setup 2.6.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

@@ -1,0 +1,32 @@
+# HUD Package Definition - cockpit 337
+# Auto-generated for oVirt infrastructure
+
+Package: cockpit
+Version: 337
+Architecture: x86_64
+Section: admin
+Depends: glib2,libssh,json-glib,polkit,krb5,openssl
+Description: Web-based server manager
+Source: https://github.com/cockpit-project/cockpit/releases/download/337/cockpit-337.tar.xz
+Service: cockpit
+
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc
+
+[build]
+make
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "cockpit 337 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+systemctl stop hud-cockpit 2>/dev/null || true
+systemctl disable hud-cockpit 2>/dev/null || true
+
+[postrm]
+ldconfig 2>/dev/null || true

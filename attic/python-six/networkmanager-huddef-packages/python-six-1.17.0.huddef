@@ -1,0 +1,26 @@
+# HUD Package Definition - six 1.17.0
+# Python 2/3 compatibility library
+# Common dependency for many Python packages
+
+Package: python-six
+Version: 1.17.0
+Architecture: x86_64
+Section: python
+Depends: python
+Description: Python 2 and 3 compatibility library
+Source: https://files.pythonhosted.org/packages/source/s/six/six-1.17.0.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR six
+
+[postinst]
+echo "✓ Python six 1.17.0 installed"

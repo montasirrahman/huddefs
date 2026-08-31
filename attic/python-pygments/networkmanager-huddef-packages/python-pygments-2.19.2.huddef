@@ -1,0 +1,26 @@
+# HUD Package Definition - Pygments 2.19.2
+# Syntax highlighting library for Python
+# Used by Sphinx and many documentation tools
+
+Package: python-pygments
+Version: 2.19.2
+Architecture: x86_64
+Section: python
+Depends: python, python-hatchling
+Description: Generic syntax highlighter for Python
+Source: https://files.pythonhosted.org/packages/source/P/Pygments/pygments-2.19.2.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
+[install]
+pip3 install --no-index --find-links dist --no-user --root=$DESTDIR Pygments
+
+[postinst]
+echo "✓ Python Pygments 2.19.2 installed"

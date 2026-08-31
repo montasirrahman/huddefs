@@ -1,0 +1,29 @@
+# HUD Package Definition - cockpit-ovirt 0.17.0
+# Auto-generated for oVirt infrastructure
+
+Package: cockpit-ovirt
+Version: 0.17.0
+Architecture: x86_64
+Section: virtualization
+Depends: cockpit,nodejs,ovirt-hosted-engine-setup
+Description: Cockpit plugin for oVirt
+Source: https://github.com/oVirt/cockpit-ovirt/archive/refs/tags/0.17.0.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+npm install && npm run build
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "cockpit-ovirt 0.17.0 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

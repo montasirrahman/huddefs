@@ -1,0 +1,29 @@
+# HUD Package Definition - libuuid 2.40.4
+# Auto-generated for oVirt infrastructure
+
+Package: libuuid
+Version: 2.40.4
+Architecture: x86_64
+Section: libraries
+Depends: 
+Description: UUID library from util-linux
+Source: https://www.kernel.org/pub/linux/utils/util-linux/v2.40/util-linux-2.40.4.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --disable-all-programs --enable-libuuid
+
+[build]
+make
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libuuid 2.40.4 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

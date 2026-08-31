@@ -1,0 +1,29 @@
+# HUD Package Definition - gtk3 3.24.48
+# GIMP Toolkit version 3
+Package: gtk3
+Version: 3.24.48
+Architecture: x86_64
+Section: graphics
+Depends: glib,pango,gdk-pixbuf,cairo,atk,at-spi2-core,libX11,libXi,libXrandr,libXcursor,libXfixes,libXinerama,libXcomposite,libXdamage,libepoxy,wayland,wayland-protocols,libxkbcommon,mesa
+Description: GIMP Toolkit version 3 for creating graphical user interfaces
+Source: https://download.gnome.org/sources/gtk+/3.24/gtk+-3.24.48.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release \
+    -Dman=false \
+    -Dbroadway_backend=true \
+    -Dx11_backend=true \
+    -Dwayland_backend=true \
+    ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ gtk3 3.24.48 installed to /opt/hud"
+/sbin/ldconfig
+gtk-query-immodules-3.0 --update-cache 2>/dev/null || true
+glib-compile-schemas /opt/hud/share/glib-2.0/schemas 2>/dev/null || true

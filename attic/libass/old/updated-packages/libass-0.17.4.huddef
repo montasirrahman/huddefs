@@ -1,0 +1,23 @@
+# HUD Package Definition - libass 0.17.4
+# Subtitle renderer
+
+Package: libass
+Version: 0.17.4
+Architecture: x86_64
+Section: multimedia
+Depends: freetype, fontconfig, fribidi, harfbuzz
+Description: Portable subtitle renderer for ASS/SSA format
+Source: https://github.com/libass/libass/releases/download/0.17.4/libass-0.17.4.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libass 0.17.4 installed to /opt/hud"

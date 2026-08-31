@@ -1,0 +1,18 @@
+# HUD Package Definition - libXv 1.0.13
+# X Window System video extension library
+Package: libXv
+Version: 1.0.13
+Architecture: x86_64
+Section: xorg
+Depends: libXext
+Description: X Window System video extension library
+Source: https://www.x.org/pub/individual/lib/libXv-1.0.13.tar.xz
+[configure]
+./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libXv 1.0.13 installed to /opt/hud"
+/sbin/ldconfig

@@ -1,0 +1,22 @@
+# HUD Package Definition - graphite2 1.3.14
+# Rendering engine for graphite fonts
+Package: graphite2
+Version: 1.3.14
+Architecture: x86_64
+Section: graphics
+Depends: cmake
+Description: Rendering engine for graphite fonts
+Source: https://github.com/silnrsi/graphite/releases/download/1.3.14/graphite2-1.3.14.tgz
+[configure]
+mkdir -p build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/opt/hud -DCMAKE_BUILD_TYPE=Release ..
+[build]
+cd build
+make
+[install]
+cd build
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ graphite2 1.3.14 installed to /opt/hud"
+/sbin/ldconfig

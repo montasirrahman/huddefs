@@ -1,0 +1,36 @@
+# HUD Package Definition - PyCairo 1.28.0
+# Python bindings for Cairo graphics library
+# Required by PyGObject for GUI applications
+
+Package: python-pycairo
+Version: 1.28.0
+Architecture: x86_64
+Section: python
+Depends: python, cairo, meson, ninja
+Description: Python bindings for the Cairo graphics library
+Source: https://github.com/pygobject/pycairo/releases/download/v1.28.0/pycairo-1.28.0.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+cd build
+ninja
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig
+echo "✓ Python PyCairo 1.28.0 installed to /opt/hud"
