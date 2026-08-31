@@ -1,0 +1,274 @@
+#!/bin/bash
+# =============================================================================
+# hud-build — build a .hud package from a .huddef, in an isolated root
+#
+#   hud-build huddefs/qemu/qemu.huddef
+#
+# Enforces the rules in huddef-v2-spec.md:
+#   - Source-SHA256 is verified before anything is unpacked
+#   - patches come from patches/ in the repo, and a failure is fatal
+#   - the build has no network access
+#   - build sections run under set -euo pipefail, so || true cannot hide failures
+#   - DESTDIR is checked to be non-empty after [install]
+#   - Provides/Requires are derived from the built tree, not hand-written
+#
+# Isolation uses systemd-nspawn. BlackFlag has systemd but no docker/podman.
+# =============================================================================
+set -euo pipefail
+
+BUILD_ROOT="${HUD_BUILD_ROOT:-/var/hud-build}"
+CACHE_DIR="$BUILD_ROOT/cache"
+OUTPUT_DIR="$BUILD_ROOT/output"
+LOG_DIR="$BUILD_ROOT/logs"
+# The MINIMAL rootfs is the default, deliberately. The full rootfs is a snapshot
+# of a machine with all 245 packages installed, so every build succeeds there
+# whether or not its Build-Depends are correct — which would let the conversion
+# of 245 definitions produce 245 green builds carrying unverified dependency
+# data. Against minimal, a build succeeds only if its Build-Depends actually
+# name what it needs. Override with HUD_BASE_ROOTFS to use the full one.
+BASE_ROOTFS="${HUD_BASE_ROOTFS:-$BUILD_ROOT/base-rootfs-minimal.tar.zst}"
+PREFIX="/opt/hud"
+
+RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'
+BLUE=$'\033[0;34m'; NC=$'\033[0m'
+info()  { echo "${BLUE}[INFO]${NC} $*"; }
+ok()    { echo "${GREEN}[✓]${NC} $*"; }
+warn()  { echo "${YELLOW}[!]${NC} $*"; }
+die()   { echo "${RED}[✗]${NC} $*" >&2; exit 1; }
+
+# -----------------------------------------------------------------------------
+# huddef parsing
+# -----------------------------------------------------------------------------
+
+# header_field <file> <Name>   -> value, or empty
+header_field() {
+    sed -n '1,/^\[/p' "$1" \
+        | grep -m1 -i "^$2:" \
+        | cut -d: -f2- \
+        | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' || true
+}
+
+# section <file> <name>        -> body of [name], or empty
+section() {
+    awk -v want="[$2]" '
+        $0 == want { inside = 1; next }
+        /^\[[a-z]+\]$/ { inside = 0 }
+        inside { print }
+    ' "$1"
+}
+
+# -----------------------------------------------------------------------------
+# main
+# -----------------------------------------------------------------------------
+HUDDEF="${1:-}"
+[ -n "$HUDDEF" ] || die "usage: hud-build <path/to/package.huddef>"
+[ -f "$HUDDEF" ] || die "not found: $HUDDEF"
+HUDDEF=$(realpath "$HUDDEF")
+DEFDIR=$(dirname "$HUDDEF")
+
+NAME=$(header_field "$HUDDEF" Package)
+VERSION=$(header_field "$HUDDEF" Version)
+ARCH=$(header_field "$HUDDEF" Architecture); ARCH="${ARCH:-x86_64}"
+SECTION=$(header_field "$HUDDEF" Section);   SECTION="${SECTION:-misc}"
+DESC=$(header_field "$HUDDEF" Description)
+SERVICE=$(header_field "$HUDDEF" Service)
+SOURCE=$(header_field "$HUDDEF" Source)
+SOURCE_SHA=$(header_field "$HUDDEF" Source-SHA256)
+BUILD_DEPS=$(header_field "$HUDDEF" Build-Depends)
+DEPENDS=$(header_field "$HUDDEF" Depends); DEPENDS="${DEPENDS:-auto}"
+PATCHES=$(header_field "$HUDDEF" Patches)
+
+[ -n "$NAME" ]    || die "Package: is missing"
+[ -n "$VERSION" ] || die "Version: is missing"
+
+mkdir -p "$CACHE_DIR" "$OUTPUT_DIR" "$LOG_DIR" "$BUILD_ROOT/work"
+LOG="$LOG_DIR/${NAME}-${VERSION}.log"
+exec > >(tee "$LOG") 2>&1
+
+info "Building $NAME $VERSION ($ARCH)"
+
+# --- 1. fetch and verify source ----------------------------------------------
+TARBALL=""
+if [ -n "$SOURCE" ] && [ "$SOURCE" != "none" ]; then
+    [ -n "$SOURCE_SHA" ] || die "Source-SHA256: is required when Source: is a URL"
+
+    TARBALL="$CACHE_DIR/$(basename "$SOURCE")"
+    if [ ! -f "$TARBALL" ]; then
+        info "Fetching $SOURCE"
+        curl -fL --proto '=https' --tlsv1.2 -o "$TARBALL.part" "$SOURCE" \
+            || die "download failed (no insecure fallback: fix the URL or the cert)"
+        mv "$TARBALL.part" "$TARBALL"
+    else
+        info "Using cached $(basename "$TARBALL")"
+    fi
+
+    actual=$(sha256sum "$TARBALL" | cut -d' ' -f1)
+    if [ "$actual" != "$SOURCE_SHA" ]; then
+        die "SHA256 mismatch
+  expected: $SOURCE_SHA
+  actual:   $actual
+  file:     $TARBALL"
+    fi
+    ok "Source hash verified"
+fi
+
+# --- 2. clean build root ------------------------------------------------------
+[ -f "$BASE_ROOTFS" ] || die "base rootfs missing: $BASE_ROOTFS (see WORKFLOW.md step 2)"
+
+WORK=$(mktemp -d "$BUILD_ROOT/work/${NAME}-XXXXXX")
+ROOT="$WORK/root"
+cleanup() { rm -rf "$WORK"; }
+trap cleanup EXIT INT TERM
+
+mkdir -p "$ROOT"
+info "Unpacking clean build root"
+tar --zstd -xf "$BASE_ROOTFS" -C "$ROOT"
+
+mkdir -p "$ROOT/build" "$ROOT/dest"
+
+# --- 3. install Build-Depends into the root (network still allowed) -----------
+if [ -n "$BUILD_DEPS" ]; then
+    deps=$(echo "$BUILD_DEPS" | tr ',' ' ' | tr -s ' ')
+    info "Installing build deps: $deps"
+    systemd-nspawn -q -D "$ROOT" \
+        /bin/bash -c "hud update >/dev/null && hud install -y $deps" \
+        || die "build dependency install failed"
+
+    # `hud install` exits 0 even when it resolved nothing — a missing package
+    # prints "Package not found" and still returns success, and a failed
+    # `hud update` leaves 0 packages available so EVERY dep resolves to nothing.
+    # Its exit code therefore proves nothing. Verify each dep landed.
+    missing=""
+    for d in $deps; do
+        systemd-nspawn -q -D "$ROOT" /bin/bash -c \
+            "test -f /opt/hud/share/hud/info/$d/PACKAGE" >/dev/null 2>&1 \
+            || missing="$missing $d"
+    done
+    [ -z "$missing" ] || die "Build-Depends did not install:$missing
+hud install reported success anyway. Check that the package names exist in the
+repository and that the build root can reach it."
+    ok "Build deps installed and verified: $deps"
+fi
+
+# --- 4. stage source and patches ---------------------------------------------
+if [ -n "$TARBALL" ]; then
+    info "Unpacking source"
+    tar -xf "$TARBALL" -C "$ROOT/build"
+    srcname=$(ls "$ROOT/build")
+    [ "$(echo "$srcname" | wc -l)" -eq 1 ] || die "tarball did not unpack to a single directory"
+    SRC_IN_ROOT="/build/$srcname"
+else
+    SRC_IN_ROOT="/build"
+fi
+
+if [ -n "$PATCHES" ]; then
+    mkdir -p "$ROOT/patches"
+    for p in $(echo "$PATCHES" | tr ',' ' '); do
+        [ -f "$DEFDIR/patches/$p" ] || die "patch not found in repo: patches/$p"
+        cp "$DEFDIR/patches/$p" "$ROOT/patches/"
+    done
+fi
+
+[ -d "$DEFDIR/files" ] && cp -r "$DEFDIR/files" "$ROOT/files"
+
+# --- 5. generate the in-root build script ------------------------------------
+{
+    echo '#!/bin/bash'
+    echo 'set -euo pipefail'
+    echo "export DESTDIR=/dest"
+    echo "export SRCDIR=$SRC_IN_ROOT"
+    echo "export NPROC=\$(nproc)"
+    echo "export PATH=$PREFIX/bin:$PREFIX/sbin:\$PATH"
+    echo "export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig:$PREFIX/lib64/pkgconfig"
+    echo "export LD_LIBRARY_PATH=$PREFIX/lib:$PREFIX/lib64"
+    echo "export CFLAGS=\"-I$PREFIX/include \${CFLAGS:-}\""
+    echo "export LDFLAGS=\"-L$PREFIX/lib -L$PREFIX/lib64 \${LDFLAGS:-}\""
+    echo "cd \$SRCDIR"
+
+    # patches: failure is fatal, no || true
+    for p in $(echo "$PATCHES" | tr ',' ' '); do
+        [ -n "$p" ] && echo "echo '>>> applying $p'; patch -Np1 --no-backup-if-mismatch -i /patches/$p"
+    done
+
+    for s in configure build install check; do
+        body=$(section "$HUDDEF" "$s")
+        if [ -n "$body" ]; then
+            echo "echo '>>> [$s]'"
+            echo "cd \$SRCDIR"
+            echo "$body"
+        fi
+    done
+} > "$ROOT/build.sh"
+chmod +x "$ROOT/build.sh"
+
+# --- 6. build, with no network ------------------------------------------------
+info "Building (network disabled)"
+if ! systemd-nspawn -q -D "$ROOT" --private-network /build.sh; then
+    die "build failed — see $LOG"
+fi
+ok "Build succeeded"
+
+DEST="$ROOT/dest"
+if [ -z "$(find "$DEST" -type f 2>/dev/null | head -1)" ]; then
+    die "DESTDIR is empty after [install].
+This is the bug that produced your ~750-byte python3-* packages: the install
+step wrote to the build root instead of \$DESTDIR. Check that [install] passes
+--root=\$DESTDIR or DESTDIR=\$DESTDIR."
+fi
+
+# --- 7. derive dependencies ---------------------------------------------------
+info "Scanning for provides and requires"
+SCAN=$(hud-scan-deps "$DEST" --json)
+PROVIDES=$(echo "$SCAN" | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin)["provides"]))')
+REQUIRES=$(echo "$SCAN" | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin)["requires"]))')
+ok "$(echo "$PROVIDES" | tr ',' '\n' | grep -c . || true) provides, $(echo "$REQUIRES" | tr ',' '\n' | grep -c . || true) requires"
+
+if [ "$DEPENDS" = "auto" ]; then
+    RUNTIME_DEPS="$REQUIRES"
+else
+    RUNTIME_DEPS="$DEPENDS"
+    warn "Depends: is hand-written; detected requires recorded separately"
+fi
+
+# --- 8. assemble the .hud -----------------------------------------------------
+INFO_DIR="$DEST$PREFIX/share/hud/info/$NAME"
+mkdir -p "$INFO_DIR"
+
+(cd "$DEST" && find . -type f -o -type l | sed 's|^\./||' | sort) > "$INFO_DIR/FILES"
+INSTALLED_SIZE=$(du -sk "$DEST" | cut -f1)
+
+cat > "$INFO_DIR/PACKAGE" <<EOF
+Package: $NAME
+Version: $VERSION
+Architecture: $ARCH
+Section: $SECTION
+Depends: $RUNTIME_DEPS
+Provides: $PROVIDES
+Requires: $REQUIRES
+Description: $DESC
+Installed-Size: $INSTALLED_SIZE
+Build-Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+HUD-Version: 2.0.0
+Service: $SERVICE
+EOF
+
+for s in postinst prerm; do
+    body=$(section "$HUDDEF" "$s")
+    if [ -n "$body" ]; then
+        { echo '#!/bin/bash'; echo 'set -euo pipefail'; echo "$body"; } > "$INFO_DIR/$s"
+        chmod +x "$INFO_DIR/$s"
+    fi
+done
+
+cp "$HUDDEF" "$INFO_DIR/$(basename "$HUDDEF")"
+echo "$NAME" > "$DEST/.owner"
+
+OUT="$OUTPUT_DIR/${NAME}-${VERSION}-${ARCH}.hud"
+(cd "$DEST" && tar czf "$OUT" .)
+
+ok "Built $OUT ($(du -h "$OUT" | cut -f1))"
+echo
+echo "Provides: $PROVIDES"
+echo "Requires: $REQUIRES"
+echo
+echo "Next:  hud-repo-manager add $OUT      # publishes to unstable"

@@ -1,0 +1,176 @@
+#!/bin/bash
+# =============================================================================
+# hud-test — install a package in a clean container and smoke test it
+#
+#   hud-test qemu
+#   hud-test qemu "qemu-system-x86_64 --version"
+#   hud-test --local /var/hud-build/output/zlib-1.3.1-x86_64.hud
+#
+# Uses the same base rootfs as hud-build, unpacked fresh and destroyed after.
+# This is why a separate test VM is not needed yet: systemd-nspawn gives a
+# clean root, which is what the install test actually requires.
+#
+# What this cannot do is boot a guest through libvirt — that needs /dev/kvm and
+# a real VM. That is the integration gate, and it comes later.
+# =============================================================================
+set -euo pipefail
+
+BUILD_ROOT="${HUD_BUILD_ROOT:-/var/hud-build}"
+BASE_ROOTFS="${HUD_BASE_ROOTFS:-$BUILD_ROOT/base-rootfs.tar.zst}"
+TEST_ROOT="${HUD_TEST_ROOT:-/var/hud-test}"
+
+RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'
+BLUE=$'\033[0;34m'; NC=$'\033[0m'
+info() { echo "${BLUE}[INFO]${NC} $*"; }
+ok()   { echo "${GREEN}[✓]${NC} $*"; }
+warn() { echo "${YELLOW}[!]${NC} $*"; }
+die()  { echo "${RED}[✗]${NC} $*" >&2; exit 1; }
+
+LOCAL_PKG=""
+if [ "${1:-}" = "--local" ]; then
+    LOCAL_PKG="${2:-}"
+    [ -f "$LOCAL_PKG" ] || die "not found: $LOCAL_PKG"
+    PKG=$(basename "$LOCAL_PKG" | sed 's/-[0-9].*//')
+    SMOKE="${3:-}"
+else
+    PKG="${1:-}"
+    SMOKE="${2:-}"
+fi
+[ -n "$PKG" ] || die "usage: hud-test <package> [smoke-command]
+       hud-test --local <file.hud> [smoke-command]"
+
+[ -f "$BASE_ROOTFS" ] || die "base rootfs missing: $BASE_ROOTFS"
+command -v systemd-nspawn >/dev/null || die "systemd-nspawn not found"
+
+RUN="$TEST_ROOT/run-$$"
+cleanup() { rm -rf "$RUN"; }
+# INT/TERM as well as EXIT: an interrupted run used to leave an 8 GB unpacked
+# root behind in $TEST_ROOT, which then got swept into the next base rootfs.
+trap cleanup EXIT INT TERM
+
+mkdir -p "$RUN"
+info "Unpacking clean root"
+tar --zstd -xf "$BASE_ROOTFS" -C "$RUN"
+
+FAILED=0
+step() {
+    local label="$1"; shift
+    if systemd-nspawn -q -D "$RUN" /bin/bash -c "$*"; then
+        ok "$label"
+    else
+        echo "${RED}[✗]${NC} $label"
+        FAILED=1
+        return 1
+    fi
+}
+
+# --- what was already there? --------------------------------------------------
+# The base rootfs is a snapshot of a working machine, so the package under test
+# may ALREADY be installed in it. Every check below would then pass against the
+# pre-existing copy without the new package ever being installed. Record the
+# build date of whatever is there now so we can prove it changed.
+# systemd-nspawn allocates a pty, so anything read back from it carries a
+# trailing CR. Strip it, or every string comparison below fails on equal values.
+BEFORE=$(systemd-nspawn -q -D "$RUN" /bin/bash -c \
+    "grep '^Build-Date:' /opt/hud/share/hud/info/$PKG/PACKAGE 2>/dev/null" 2>/dev/null \
+    | tr -d '\r' | sed 's/[[:space:]]*$//' || true)
+if [ -n "$BEFORE" ]; then
+    warn "$PKG is already present in the base rootfs (${BEFORE#Build-Date: })"
+fi
+
+# --- install -----------------------------------------------------------------
+if [ -n "$LOCAL_PKG" ]; then
+    EXPECTED=$(tar xzf "$LOCAL_PKG" -O "./opt/hud/share/hud/info/$PKG/PACKAGE" 2>/dev/null \
+               | grep '^Build-Date:' | tr -d '\r' | sed 's/[[:space:]]*$//' || true)
+    [ -n "$EXPECTED" ] || die "cannot read Build-Date from $LOCAL_PKG — is it a .hud?"
+
+    # NOT /tmp: systemd-nspawn mounts a fresh tmpfs over /tmp (and /run), so a
+    # file staged there on the host is invisible inside the container.
+    cp "$LOCAL_PKG" "$RUN/pkg.hud"
+    info "Installing from local file"
+
+    # The hud client resolves package NAMES from the repository; it has no
+    # local-file install (`hud install <path>` prints "Package not found",
+    # then exits 0). So unpack the archive the way the client would, and run the
+    # package's own postinst. This exercises the payload and the postinst, but
+    # NOT the client's dependency resolution — use the repo path for that.
+    step "install" "tar xzf /pkg.hud -C / && \
+        if [ -x /opt/hud/share/hud/info/$PKG/postinst ]; then \
+            /opt/hud/share/hud/info/$PKG/postinst; \
+        fi" || die "install failed"
+else
+    EXPECTED=""
+    info "Installing $PKG from repo"
+    step "update" "hud update" || die "hud update failed"
+    step "install" "hud install -y $PKG" || die "install failed"
+fi
+
+# --- did the package under test actually land? -------------------------------
+# `hud install` exits 0 even when it resolved nothing, so its exit code proves
+# nothing on its own. Compare what is installed now against what we shipped.
+AFTER=$(systemd-nspawn -q -D "$RUN" /bin/bash -c \
+    "grep '^Build-Date:' /opt/hud/share/hud/info/$PKG/PACKAGE 2>/dev/null" 2>/dev/null \
+    | tr -d '\r' | sed 's/[[:space:]]*$//' || true)
+[ -n "$AFTER" ] || die "no $PKG metadata after install — nothing was installed"
+
+if [ -n "$EXPECTED" ] && [ "$AFTER" != "$EXPECTED" ]; then
+    die "the package under test did not install.
+  expected: $EXPECTED
+  found:    $AFTER
+This is what a pre-existing copy in the base rootfs looks like."
+fi
+if [ -n "$BEFORE" ] && [ "$AFTER" = "$BEFORE" ]; then
+    die "$PKG metadata is unchanged after install ($AFTER).
+The copy already in the base rootfs is still there; the new one never landed."
+fi
+ok "installed package is the one under test (${AFTER#Build-Date: })"
+
+# --- did anything actually land? ---------------------------------------------
+# This is the check that would have caught the ~750-byte python3-* packages.
+FILE_COUNT=$(systemd-nspawn -q -D "$RUN" /bin/bash -c \
+    "wc -l < /opt/hud/share/hud/info/$PKG/FILES 2>/dev/null || echo 0" | tr -d '[:space:]')
+
+if [ "${FILE_COUNT:-0}" -lt 2 ]; then
+    echo
+    die "package installed but FILES lists only ${FILE_COUNT} entries.
+This is an empty package — the build's [install] step probably wrote to the
+build root instead of \$DESTDIR. Compare against python3-distlib, which is
+correct."
+fi
+ok "FILES lists $FILE_COUNT entries"
+
+# --- are the shared libraries it needs actually present? ---------------------
+info "Checking for unresolved libraries"
+MISSING=$(systemd-nspawn -q -D "$RUN" /bin/bash -c "
+    export LD_LIBRARY_PATH=/opt/hud/lib:/opt/hud/lib64
+    while read -r f; do
+        [ -f \"/\$f\" ] || continue
+        case \"\$f\" in *.so|*.so.*|*/bin/*|*/sbin/*|*/libexec/*) ;; *) continue ;; esac
+        head -c4 \"/\$f\" 2>/dev/null | grep -q ELF || continue
+        ldd \"/\$f\" 2>/dev/null | grep 'not found' | awk '{print \$1}'
+    done < /opt/hud/share/hud/info/$PKG/FILES | sort -u
+" || true)
+
+if [ -n "$MISSING" ]; then
+    warn "Unresolved shared libraries:"
+    echo "$MISSING" | sed 's/^/    /'
+    FAILED=1
+else
+    ok "No unresolved libraries"
+fi
+
+# --- smoke test ---------------------------------------------------------------
+if [ -n "$SMOKE" ]; then
+    info "Smoke test: $SMOKE"
+    step "smoke" "export PATH=/opt/hud/bin:/opt/hud/sbin:\$PATH; $SMOKE" || true
+else
+    warn "No smoke command given — add one as the second argument"
+fi
+
+echo
+if [ "$FAILED" -eq 0 ]; then
+    ok "$PKG passed"
+    exit 0
+else
+    die "$PKG failed"
+fi

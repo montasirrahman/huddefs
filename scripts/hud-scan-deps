@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+"""
+hud-scan-deps — derive Provides and Requires capabilities from a staged tree.
+
+Usage:
+    hud-scan-deps <DESTDIR> [--json]
+
+Emits capability strings, not package names:
+
+    PROVIDES libpixman-1.so.0
+    PROVIDES pkgconfig(pixman-1)
+    REQUIRES libc.so.6
+    REQUIRES libglib-2.0.so.0
+
+Mapping capabilities back to package names is a separate step, done against
+packages.db. Keeping them separate is deliberate: capabilities survive package
+renames and catch soname bumps, which package names do not.
+
+Sources scanned:
+    ELF binaries      readelf -d   -> DT_SONAME (provides), DT_NEEDED (requires)
+    pkg-config files  *.pc         -> package name (provides), Requires (requires)
+    Python dists      METADATA     -> Name (provides), Requires-Dist (requires)
+    Scripts           shebang      -> interpreter (requires)
+
+Requires that the package provides itself are removed, so a library that links
+its own siblings does not depend on itself.
+"""
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+
+SONAME_RE = re.compile(r"\(SONAME\).*\[(?P<v>[^\]]+)\]")
+NEEDED_RE = re.compile(r"\(NEEDED\).*\[(?P<v>[^\]]+)\]")
+# NOTE: these use [ \t]* rather than \s*, and require the value to start with a
+# non-space character. \s matches newlines, so on a field that is present but
+# empty — `Requires:` with nothing after it, which is normal in a .pc file —
+# \s* swallowed the line break and captured the *next* line instead. That made
+# zlib report requires of pkgconfig(Libs:), pkgconfig(-lz) and pkgconfig(-L${libdir}).
+PC_NAME_RE = re.compile(r"^Name:[ \t]*(?P<v>\S.*?)[ \t]*$", re.M)
+PC_REQ_RE = re.compile(r"^Requires(?:\.private)?:[ \t]*(?P<v>\S.*?)[ \t]*$", re.M)
+MD_NAME_RE = re.compile(r"^Name:[ \t]*(?P<v>\S.*?)[ \t]*$", re.M)
+MD_REQ_RE = re.compile(r"^Requires-Dist:[ \t]*(?P<v>[A-Za-z0-9._-]+)", re.M)
+
+
+def is_elf(path):
+    try:
+        with open(path, "rb") as fh:
+            return fh.read(4) == b"\x7fELF"
+    except OSError:
+        return False
+
+
+def scan_elf(path, provides, requires):
+    try:
+        out = subprocess.run(
+            ["readelf", "-d", path],
+            capture_output=True, text=True, check=False,
+        ).stdout
+    except FileNotFoundError:
+        sys.exit("error: readelf not found (install binutils)")
+
+    for m in SONAME_RE.finditer(out):
+        provides.add(m.group("v"))
+    for m in NEEDED_RE.finditer(out):
+        requires.add(m.group("v"))
+
+
+def scan_pkgconfig(path, provides, requires):
+    try:
+        text = open(path, encoding="utf-8", errors="replace").read()
+    except OSError:
+        return
+
+    base = os.path.basename(path)[:-3]          # strip .pc
+    provides.add(f"pkgconfig({base})")
+
+    for m in PC_REQ_RE.finditer(text):
+        # "glib-2.0 >= 2.70, gobject-2.0" -> glib-2.0, gobject-2.0
+        for dep in re.split(r"[,\s]+", m.group("v")):
+            dep = dep.strip()
+            if not dep or dep[0] in "<>=!":
+                continue
+            if re.match(r"^[\d.]+$", dep):      # a bare version number
+                continue
+            requires.add(f"pkgconfig({dep})")
+
+
+def scan_python_dist(meta_path, provides, requires):
+    try:
+        text = open(meta_path, encoding="utf-8", errors="replace").read()
+    except OSError:
+        return
+
+    m = MD_NAME_RE.search(text)
+    if m:
+        provides.add(f"python3dist({m.group('v').lower().replace('_', '-')})")
+    else:
+        # A dist-info with no Name is malformed and will break pip for every
+        # subsequent install on this system. Worth shouting about.
+        print(f"warning: {meta_path} has no Name field", file=sys.stderr)
+
+    for m in MD_REQ_RE.finditer(text):
+        name = m.group("v").lower().replace("_", "-")
+        requires.add(f"python3dist({name})")
+
+
+def scan_shebang(path, requires):
+    try:
+        with open(path, "rb") as fh:
+            if fh.read(2) != b"#!":
+                return
+            line = fh.readline(256).decode("utf-8", "replace").strip()
+    except OSError:
+        return
+
+    parts = line.split()
+    if not parts:
+        return
+    interp = parts[0]
+    if os.path.basename(interp) == "env" and len(parts) > 1:
+        interp = parts[1]
+    requires.add(f"exec({os.path.basename(interp)})")
+
+
+def scan(destdir):
+    provides, requires = set(), set()
+
+    for root, _dirs, files in os.walk(destdir):
+        for name in files:
+            path = os.path.join(root, name)
+            if os.path.islink(path) or not os.path.isfile(path):
+                continue
+
+            if is_elf(path):
+                scan_elf(path, provides, requires)
+            elif name.endswith(".pc"):
+                scan_pkgconfig(path, provides, requires)
+            elif name in ("METADATA", "PKG-INFO") and (
+                ".dist-info" in root or ".egg-info" in root
+            ):
+                scan_python_dist(path, provides, requires)
+            elif os.access(path, os.X_OK):
+                scan_shebang(path, requires)
+
+    # Do not depend on yourself.
+    requires -= provides
+    return sorted(provides), sorted(requires)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("destdir")
+    ap.add_argument("--json", action="store_true")
+    args = ap.parse_args()
+
+    if not os.path.isdir(args.destdir):
+        sys.exit(f"error: not a directory: {args.destdir}")
+
+    provides, requires = scan(args.destdir)
+
+    if args.json:
+        json.dump({"provides": provides, "requires": requires}, sys.stdout, indent=2)
+        print()
+    else:
+        for p in provides:
+            print(f"PROVIDES {p}")
+        for r in requires:
+            print(f"REQUIRES {r}")
+
+
+if __name__ == "__main__":
+    main()
