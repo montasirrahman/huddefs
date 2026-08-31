@@ -1,0 +1,33 @@
+# HUD Package Definition - libndp 1.9
+# Library for IPv6 Neighbor Discovery Protocol
+# Required by NetworkManager
+
+Package: libndp
+Version: 1.9
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Library for IPv6 Neighbor Discovery Protocol
+Source: https://github.com/jpirko/libndp/releases/download/v1.9/libndp-1.9.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+./configure --prefix=/opt/hud \
+            --disable-static
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig
+echo "✓ libndp 1.9 installed to /opt/hud"

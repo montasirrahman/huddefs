@@ -1,0 +1,21 @@
+# HUD Package Definition - libndp 1.9
+# Library for Neighbor Discovery Protocol
+Package: libndp
+Version: 1.9
+Architecture: x86_64
+Section: network
+Depends:
+Description: Wrapper library for IPv6 Neighbor Discovery Protocol with ndptool utility
+Source: http://libndp.org/files/libndp-1.9.tar.gz
+[configure]
+./configure --prefix=/opt/hud \
+            --sysconfdir=/opt/hud/etc \
+            --localstatedir=/opt/hud/var \
+            --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libndp 1.9 installed to /opt/hud"

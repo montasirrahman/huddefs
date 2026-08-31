@@ -1,0 +1,28 @@
+# HUD Package Definition - libnftnl 1.2.8
+# Netfilter nftables library
+
+Package: libnftnl
+Version: 1.2.8
+Architecture: x86_64
+Section: libraries
+Depends: libmnl
+Description: Netfilter nftables userspace library
+Source: https://netfilter.org/projects/libnftnl/files/libnftnl-1.2.8.tar.xz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --disable-static \
+    LDFLAGS="-L/opt/hud/lib -Wl,-rpath,/opt/hud/lib" \
+    CPPFLAGS="-I/opt/hud/include" \
+    PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig"
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libnftnl 1.2.8 installed to /opt/hud"

@@ -1,0 +1,30 @@
+# HUD Package Definition - libunistring 1.3
+# Based on BLFS 12.4 documentation
+# Note: Recommended dependency for GnuTLS
+
+Package: libunistring
+Version: 1.3
+Architecture: x86_64
+Section: misc
+Depends:
+Description: Library for manipulating Unicode strings and C strings according to Unicode standard
+Source: https://ftp.gnu.org/gnu/libunistring/libunistring-1.3.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make install DESTDIR=$DESTDIR
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libunistring 1.3 installed to /opt/hud"
+
+[prerm]
+# No services to stop
+
+[postrm]
+ldconfig 2>/dev/null || true

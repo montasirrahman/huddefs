@@ -1,0 +1,22 @@
+# HUD Package Definition - libpciaccess 0.18.1
+# Generic PCI Access library for X
+Package: libpciaccess
+Version: 0.18.1
+Architecture: x86_64
+Section: xorg
+Depends: util-macros
+Description: Generic PCI Access library for X
+Source: https://www.x.org/pub/individual/lib/libpciaccess-0.18.1.tar.xz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ libpciaccess 0.18.1 installed to /opt/hud"
+/sbin/ldconfig

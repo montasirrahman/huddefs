@@ -1,0 +1,22 @@
+# HUD Package Definition - libtiff 4.7.0
+# TIFF library and utilities
+Package: libtiff
+Version: 4.7.0
+Architecture: x86_64
+Section: graphics
+Depends: libjpeg-turbo,zlib,xz
+Description: Library and utilities for reading and writing TIFF files
+Source: https://download.osgeo.org/libtiff/tiff-4.7.0.tar.gz
+[configure]
+mkdir -p build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/opt/hud -DCMAKE_BUILD_TYPE=Release ..
+[build]
+cd build
+make
+[install]
+cd build
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libtiff 4.7.0 installed to /opt/hud"
+/sbin/ldconfig

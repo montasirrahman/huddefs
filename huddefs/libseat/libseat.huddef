@@ -1,0 +1,22 @@
+# HUD Package Definition - libseat 0.9.1
+# Seat management library
+Package: libseat
+Version: 0.9.1
+Architecture: x86_64
+Section: system
+Depends: meson,ninja
+Description: Seat management library for Wayland compositors
+Source: https://git.sr.ht/~kennylevinsen/seatd/archive/0.9.1.tar.gz
+[configure]
+mkdir -p build
+cd build
+meson setup --prefix=/opt/hud --buildtype=release -Dexamples=disabled -Dman-pages=disabled ..
+[build]
+cd build
+ninja
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+[postinst]
+echo "✓ libseat 0.9.1 installed to /opt/hud"
+/sbin/ldconfig

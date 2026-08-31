@@ -1,0 +1,25 @@
+# HUD Package Definition - libsndfile 1.2.2
+# Library for reading and writing audio files
+
+Package: libsndfile
+Version: 1.2.2
+Architecture: x86_64
+Section: libraries
+Depends: flac,opus,libvorbis
+Description: Library of C routines for reading and writing files containing sampled audio data
+Source: https://github.com/libsndfile/libsndfile/releases/download/1.2.2/libsndfile-1.2.2.tar.xz
+MD5sum: 04e2e6f726da7c5dc87f8cf72f250d04
+
+[configure]
+sed '/typedef enum/,/bool ;/d' -i src/ALAC/alac_{en,de}coder.c
+./configure --prefix=/opt/hud --docdir=/opt/hud/share/doc/libsndfile-1.2.2
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libsndfile 1.2.2 installed to /opt/hud"

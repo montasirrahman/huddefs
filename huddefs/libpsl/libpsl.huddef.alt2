@@ -1,0 +1,26 @@
+# HUD Package Definition - libpsl 0.21.5
+# Public Suffix List library
+
+Package: libpsl
+Version: 0.21.5
+Architecture: x86_64
+Section: libraries
+Depends: libidn2,libunistring
+Description: Library to handle the Public Suffix List
+Source: https://github.com/rockdaboot/libpsl/releases/download/0.21.5/libpsl-0.21.5.tar.gz
+
+[configure]
+mkdir -p build && cd build && meson setup .. \
+    --prefix=/opt/hud \
+    -Druntime=libidn2 \
+    -Dbuiltin=true
+
+[build]
+cd build && ninja -j$(nproc)
+
+[install]
+cd build && DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libpsl 0.21.5 installed to /opt/hud"

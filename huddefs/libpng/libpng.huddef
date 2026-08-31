@@ -1,0 +1,31 @@
+# HUD Package Definition - libpng 1.6.50
+# Auto-generated for oVirt infrastructure
+
+Package: libpng
+Version: 1.6.50
+Architecture: x86_64
+Section: libraries
+Depends: 
+Description: libpng-1.6.50
+Source: https://downloads.sourceforge.net/libpng/libpng-1.6.50.tar.xz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install &&
+mkdir -v /usr/share/doc/libpng-1.6.50 &&
+cp -v README libpng-manual.txt /usr/share/doc/libpng-1.6.50
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libpng 1.6.50 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

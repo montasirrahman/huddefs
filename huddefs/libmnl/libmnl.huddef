@@ -1,0 +1,25 @@
+# HUD Package Definition - libmnl 1.0.5
+# Minimalistic Netlink library
+
+Package: libmnl
+Version: 1.0.5
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Minimalistic user-space library for Netlink
+Source: https://netfilter.org/projects/libmnl/files/libmnl-1.0.5.tar.bz2
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libmnl 1.0.5 installed to /opt/hud"

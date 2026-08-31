@@ -1,0 +1,23 @@
+# HUD Package Definition - libslirp 4.9.1
+# User-mode networking library for virtual machines
+
+Package: libslirp
+Version: 4.9.1
+Architecture: x86_64
+Section: libraries
+Depends: glib2
+Description: General purpose TCP-IP emulator used by virtual machines
+Source: https://gitlab.freedesktop.org/slirp/libslirp/-/archive/v4.9.1/libslirp-v4.9.1.tar.bz2
+
+[configure]
+mkdir -p build && cd build && meson setup --prefix=/opt/hud --buildtype=release ..
+
+[build]
+cd build && ninja -j$(nproc)
+
+[install]
+cd build && DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libslirp 4.9.1 installed to /opt/hud"

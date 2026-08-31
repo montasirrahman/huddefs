@@ -1,0 +1,18 @@
+# HUD Package Definition - libpng 1.6.50
+# PNG reference library
+Package: libpng
+Version: 1.6.50
+Architecture: x86_64
+Section: graphics
+Depends: zlib
+Description: PNG reference library for reading, writing, and manipulating PNG images
+Source: https://downloads.sourceforge.net/libpng/libpng-1.6.50.tar.xz
+[configure]
+./configure --prefix=/opt/hud --disable-static
+[build]
+make
+[install]
+make DESTDIR=$DESTDIR install
+[postinst]
+echo "✓ libpng 1.6.50 installed to /opt/hud"
+/sbin/ldconfig

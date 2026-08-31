@@ -1,0 +1,31 @@
+# HUD Package Definition - libjpeg-turbo 3.0.1
+# JPEG image codec library - Based on LFS 12.4
+# Note: Requires CMake and optionally NASM/Yasm for SIMD optimization
+
+Package: libjpeg
+Version: 3.0.1
+Architecture: x86_64
+Section: libraries
+Depends: cmake, nasm
+Description: libjpeg-turbo - high-speed JPEG codec library with SIMD
+Source: https://downloads.sourceforge.net/libjpeg-turbo/libjpeg-turbo-3.0.1.tar.gz
+
+[configure]
+mkdir -p build && cd build && \
+cmake -DCMAKE_INSTALL_PREFIX=/opt/hud \
+      -DCMAKE_BUILD_TYPE=RELEASE \
+      -DENABLE_STATIC=FALSE \
+      -DCMAKE_INSTALL_DEFAULT_LIBDIR=lib \
+      -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+      -DCMAKE_SKIP_INSTALL_RPATH=ON \
+      ..
+
+[build]
+cd build && make -j$(nproc)
+
+[install]
+cd build && make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libjpeg-turbo 3.0.1 installed to /opt/hud"

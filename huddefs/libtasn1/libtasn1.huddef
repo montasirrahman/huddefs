@@ -1,0 +1,30 @@
+# HUD Package Definition - libtasn1 4.20.0
+# Based on BLFS 12.4 documentation
+# Note: Required dependency for p11-kit
+
+Package: libtasn1
+Version: 4.20.0
+Architecture: x86_64
+Section: security
+Depends:
+Description: ASN.1 library used for DER/BER encoding/decoding
+Source: https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.20.0.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make install DESTDIR=$DESTDIR
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libtasn1 4.20.0 installed to /opt/hud"
+
+[prerm]
+# No services to stop
+
+[postrm]
+ldconfig 2>/dev/null || true

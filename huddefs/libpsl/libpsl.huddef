@@ -1,0 +1,43 @@
+# HUD Package Definition - libpsl 0.21.5
+# Public Suffix List library
+# Required by NetworkManager for domain resolution
+
+Package: libpsl
+Version: 0.21.5
+Architecture: x86_64
+Section: libraries
+Depends: libidn2, libunistring
+Description: Library for accessing the Public Suffix List (PSL)
+Source: https://github.com/rockdaboot/libpsl/releases/download/0.21.5/libpsl-0.21.5.tar.gz
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+mkdir -p build
+cd build
+
+meson setup --prefix=/opt/hud \
+            --buildtype=release \
+            ..
+
+[build]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+cd build
+ninja
+
+[check]
+cd build
+ninja test
+
+[install]
+cd build
+DESTDIR=$DESTDIR ninja install
+
+[postinst]
+ldconfig
+echo "✓ libpsl 0.21.5 installed to /opt/hud"

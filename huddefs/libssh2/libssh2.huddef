@@ -1,0 +1,30 @@
+# HUD Package Definition - libssh2 1.11.1
+# SSH2 protocol library
+
+Package: libssh2
+Version: 1.11.1
+Architecture: x86_64
+Section: security
+Depends: openssl,zlib
+Description: Library implementing the SSH2 protocol
+Source: https://github.com/libssh2/libssh2/releases/download/libssh2-1.11.1/libssh2-1.11.1.tar.gz
+
+[configure]
+./configure \
+    --prefix=/opt/hud \
+    --with-crypto=openssl \
+    --with-libssl-prefix=/opt/hud \
+    --with-libz=/opt/hud \
+    PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig" \
+    LDFLAGS="-L/opt/hud/lib -Wl,-rpath,/opt/hud/lib" \
+    CPPFLAGS="-I/opt/hud/include"
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "✓ libssh2 1.11.1 installed to /opt/hud"

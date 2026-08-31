@@ -1,0 +1,29 @@
+# HUD Package Definition - libjpeg 3.0.1
+# Auto-generated for oVirt infrastructure
+
+Package: libjpeg
+Version: 3.0.1
+Architecture: x86_64
+Section: libraries
+Depends: cmake,nasm
+Description: libjpeg-turbo-3.0.1
+Source: https://downloads.sourceforge.net/libjpeg-turbo/libjpeg-turbo-3.0.1.tar.gz
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make install
+
+[postinst]
+ldconfig 2>/dev/null || true
+echo "libjpeg 3.0.1 installed to /opt/hud"
+
+[prerm]
+# Stop service if running
+
+[postrm]
+ldconfig 2>/dev/null || true

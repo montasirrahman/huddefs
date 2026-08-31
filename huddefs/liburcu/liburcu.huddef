@@ -1,0 +1,36 @@
+# HUD Package Definition - liburcu 0.14.1
+# Userspace Read-Copy-Update library
+# Required by: glusterfs
+
+Package: liburcu
+Version: 0.14.1
+Architecture: x86_64
+Section: libraries
+Depends:
+Description: Userspace Read-Copy-Update (RCU) library
+Source: https://lttng.org/files/urcu/userspace-rcu-0.14.1.tar.bz2
+
+[configure]
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
+export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
+export CFLAGS="-I/opt/hud/include"
+export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
+
+./configure --prefix=/opt/hud \
+            --libdir=/opt/hud/lib64 \
+            --disable-static
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "/opt/hud/lib64" > /etc/ld.so.conf.d/liburcu.conf
+ldconfig
+
+echo "✓ liburcu 0.14.1 installed to /opt/hud"
+echo "  Library: /opt/hud/lib64/liburcu.so"
+echo "  Headers: /opt/hud/include/urcu/"
