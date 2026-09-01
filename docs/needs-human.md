@@ -48,3 +48,69 @@ for patches, `pip3`, network calls and absolute paths — not for a build sectio
 reaching for a tarball that is not declared. Other EASY packages may hide the
 same thing. Worth a scan for `tar -x` / `tar x` inside build sections against a
 path the definition never fetched.
+
+---
+
+## `cmake` 4.1.0 — `ccmake` fails to compile; disabling it would drop a shipped binary
+
+**First genuine source-level build failure in E4.** Not definition data, not the
+dropped `libuv`, not memory or disk — a toolchain incompatibility.
+
+### Diagnosis
+
+Only the `ccmake` target fails
+(`Source/CursesDialog/CMakeFiles/ccmake.dir/.../ccmake.cxx.o`). `cmake`, `ctest`,
+`cpack` and `CTestLib` all build.
+
+ncurses defines `NCURSES_BOOL` as a macro expanding to `unsigned char`. cmake's
+`cm::enum_set` uses `size_type`, also `unsigned char`. Once `curses.h` is
+included, the two constructor signatures become identical and GCC rejects them
+with "cannot be overloaded with". The `numeric_limits` redefinition and the
+`std_function.h` errors further down the log are the same macro pollution, not
+separate faults.
+
+GCC 15.2 is stricter than the compiler cmake 4.1.0 was released against.
+
+### Why this needs a decision
+
+`ccmake` **is** in the shipped package:
+
+```
+./opt/hud/bin/cmake
+./opt/hud/bin/ctest
+./opt/hud/bin/cpack
+./opt/hud/bin/ccmake          <-- present
+./opt/hud/share/cmake-4.1/Help/manual/ccmake.1.rst
+./opt/hud/share/envvar/CCMAKE_COLORS.rst
+```
+
+So the v1 build did **not** hit this — it compiled `ccmake` successfully against
+whatever toolchain built it. Adding `-DBUILD_CursesDialog=OFF` would therefore
+make the rebuilt package ship *less* than the one in the pool, which is exactly
+the "builds but disables features" outcome this repository's `CLAUDE.md` warns
+about. That is a deliberate reduction in scope, not a mechanical fix, so it is
+not applied automatically.
+
+### Recommendation
+
+**Disable it:** add `-DBUILD_CursesDialog=OFF` to `[configure]`.
+
+`ccmake` is an interactive ncurses TUI for editing a CMake cache by hand. A build
+server never runs it, and nothing in this distribution depends on it — it
+provides no library, no pkg-config file and no soname. Losing it costs an
+interactive convenience on a machine with no interactive users.
+
+The alternative is patching cmake's `enum_set` or ncurses' macro out of the way,
+which means carrying a local patch against upstream C++ for a binary nobody runs.
+
+### If accepted
+
+```
+[configure]
+... existing flags ...
+             -DBUILD_CursesDialog=OFF
+```
+
+and note in the definition why, so the next person does not "fix" it back.
+
+`cmake` is deferred to the retry pass at the end of E4.

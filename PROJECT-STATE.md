@@ -265,6 +265,33 @@ All three D8 branches verified unmerged after the correction.
 
 ---
 
+## First genuine source-level build failure: cmake 4.1.0
+
+Worth separating from the noise, because everything that failed in E4 before this
+was either definition data or my own tooling.
+
+`cmake`'s `ccmake` target does not compile under GCC 15.2. ncurses defines
+`NCURSES_BOOL` as a macro expanding to `unsigned char`; cmake's `cm::enum_set`
+uses `size_type`, also `unsigned char`; once `curses.h` is included the two
+constructor signatures collide and the compiler rejects them. The
+`numeric_limits` and `std_function.h` errors further down are the same macro
+pollution, not separate faults.
+
+**The cause is toolchain strictness plus ncurses macro pollution — not v1
+definition data.** `cmake`, `ctest`, `cpack` and `CTestLib` all build. The
+shipped package contains `ccmake`, so the original build did not hit this, which
+means the toolchain moved underneath the definition rather than the definition
+being wrong.
+
+That distinction matters for the rest of the rebuild: it is the first evidence
+that some of the 245 will fail for reasons that have nothing to do with the
+conversion, and that a package building in 2026-02 is not evidence it builds
+today. Logged to `docs/needs-human.md` with a recommendation
+(`-DBUILD_CursesDialog=OFF`), deferred to the retry pass rather than silently
+shipping less than the pool copy does.
+
+---
+
 ## Next phases
 
 1. **Rebuild the kernel with `CONFIG_OVERLAY_FS=y` on bf-build.** This is the

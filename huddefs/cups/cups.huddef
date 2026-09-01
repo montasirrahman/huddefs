@@ -5,9 +5,13 @@ Package: cups
 Version: 2.4.12
 Architecture: x86_64
 Section: misc
-Depends: gnutls, libpng, libjpeg, libtiff, dbus, libusb
 Description: Common Unix Printing System
 Source: https://github.com/OpenPrinting/cups/releases/download/v2.4.12/cups-2.4.12-source.tar.gz
+Source-SHA256:    b1dde191a4ae2760c47220c82ca6155a28c382701e6c1a0159d1054990231d59
+
+Build-Depends:    gnutls, libpng, libjpeg, libtiff, dbus, libusb
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc --localstatedir=/opt/hud/var --with-tls=gnutls --enable-libusb
