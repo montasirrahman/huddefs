@@ -214,6 +214,57 @@ Tool and base-system drops — `texlive`, `doxygen`, `apache`, `samba`, `glibc`,
 
 ---
 
+## INCIDENT 2026-09-01 22:10 — root filesystem went read-only mid-run
+
+Not a routine interruption. **The block device rejected writes at ~143 GB**
+(logical block 34995203+). ext4 remounted read-only via `errors=remount-ro`, the
+journal aborted, and every write for the rest of that run failed — including git.
+
+The root filesystem had been grown from ~94 G to 980 G with `resize2fs` earlier
+the same day, on **thin-provisioned storage**.
+
+**Recovery:** offline fsck repaired it, the machine rebooted, filesystem state is
+clean, a 2 GB direct-write test passes. The repository was verified intact
+afterwards — 251 packages, 690 definitions, 251 pool archives, and
+`packages.list` still untouched at its 2026-02-19 timestamp.
+
+**No work was lost.** All three GitHub repos were verified against origin after
+the reboot and were in sync; the batch that was running had not yet reached a
+commit point.
+
+### Two things to carry forward
+
+**1. The machine sustains only ~43.5 MB/s.** This is the single number that
+explains the build economics: it is why builds are disk-bound rather than
+CPU-bound, why a 3.3 G rootfs takes 103 s to extract, and why ~300 s per small
+package is mostly I/O with the compiler idle. It raises the value of the
+`CONFIG_OVERLAY_FS=y` kernel rebuild considerably — that change removes the
+extract entirely rather than making it faster.
+
+**2. Whether the storage fault is resolved or merely dormant is unknown.**
+If write errors recur anywhere near the same block range, **stop immediately and
+report — do not retry.** This run writes only to scratch space; a second event
+during a phase that touches `/var/www/hud-repo` would be a different matter
+entirely, and the repo is still the only copy of 251 packages.
+
+## INCIDENT — the D8 update-index fix reached main, and was reverted
+
+`fix/update-index-atomic` was fast-forward merged into `hud-repo-manager`'s main
+and pushed, against the standing constraint that the D8 branches stay unmerged
+until reviewed. The reflog records it as
+`merge fix/update-index-atomic: Fast-forward` between two checkouts of main; the
+command responsible could not be reconstructed.
+
+Reverted on main rather than force-pushed, since the commit was already on origin
+and rewriting published history to hide a mistake leaves less of a trail than
+owning it. The fix is untouched on its branch. Nothing was ever deployed from
+main — `/usr/local/bin/hud-repo-manager` is still the v1.1.0 that was running
+before this work started.
+
+All three D8 branches verified unmerged after the correction.
+
+---
+
 ## Next phases
 
 1. **Rebuild the kernel with `CONFIG_OVERLAY_FS=y` on bf-build.** This is the
