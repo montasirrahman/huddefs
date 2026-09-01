@@ -173,6 +173,47 @@ Built up in stages so a failure isolates to one thing:
 
 ---
 
+### Precedent: a declared dependency the repository does not have is presumed invalid
+
+v1's `Depends:` fields were transcribed from the LFS/BLFS book, **including
+optional entries**, and using the book's names rather than this repository's.
+19 of the 148 EASY packages name something `packages.list` does not contain.
+
+**A declared dependency absent from `packages.list` is presumed invalid, not
+presumed missing.** Resolve it:
+
+1. **Maps to a real package under another name** — rewrite it.
+   `glib2` → `glib`, `libx11` → `libX11`, `libxext` → `libXext`,
+   `freetype2` → `freetype`.
+2. **No repository package exists** — drop it, and log it to
+   `/var/hud-build/dropped-deps.json`. Never drop silently.
+
+The evidence for the rule: all 19 affected packages shipped successfully while
+none of the named dependencies was ever installable, so none of them can have
+been required to build.
+
+#### Verifying a library drop
+
+Dropping a documentation builder or a test-suite server is unambiguous. Dropping
+something that is a real library — `libpulse`, `libxcursor`, `libxkbcommon`,
+`elogind` and similar — might instead mean the build now silently omits a
+feature. That is the "builds but disables features" failure this repository's
+`CLAUDE.md` warns about, and it is invisible in a green build.
+
+So for those, compare `hud-scan-deps` output for the newly built package against
+the `.hud` currently in `pool/`:
+
+- **derived `Requires` unchanged** → the feature was never compiled in, the drop
+  changed nothing, continue
+- **`Requires` reduced** → the drop removed real functionality: **stop and
+  report that package**
+
+The comparison is recorded per package in `dropped-deps.json` alongside the drop.
+Tool and base-system drops — `texlive`, `doxygen`, `apache`, `samba`, `glibc`,
+`java`, `python`, `libuv` — never halt the run.
+
+---
+
 ## Next phases
 
 1. **Rebuild the kernel with `CONFIG_OVERLAY_FS=y` on bf-build.** This is the

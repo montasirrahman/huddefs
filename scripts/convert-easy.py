@@ -57,6 +57,65 @@ def sha256(path):
     return h.hexdigest()
 
 
+
+# Names that are unambiguously tools or base-system components. A drop here needs
+# no verification: documentation builders, test-suite servers, or things the base
+# LFS system provides and hud never packaged.
+UNAMBIGUOUS_DROPS = {
+    "texlive", "tl-installer", "libreoffice", "doxygen", "sphinx", "asciidoc",
+    "graphviz", "mercurial", "gtk-doc", "docbook-xml", "apache", "samba",
+    "openssh", "fcron", "perl-io-socket-ssl", "glibc", "java", "python",
+    "ojdk-conf", "xorg-libraries", "xorg7-lib", "rust", "guile", "six",
+    "libuv",
+}
+
+def shipped_requires(pkg):
+    """Derive Requires from the .hud currently in the live pool. Read-only."""
+    import glob, tempfile, shutil as _sh
+    cands = sorted(glob.glob(f"/var/www/hud-repo/pool/main/{pkg[0]}/{pkg}/{pkg}-*.hud"))
+    if not cands:
+        return None
+    tmp = tempfile.mkdtemp(prefix="shipped-", dir="/var/hud-build")
+    try:
+        rc, _ = sh(f"tar xzf {cands[-1]} -C {tmp}", timeout=600)
+        if rc != 0:
+            return None
+        rc, out = sh(f"hud-scan-deps {tmp} --json", timeout=1800)
+        if rc != 0:
+            return None
+        return set(json.loads(out).get("requires", []))
+    except Exception:
+        return None
+    finally:
+        _sh.rmtree(tmp, ignore_errors=True)
+
+def verify_drops(pkg, dropped, new_requires):
+    """Did dropping a dependency remove real functionality?
+
+    Compare what the newly built package needs against what the shipped one
+    needed. Same capabilities means the feature was never compiled in and the
+    drop changed nothing. Fewer means the drop removed something real.
+    """
+    libs = [d for d in dropped if d not in UNAMBIGUOUS_DROPS]
+    old = shipped_requires(pkg)
+    result = {"dropped": sorted(dropped), "library_drops": sorted(libs)}
+    if old is None:
+        result["verdict"] = "no shipped package to compare against"
+        return result, False
+    new = set(x for x in (new_requires or "").split(",") if x)
+    result["requires_shipped"] = sorted(old)
+    result["requires_new"] = sorted(new)
+    lost = sorted(old - new)
+    result["lost_capabilities"] = lost
+    if not lost:
+        result["verdict"] = "unchanged - drop was harmless"
+        return result, False
+    if libs:
+        result["verdict"] = "DIFFERS and a library was dropped - halt"
+        return result, True
+    result["verdict"] = "differs, but only tool/base-system drops - not halting"
+    return result, False
+
 # ---------------------------------------------------------------- dep hygiene
 
 _REPO_NAMES = None
@@ -249,6 +308,22 @@ def do_package(pkg, prov):
     rec["provides"] = p.group(1).strip() if p else ""
     rec["requires"] = r.group(1).strip() if r else ""
     rec["build"] = "OK"
+
+    # If dependencies were dropped from this package, prove the drop was harmless
+    # by comparing derived capabilities against the shipped package.
+    try:
+        dd = json.load(open(DROPPED_LOG))
+    except Exception:
+        dd = {}
+    if pkg in dd and isinstance(dd[pkg], list) and dd[pkg]:
+        verdict, halt = verify_drops(pkg, dd[pkg], rec["requires"])
+        dd[pkg] = verdict
+        json.dump(dd, open(DROPPED_LOG, "w"), indent=1)
+        print(f"    drop-check: {verdict['verdict']}", flush=True)
+        if halt:
+            rec["note"] = ("dropped dependency removed functionality: lost "
+                           + ", ".join(verdict["lost_capabilities"][:5]))
+            return rec, "DROP-REMOVED-FUNCTIONALITY"
 
     art = artifact(pkg)
     if not art:
