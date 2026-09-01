@@ -4,9 +4,14 @@ Package: binutils
 Version: 2.45
 Architecture: x86_64
 Section: development
-Depends: zlib
 Description: GNU Binary Utilities - linker, assembler, and other tools for handling object files
 Source: https://sourceware.org/pub/binutils/releases/binutils-2.45.tar.xz
+Source-SHA256:    c50c0e7f9cb188980e2cc97e4537626b1672441815587f1eab69d2a1bfbef5d2
+
+Build-Depends:    zlib
+Depends:          auto
+Provides:         auto
+
 [configure]
 mkdir -v build
 cd build
