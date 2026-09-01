@@ -145,6 +145,36 @@ happens, and nothing else in the queue moves.
 
 ---
 
+## HARD GATE — no Kubernetes or KubeVirt work may begin until all four hold
+
+**No Kubernetes, KubeVirt, containerd, CNI or storage packaging starts until:**
+
+1. **G1 passes** — all 245 rebuild from scratch, dependency-ordered, unattended,
+   on a clean machine
+2. **G2 exists** — the capability graph answers `rdeps` / `deps` / `why` exactly,
+   against the capability table rather than a substring match
+3. **The client verifies SHA256 and packages are signed**
+4. **The FHS vs `/opt/hud` decision is made** and, if FHS, migrated
+
+### Why
+
+Kubernetes and KubeVirt assume FHS paths. `/opt/hud` already needs hand-written
+compatibility symlinks to function — `/usr/bin/curl` is a symlink into
+`/opt/hud/bin/curl`, and qemu's postinst writes three more into `/usr/bin`.
+Packaging hundreds of Go binaries onto that prefix multiplies that workaround
+across the largest body of software in the distribution.
+
+Starting before G1 means building on a base that cannot be reproduced or
+security-updated. Starting before G2 means no way to answer "what breaks if this
+soname bumps" across a dependency tree that large. Starting before signing means
+shipping an appliance whose packages cannot be verified by the machines
+installing them.
+
+The order is not negotiable by convenience: each gate exists because skipping it
+makes the next problem unfixable rather than merely harder.
+
+---
+
 ## Standing constraints
 
 Never, regardless of progress:
