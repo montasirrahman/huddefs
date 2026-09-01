@@ -9,7 +9,7 @@ pick up where the last one stopped. If you are resuming, read this first, then
 ## Where things stand
 
 **Current phase:** E4 — mechanical v1 -> v2 conversion of the 148 EASY packages,
-in batches of 20, strictly sequential. **Batch 1 of 8 complete.**
+in batches of 20, strictly sequential. **Batch 1 of 7 complete.**
 
 **Resume point:** `/var/hud-build/convert-state.json` on bf-repo lists every
 package already processed. `scripts/convert-easy.py` skips those, so re-running
@@ -289,6 +289,62 @@ conversion, and that a package building in 2026-02 is not evidence it builds
 today. Logged to `docs/needs-human.md` with a recommendation
 (`-DBUILD_CursesDialog=OFF`), deferred to the retry pass rather than silently
 shipping less than the pool copy does.
+
+---
+
+## bf-build is reachable again — and it has the kernel feature bf-repo lacks
+
+Verified 2026-09-01 23:40.
+
+```
+                bf-build                     bf-repo
+cores/RAM       1 core / 1 GB                4 cores / 3.8 GB
+disk            94 G, 86 G free, 224 MB/s    980 G, 43.5 MB/s, failed once today
+overlayfs       PRESENT                      CONFIG_OVERLAY_FS not set
+/dev/kvm        absent                       present
+```
+
+Two of those lines matter a great deal.
+
+**bf-build has overlayfs.** That is the exact feature whose absence on bf-repo
+made F5 impossible and forced the whole `--volatile=overlay` detour. On bf-build
+the original design works: mount an overlay over one pre-extracted tree instead
+of unpacking 3.3 G per build.
+
+**Its disk is 5x faster** — 224 MB/s against 43.5 MB/s. Combined with overlayfs,
+the ~300 s per small package that is currently almost all I/O should drop below a
+minute.
+
+**But it is still 1 core / 1 GB**, so the resize has not landed yet. `binutils`
+took 847 s on four cores here; on one core with 1 GB it would thrash or be killed.
+Until it is resized bf-build is a better *storage* host, not a better build host.
+
+`/dev/kvm` is absent there, so **G4 and G5 must run on bf-repo** regardless.
+
+### The 251 shipped packages now exist in two places
+
+The definitions have been safe in GitHub for a while; the binaries were not, and
+they are **not reliably rebuildable** — `cmake` does not compile today under
+GCC 15.2. That makes them irreplaceable rather than merely inconvenient to lose,
+on a disk that rejected writes this morning. The earlier backups sat on that same
+disk, which is no backup at all.
+
+Copied to `bf-build:/var/backup/bf-repo/hud-pool-2026-09-01.tar` and verified by
+comparing sha256 of every file, not just by size:
+
+```
+251 .hud    byte-identical
+251 .huddef byte-identical
+packages.list  1ba27c5249381197 == 1ba27c5249381197
+```
+
+### Recommended order from here
+
+1. Resize bf-build. It unblocks more than any amount of grinding on bf-repo.
+2. Move the build loop there once resized — overlayfs plus 224 MB/s addresses
+   both constraints at once, and takes builds off the machine that serves the
+   repo and holds the only writable copy of it.
+3. Keep G4/G5 on bf-repo, which has KVM.
 
 ---
 

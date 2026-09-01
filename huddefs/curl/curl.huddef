@@ -5,9 +5,14 @@ Package: curl
 Version: 8.15.0
 Architecture: x86_64
 Section: network
-Depends: samba,nghttp2,apache,valgrind,openssh,gnutls,make-ca,brotli,libssh2,libpsl
 Description: cURL-8.15.0
 Source: https://curl.se/download/curl-8.15.0.tar.xz
+Source-SHA256:    6cd0a8a5b126ddfda61c94dc2c3fc53481ba7a35461cf7c5ab66aa9d6775b609
+
+
+Build-Depends:    nghttp2, valgrind, gnutls, make-ca, brotli, libssh2, libpsl
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud --with-openssl --enable-threaded-resolver --with-libssh2

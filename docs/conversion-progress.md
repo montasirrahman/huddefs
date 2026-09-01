@@ -23,3 +23,14 @@ that set.
 | `acl` | FAIL — [✗] Package not found: auto | — | 125 | — | — | — |
 | `aom` | FAIL — [✗] Package not found: auto | — | 136 | — | — | — |
 | `attr` | FAIL — [✗] Package not found: auto | — | 141 | — | — | — |
+
+## Batch 1
+
+1/4 built, average build 570s, cumulative elapsed 9.3h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `cracklib` | OK | OK | 570 | `_cracklib.so`, `libcrack.so.2` | `exec(sh)`, `libc.so.6`, `libz.so.1` | — |
+| `cups` | FAIL — [✗] build dependency install failed | — | 176 | — | — | — |
+| `curl` | FAIL — [✗] build dependency install failed | — | 194 | — | — | — |
+| `dav1d` | FAIL — [✗] build dependency install failed | — | 209 | — | — | — |

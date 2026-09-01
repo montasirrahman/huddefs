@@ -5,9 +5,14 @@ Package: dav1d
 Version: 1.5.1
 Architecture: x86_64
 Section: multimedia
-Depends: meson, ninja, nasm
 Description: Fast AV1 decoder by VideoLAN and FFmpeg
 Source: https://code.videolan.org/videolan/dav1d/-/archive/1.5.1/dav1d-1.5.1.tar.bz2
+Source-SHA256:    4eddffd108f098e307b93c9da57b6125224dc5877b1b3d157b31be6ae8f1f093
+
+
+Build-Depends:    meson, ninja, nasm
+Depends:          auto
+Provides:         auto
 
 [configure]
 meson setup build --prefix=/opt/hud --buildtype=release -Ddefault_library=shared
