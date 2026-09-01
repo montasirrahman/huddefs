@@ -72,6 +72,62 @@ Results land in `docs/conversion-progress.md`, one section per batch.
 
 ---
 
+## Blocking discovery: G3 must come before E5
+
+E5 cannot run in the order given, and the reason is structural rather than a
+per-package problem.
+
+All 66 SUSPECT-EMPTY packages share one defect — `[install]` runs pip without
+`--root=$DESTDIR`, so the payload went into the build container's own Python and
+the `.hud` holds metadata only. The fix is mechanical. The obstacle is what has
+to happen next.
+
+**Every Python build backend is itself one of the 66 empty packages:**
+
+```
+python-setuptools            2822845 bytes   has payload
+python3-distlib               676946 bytes   has payload
+python3-hatchling                798 bytes   EMPTY
+python3-setuptools-scm           769 bytes   EMPTY
+python3-editables                750 bytes   EMPTY
+python3-pathspec                 760 bytes   EMPTY
+python3-pluggy                   773 bytes   EMPTY
+python3-trove-classifiers        756 bytes   EMPTY
+python3-meson-python             780 bytes   EMPTY
+python3-cython                   753 bytes   EMPTY
+python3-pyproject-hooks          762 bytes   EMPTY
+python3-pyproject-metadata       753 bytes   EMPTY
+python3-hatch-vcs                772 bytes   EMPTY
+python3-hatch-fancy-pypi-readme  765 bytes   EMPTY
+```
+
+`python3-attrs` needs hatchling to build; hatchling needs pathspec, pluggy,
+editables and trove-classifiers; all of those are empty too.
+
+And `hud-build` installs `Build-Depends` with `hud install` from the repository
+in the build root's `sources.list`, which is the **live** repo:
+
+```
+hud http://172.19.1.7/hud-repo stable main
+```
+
+So rebuilding `python3-hatchling` correctly on this machine changes nothing for
+the next build: `python3-attrs` will still install the old empty hatchling from
+the live repo. Publishing the fixed ones to the live repo is forbidden, and
+correctly so — the client does not verify SHA256, so a bad publish reaches every
+machine.
+
+**Therefore G3 (the staging repo) moves ahead of E5.** `/var/www/hud-unstable/`
+with its own `packages.db` and `packages.list`, nothing pointing at it, is
+explicitly safe to publish to. Once the build rootfs's `sources.list` points
+there, the 66 can be fixed in dependency order — backends first, then their
+dependents — with each fixed package immediately available to the next build.
+
+This is a sequencing consequence, not a change of scope: every phase still
+happens, and nothing else in the queue moves.
+
+---
+
 ## Next phases
 
 1. **Rebuild the kernel with `CONFIG_OVERLAY_FS=y` on bf-build.** This is the
