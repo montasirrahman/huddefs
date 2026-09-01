@@ -274,6 +274,27 @@ def artifact(pkg):
          if re.match(rf"^{re.escape(pkg)}-\d.*\.hud$", f)]
     return os.path.join(OUT, sorted(c)[-1]) if c else None
 
+
+def clear_stale_containers():
+    """Remove nspawn leftovers before every build.
+
+    Every build root is a directory called "root", so systemd-nspawn registers
+    every container under the machine name "root". If a previous container was
+    orphaned rather than exiting — which is what `systemctl stop` with
+    KillMode=process does to a build in progress — the next one cannot start:
+
+        Failed to register machine: Machine 'root' already exists
+        Mount point '/run/systemd/nspawn/unix-export/root' exists already
+
+    This ran once per batch before, which was not enough: the orphan appears
+    mid-batch and every remaining package in it then fails. cups, curl and dav1d
+    all failed this way and tripped the same-failure-three-times stop condition.
+    """
+    sh("machinectl list --no-legend 2>/dev/null | awk '{print $1}' | "
+       "xargs -r -n1 machinectl terminate 2>/dev/null", timeout=120)
+    sh("umount /run/systemd/nspawn/unix-export/* 2>/dev/null; "
+       "rm -rf /run/systemd/nspawn/unix-export/* 2>/dev/null", timeout=120)
+
 def do_package(pkg, prov):
     rec = {"pkg": pkg, "build": "", "test": "", "provides": "", "requires": "",
            "added": [], "note": "", "build_s": 0, "test_s": 0, "build_depends": []}
@@ -286,6 +307,7 @@ def do_package(pkg, prov):
 
     added, tries = [], 1
     t0 = time.time()
+    clear_stale_containers()
     rc, log = sh(f"hud-build {H}/{pkg}/{pkg}.huddef")
     while rc != 0 and tries < MAXTRY:
         dep, ev = guess_dep(log, prov)
@@ -347,6 +369,7 @@ def do_package(pkg, prov):
         smoke = ('"python3 -c \\"import ctypes; ctypes.CDLL(\'' + target +
                  '\'); print(\'ok\')\\""')
     t1 = time.time()
+    clear_stale_containers()
     trc, tlog = sh(f"hud-test --local {art} {smoke}".strip(), timeout=7200)
     rec["test_s"] = int(time.time() - t1)
     rec["test"] = "OK" if trc == 0 else "FAIL"
