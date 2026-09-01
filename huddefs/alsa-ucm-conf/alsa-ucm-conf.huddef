@@ -1,0 +1,33 @@
+# HUD Package Definition - alsa-ucm-conf 1.2.14
+# ALSA Use Case Manager configuration files
+#
+# Split out of alsa-lib, whose [install] used to fetch and unpack this second
+# upstream release itself. A second archive that no Source-SHA256 covers is
+# exactly what the hash exists to prevent, so it became its own package rather
+# than a second Source. See docs/huddef-v2-spec.md, "One Source per definition".
+
+Package:          alsa-ucm-conf
+Version:          1.2.14
+Architecture:     noarch
+Section:          multimedia
+Description:      ALSA Use Case Manager configuration files
+
+Source:           https://www.alsa-project.org/files/pub/lib/alsa-ucm-conf-1.2.14.tar.bz2
+Source-SHA256:    32e9809f592d92b978aa1032e35293c33b8d0f1ec475f937022c3ee9a3069c21
+
+# Configuration data only: nothing is compiled, so there is no toolchain to
+# declare and nothing for the dependency scanner to find.
+Build-Depends:
+Depends:          auto
+Provides:         auto
+
+[install]
+# v1 unpacked these into /usr/share/alsa, outside the package prefix and outside
+# $DESTDIR, so they never appeared in FILES and never shipped in the .hud. They
+# belong under the prefix, staged like everything else.
+install -vdm755 $DESTDIR/opt/hud/share/alsa
+cp -a ucm ucm2 $DESTDIR/opt/hud/share/alsa/
+
+[check]
+test -d $DESTDIR/opt/hud/share/alsa/ucm2
+test -f $DESTDIR/opt/hud/share/alsa/ucm2/ucm.conf

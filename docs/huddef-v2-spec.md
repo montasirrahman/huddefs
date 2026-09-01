@@ -169,6 +169,51 @@ cover: stopping services, removing generated state.
 
 ---
 
+## One Source per definition
+
+**A definition declares exactly one `Source:` and exactly one `Source-SHA256:`.
+Multi-source packages are not supported, and this is deliberate.**
+
+The question came up with `alsa-lib`, whose v1 `[install]` did this:
+
+```bash
+make install &&
+tar -C /usr/share/alsa --strip-components=1 -xf ../alsa-ucm-conf-1.2.14.tar.bz2
+```
+
+That second tarball is a separate upstream release. Nothing in the definition
+declared it, nothing hashed it, and the builder never fetched it — the file
+simply had to already be sitting next to the source tree, left there by whoever
+built the package last.
+
+Adding `Source-1:`/`Source-1-SHA256:` to the format would have made that legal.
+It was rejected. **An undeclared second download is precisely the thing
+`Source-SHA256` exists to prevent**, and a format that supports several sources
+per package invites exactly the arrangement that shipped an unverified tarball
+into a package in the first place. One definition, one upstream artifact, one
+hash — so that "what went into this package" has a single answer.
+
+### What to do instead
+
+Package the second artifact separately and depend on it. `alsa-ucm-conf` became
+`huddefs/alsa-ucm-conf/alsa-ucm-conf.huddef` with its own `Source` and
+`Source-SHA256`, and `alsa-lib` declares it in `Depends:`. Each tarball is now
+fetched by the builder, hash-verified, and tracked in its own `FILES`.
+
+This also fixed a second defect in the same line: the extraction target was
+`/usr/share/alsa`, outside both the package prefix and `$DESTDIR`, so those
+files never appeared in `FILES` and never shipped. They now stage into
+`$DESTDIR/opt/hud/share/alsa`.
+
+### The narrow exception
+
+If upstream genuinely ships one logical release as several archives that are
+useless apart — not the `alsa-ucm-conf` case, which has its own version and
+release cadence — vendor the extra archive into `files/` and commit it, where it
+is reviewable and travels with the definition. Do not fetch it at build time.
+
+---
+
 ## Network policy
 
 The build container has **no network access** after the source tarball is
