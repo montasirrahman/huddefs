@@ -15,10 +15,15 @@ in batches of 20, strictly sequential. **Batch 1 of 8 complete.**
 package already processed. `scripts/convert-easy.py` skips those, so re-running
 the driver continues rather than restarting.
 
+The conversion runs as a **transient systemd unit** so it survives the session
+that started it. Earlier runs were killed twice by session teardown mid-batch.
+
 ```bash
 # on bf-repo
-bash /var/hud-build/e4/driver.sh          # continues from convert-state.json
-tail -f /var/hud-build/e4/driver.out
+systemctl status e4-conversion
+journalctl -u e4-conversion -f
+systemd-run --unit=e4-conversion --property=KillMode=process \
+    /bin/bash /var/hud-build/e4/e4.sh      # resumes from convert-state.json
 ```
 
 Results land in `docs/conversion-progress.md`, one section per batch.
@@ -125,6 +130,46 @@ dependents — with each fixed package immediately available to the next build.
 
 This is a sequencing consequence, not a change of scope: every phase still
 happens, and nothing else in the queue moves.
+
+---
+
+## qemu harness — verified 2026-09-01 on bf-repo
+
+Established before G4, so that a G4 failure can be read as a rootfs problem
+rather than sending anyone to debug the emulator.
+
+- **qemu boots guests under KVM successfully, unpatched.** The E8 patch is a
+  build-time fix for compiling against Python 3.13.6; it does not touch the
+  emulator. **The harness is not blocked on E8.**
+- **Kernel 6.16.1 has `CONFIG_VIRTIO_BLK/NET/PCI=y` built in** — guests need no
+  initrd for virtio, so a raw rootfs image boots directly.
+- **SELinux is compiled in.** Relevant to libvirt's sVirt at G5.
+- **`CONFIG_OVERLAY_FS` is not set.** Still the one kernel rebuild worth doing,
+  and it is for build I/O only — it does not block G4 or G5.
+
+**Therefore any G4 failure is a rootfs problem, not a harness problem.**
+
+### How G4 must test
+
+Never by exit code: a kernel panic and a clean boot both leave qemu running
+until the timeout, so both "succeed". Test by log content with a hard timeout.
+
+```bash
+timeout 120 qemu-system-x86_64 -enable-kvm -m 1024 -nographic \
+  -kernel /boot/vmlinuz-6.16.1 \
+  -drive file=rootfs.img,format=raw,if=virtio \
+  -netdev user,id=n0 -device virtio-net-pci,netdev=n0 \
+  -append "console=ttyS0 root=/dev/vda rw" 2>&1 | tee boot.log
+# then grep boot.log for the success marker
+```
+
+Built up in stages so a failure isolates to one thing:
+
+1. kernel boots to userspace — already proven
+2. the disk image mounts as root
+3. systemd reaches a target as PID 1
+4. packages install from unstable
+5. pass/fail reported
 
 ---
 
