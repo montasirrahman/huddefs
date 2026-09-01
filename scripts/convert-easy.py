@@ -330,9 +330,22 @@ def do_package(pkg, prov):
         rec.update(test="FAIL", note="no artifact produced")
         return rec, None
 
-    so = next((x for x in rec["provides"].split(",") if ".so" in x), "")
-    smoke = (f'"python3 -c \\"import ctypes; ctypes.CDLL(\'/opt/hud/lib/{so}\'); '
-             f'print(\'ok\')\\""') if so else ""
+    # Pick the smoke target from the archive's real paths, not from Provides.
+    #
+    # Provides lists sonames, and taking the first one broke on cracklib: its
+    # first entry is _cracklib.so, a Python extension module that lives in
+    # site-packages, so loading it from /opt/hud/lib failed and the package was
+    # reported FAIL when it was fine. Look for a real versioned library under a
+    # lib directory instead, and skip the smoke test when there is not one.
+    rc_l, listing = sh(f"tar tzf {art}", timeout=600)
+    libs = [l.strip().lstrip(".") for l in listing.splitlines()
+            if re.search(r"/lib(64)?/lib[^/]*\.so\.[0-9]", l)
+            and "site-packages" not in l]
+    smoke = ""
+    if libs:
+        target = sorted(libs, key=len)[0]
+        smoke = ('"python3 -c \\"import ctypes; ctypes.CDLL(\'' + target +
+                 '\'); print(\'ok\')\\""')
     t1 = time.time()
     trc, tlog = sh(f"hud-test --local {art} {smoke}".strip(), timeout=7200)
     rec["test_s"] = int(time.time() - t1)
