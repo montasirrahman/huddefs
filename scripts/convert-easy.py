@@ -28,6 +28,12 @@ CACHE  = "/var/hud-build/cache"
 OUT    = "/var/hud-build/output"
 STATE  = "/var/hud-build/convert-state.json"
 MIN_FREE_GB = 100
+
+# Always present in the minimal rootfs because the hud client cannot fetch
+# anything without them. A Build-Depends naming only these cannot be shown to be
+# necessary by a build here, so it is reported as unvalidated rather than proven.
+BOOTSTRAP = {"curl", "openssl", "zlib", "zstd", "brotli", "nghttp2",
+             "libidn2", "libpsl", "libunistring"}
 MAXTRY = 3
 
 # ---------------------------------------------------------------- helpers
@@ -66,8 +72,22 @@ def convert(pkg, extra_bd=None):
         return f"tarball-missing:{os.path.basename(tarball)}", None
     digest = sha256(tarball)
 
+    # Where the base Build-Depends comes from:
+    #
+    # An already-converted file carries "Depends: auto". Reading that as the v1
+    # dependency list produced "Build-Depends: auto", and hud-build then tried to
+    # install a package literally called "auto" — which is how acl, aom and attr
+    # all failed with "Package not found: auto" and tripped stop condition 1.
+    #
+    # So: if the file already declares Build-Depends, that is authoritative and
+    # v1's Depends is not consulted. "auto" is never a package name.
+    bd_m = re.search(r"^Build-Depends:[ \t]*(.*)$", head, re.M)
     dep_m = re.search(r"^Depends:[ \t]*(.*)$", head, re.M)
-    v1_deps = [d.strip() for d in (dep_m.group(1) if dep_m else "").split(",") if d.strip()]
+    if bd_m is not None:
+        base = [d.strip() for d in bd_m.group(1).split(",") if d.strip()]
+    else:
+        base = [d.strip() for d in (dep_m.group(1) if dep_m else "").split(",") if d.strip()]
+    v1_deps = [d for d in base if d.lower() != "auto"]
     bd = list(v1_deps)
     for e in (extra_bd or []):
         if e not in bd:
@@ -135,12 +155,13 @@ def artifact(pkg):
 
 def do_package(pkg, prov):
     rec = {"pkg": pkg, "build": "", "test": "", "provides": "", "requires": "",
-           "added": [], "note": "", "build_s": 0, "test_s": 0}
+           "added": [], "note": "", "build_s": 0, "test_s": 0, "build_depends": []}
 
     st, info = convert(pkg)
     if st != "converted":
         rec.update(build="SKIP", note=st)
         return rec, None
+    rec["build_depends"] = info["build_depends"]
 
     added, tries = [], 1
     t0 = time.time()
@@ -212,15 +233,25 @@ that set.
         fh.write(f"\n## Batch {batch_no}\n\n")
         fh.write(f"{ok}/{len(recs)} built, average build {avg:.0f}s, "
                  f"cumulative elapsed {elapsed_total/3600:.1f}h\n\n")
-        fh.write("| Package | Build | Test | Provides | Requires | Undeclared Build-Depends |\n")
-        fh.write("|---|---|---|---|---|---|\n")
+        fh.write("| Package | Build | Test | Build s | Provides | Requires | "
+                 "Undeclared Build-Depends |\n")
+        fh.write("|---|---|---|---|---|---|---|\n")
+        floor_only = []
         for r in recs:
             prov = f"`{r['provides'].replace(',', '`, `')}`" if r["provides"] else "—"
             req = f"`{r['requires'].replace(',', '`, `')}`" if r["requires"] else "—"
             add = f"**`{'`, `'.join(r['added'])}`**" if r["added"] else "—"
             note = f" — {r['note']}" if r["note"] else ""
-            fh.write(f"| `{r['pkg']}` | {r['build']}{note} | {r['test'] or '—'} | "
-                     f"{prov} | {req} | {add} |\n")
+            bd = set(r.get("build_depends") or [])
+            mark = ""
+            if bd and bd <= BOOTSTRAP:
+                floor_only.append(r["pkg"]); mark = " ᵇ"
+            fh.write(f"| `{r['pkg']}`{mark} | {r['build']}{note} | {r['test'] or '—'} | "
+                     f"{r['build_s']} | {prov} | {req} | {add} |\n")
+        if floor_only:
+            fh.write(f"\nᵇ Build-Depends falls entirely inside the bootstrap floor "
+                     f"({', '.join('`'+p+'`' for p in floor_only)}), so it is present in the "
+                     f"rootfs regardless and this build does not validate it.\n")
 
 def log_needs_human(pkg, why):
     path = f"{REPO}/docs/needs-human.md"
