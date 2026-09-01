@@ -6,9 +6,13 @@ Package: gobject-introspection
 Version: 1.84.0
 Architecture: x86_64
 Section: libraries
-Depends: glib, libffi, python3
 Description: GObject introspection tools and libraries (rebuilt against new glib)
 Source: https://download.gnome.org/sources/gobject-introspection/1.84/gobject-introspection-1.84.0.tar.xz
+Source-SHA256:    945b57da7ec262e5c266b89e091d14be800cc424277d82a02872b7d794a84779
+
+Build-Depends:    glib, libffi, python3
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

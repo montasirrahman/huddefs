@@ -5,9 +5,13 @@ Package: gnutls
 Version: 3.8.10
 Architecture: x86_64
 Section: security
-Depends: nettle,libtasn1,libunistring,p11-kit
 Description: GnuTLS - secure communications library implementing TLS, SSL, and DTLS protocols
 Source: https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-3.8.10.tar.xz
+Source-SHA256:    db7fab7cce791e7727ebbef2334301c821d79a550ec55c9ef096b610b03eb6b7
+
+Build-Depends:    nettle, libtasn1, libunistring, p11-kit
+Depends:          auto
+Provides:         auto
 
 [configure]
 # Set up environment so configure finds /opt/hud dependencies FIRST

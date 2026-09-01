@@ -34,6 +34,17 @@ ok()   { echo "${GREEN}[✓]${NC} $*"; }
 warn() { echo "${YELLOW}[!]${NC} $*"; }
 die()  { echo "${RED}[✗]${NC} $*" >&2; exit 1; }
 
+# --deps "a b c": install these packages from the repository before the package
+# under test. Without them the unresolved-library check is meaningless in a clean
+# root: it has only the package under test installed, so freetype is reported as
+# missing libpng16.so.16 purely because nothing else is there. The check is worth
+# keeping — it is what catches a genuinely missing dependency — but it has to run
+# against a root where the declared dependencies are present.
+PREDEPS=""
+if [ "${1:-}" = "--deps" ]; then
+    PREDEPS="${2:-}"; shift 2
+fi
+
 LOCAL_PKG=""
 if [ "${1:-}" = "--local" ]; then
     LOCAL_PKG="${2:-}"
@@ -72,6 +83,17 @@ step() {
         return 1
     fi
 }
+
+# --- install the declared dependencies first --------------------------------
+if [ -n "$PREDEPS" ]; then
+    info "Installing declared dependencies: $PREDEPS"
+    if systemd-nspawn -q -D "$RUN" /bin/bash -c \
+        "hud update >/dev/null 2>&1 && hud install -y $PREDEPS >/dev/null 2>&1"; then
+        ok "dependencies installed"
+    else
+        warn "could not install all dependencies; unresolved-library results may be noisy"
+    fi
+fi
 
 # --- what was already there? --------------------------------------------------
 # The base rootfs is a snapshot of a working machine, so the package under test

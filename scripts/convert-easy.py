@@ -396,7 +396,13 @@ def do_package(pkg, prov):
     smoke = ""
     t1 = time.time()
     clear_stale_containers()
-    trc, tlog = sh(f"hud-test --local {art} {smoke}".strip(), timeout=7200)
+    # Install the package's own declared dependencies into the test root first,
+    # so the unresolved-library check means something. Uses the repo copy of
+    # hud-test rather than the deployed one; nothing is installed to /usr/local/bin.
+    predeps = " ".join(rec.get("build_depends") or [])
+    dflag = f'--deps "{predeps}" ' if predeps else ""
+    trc, tlog = sh(f"/root/blackflag/scripts/hud-test {dflag}--local {art} {smoke}".strip(),
+                   timeout=7200)
     rec["test_s"] = int(time.time() - t1)
     rec["test"] = "OK" if trc == 0 else "FAIL"
     if trc != 0:

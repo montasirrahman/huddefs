@@ -4,9 +4,14 @@ Package: glib
 Version: 2.84.4
 Architecture: x86_64
 Section: libraries
-Depends: pcre2,libffi,python3,meson,ninja
 Description: Low-level core library that forms the basis for GTK+ and GNOME
 Source: https://download.gnome.org/sources/glib/2.84/glib-2.84.4.tar.xz
+Source-SHA256:    8a9ea10943c36fc117e253f80c91e477b673525ae45762942858aef57631bb90
+
+Build-Depends:    pcre2, libffi, python3, meson, ninja
+Depends:          auto
+Provides:         auto
+
 [configure]
 mkdir -p build
 cd build
