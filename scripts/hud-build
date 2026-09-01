@@ -17,16 +17,20 @@
 set -euo pipefail
 
 BUILD_ROOT="${HUD_BUILD_ROOT:-/var/hud-build}"
+
+# Single source of truth for which rootfs to use. Both hud-build and hud-test
+# read this file; the path used to be duplicated in each script and drifted.
+HUD_BUILD_CONF="${HUD_BUILD_CONF:-/etc/hud-build.conf}"
+# shellcheck source=/dev/null
+[ -r "$HUD_BUILD_CONF" ] && . "$HUD_BUILD_CONF"
+
 CACHE_DIR="$BUILD_ROOT/cache"
 OUTPUT_DIR="$BUILD_ROOT/output"
 LOG_DIR="$BUILD_ROOT/logs"
-# The MINIMAL rootfs is the default, deliberately. The full rootfs is a snapshot
-# of a machine with all 245 packages installed, so every build succeeds there
-# whether or not its Build-Depends are correct — which would let the conversion
-# of 245 definitions produce 245 green builds carrying unverified dependency
-# data. Against minimal, a build succeeds only if its Build-Depends actually
-# name what it needs. Override with HUD_BASE_ROOTFS to use the full one.
-BASE_ROOTFS="${HUD_BASE_ROOTFS:-$BUILD_ROOT/base-rootfs-minimal.tar.zst}"
+# Resolution order: an explicit HUD_BASE_ROOTFS for this run, then the shared
+# default from hud-build.conf, then a hard fallback. The rationale for minimal
+# being the default lives in hud-build.conf, next to the value itself.
+BASE_ROOTFS="${HUD_BASE_ROOTFS:-${HUD_ROOTFS_DEFAULT:-$BUILD_ROOT/base-rootfs-minimal.tar.zst}}"
 PREFIX="/opt/hud"
 
 RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'
@@ -90,6 +94,7 @@ ln -sfn "$(basename "$LOG")" "$LOG_DIR/${NAME}-${VERSION}.log"
 exec > >(tee "$LOG") 2>&1
 
 info "Building $NAME $VERSION ($ARCH)"
+info "Rootfs: $BASE_ROOTFS"
 
 # --- 1. fetch and verify source ----------------------------------------------
 TARBALL=""

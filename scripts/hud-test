@@ -16,7 +16,15 @@
 set -euo pipefail
 
 BUILD_ROOT="${HUD_BUILD_ROOT:-/var/hud-build}"
-BASE_ROOTFS="${HUD_BASE_ROOTFS:-$BUILD_ROOT/base-rootfs.tar.zst}"
+
+# Single source of truth for which rootfs to use — see hud-build.conf. This
+# script used to carry its own copy of the path, which is how it ended up
+# testing against the full rootfs long after hud-build had moved to minimal.
+HUD_BUILD_CONF="${HUD_BUILD_CONF:-/etc/hud-build.conf}"
+# shellcheck source=/dev/null
+[ -r "$HUD_BUILD_CONF" ] && . "$HUD_BUILD_CONF"
+
+BASE_ROOTFS="${HUD_BASE_ROOTFS:-${HUD_ROOTFS_DEFAULT:-$BUILD_ROOT/base-rootfs-minimal.tar.zst}}"
 TEST_ROOT="${HUD_TEST_ROOT:-/var/hud-test}"
 
 RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'
@@ -39,6 +47,7 @@ fi
 [ -n "$PKG" ] || die "usage: hud-test <package> [smoke-command]
        hud-test --local <file.hud> [smoke-command]"
 
+info "Rootfs: $BASE_ROOTFS"
 [ -f "$BASE_ROOTFS" ] || die "base rootfs missing: $BASE_ROOTFS"
 command -v systemd-nspawn >/dev/null || die "systemd-nspawn not found"
 
