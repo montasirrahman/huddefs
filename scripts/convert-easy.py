@@ -56,6 +56,51 @@ def sha256(path):
             h.update(c)
     return h.hexdigest()
 
+
+# ---------------------------------------------------------------- dep hygiene
+
+_REPO_NAMES = None
+DROPPED_LOG = "/var/hud-build/dropped-deps.json"
+
+def repo_names():
+    global _REPO_NAMES
+    if _REPO_NAMES is None:
+        _REPO_NAMES = {}
+        try:
+            for line in open("/var/www/hud-repo/packages.list"):
+                if not line.startswith("#") and "|" in line:
+                    n = line.split("|")[0]
+                    _REPO_NAMES[n.lower()] = n
+        except OSError:
+            pass
+    return _REPO_NAMES
+
+def normalise_deps(deps):
+    """Map book names onto real package names; drop what was never packaged."""
+    have = repo_names()
+    keep, dropped = [], []
+    for d in deps:
+        dl = d.lower()
+        hit = None
+        for cand in (dl, dl.rstrip("0123456789"), dl.replace("-", ""), dl + "2"):
+            if cand in have:
+                hit = have[cand]
+                break
+        if hit:
+            if hit not in keep:
+                keep.append(hit)
+        else:
+            dropped.append(d)
+    return keep, dropped
+
+def record_dropped(pkg, dropped):
+    try:
+        data = json.load(open(DROPPED_LOG))
+    except Exception:
+        data = {}
+    data[pkg] = sorted(set(data.get(pkg, []) + dropped))
+    json.dump(data, open(DROPPED_LOG, "w"), indent=1)
+
 # ---------------------------------------------------------------- conversion
 
 def convert(pkg, extra_bd=None):
@@ -88,6 +133,23 @@ def convert(pkg, extra_bd=None):
     else:
         base = [d.strip() for d in (dep_m.group(1) if dep_m else "").split(",") if d.strip()]
     v1_deps = [d for d in base if d.lower() != "auto"]
+
+    # v1's Depends were largely copied from the LFS/BLFS book, including
+    # OPTIONAL entries, and using the book's names rather than this repo's.
+    # 19 of the 148 EASY packages name something the repository does not have:
+    # texlive, libreoffice, doxygen and sphinx (book "optional, for
+    # documentation"), apache, samba and openssh (book "optional, to run the
+    # test suite"), glibc/java/python (base system, never hud packages), and
+    # name mismatches like glib2 vs glib or libx11 vs libX11.
+    #
+    # Every one of those packages shipped successfully while none of these was
+    # ever installable, which is the evidence that they are not required.
+    #
+    #   resolvable name/case mismatch -> rewritten to the real package name
+    #   not in the repository at all  -> dropped, and logged, never silently
+    v1_deps, dropped = normalise_deps(v1_deps)
+    if dropped:
+        record_dropped(pkg, dropped)
     bd = list(v1_deps)
     for e in (extra_bd or []):
         if e not in bd:

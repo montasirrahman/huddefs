@@ -5,9 +5,13 @@ Package: aom
 Version: 3.12.1
 Architecture: x86_64
 Section: multimedia
-Depends: cmake, nasm
 Description: AV1 video codec library from Alliance for Open Media
 Source: https://storage.googleapis.com/aom-releases/libaom-3.12.1.tar.gz
+Source-SHA256:    9e9775180dec7dfd61a79e00bda3809d43891aee6b2e331ff7f26986207ea22e
+
+Build-Depends:    cmake, nasm
+Depends:          auto
+Provides:         auto
 
 [configure]
 mkdir -p aom_build && cd aom_build && cmake .. -DCMAKE_INSTALL_PREFIX=/opt/hud -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DENABLE_DOCS=OFF -DENABLE_TESTS=OFF

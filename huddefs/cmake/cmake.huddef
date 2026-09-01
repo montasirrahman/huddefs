@@ -6,9 +6,13 @@ Package: cmake
 Version: 4.1.0
 Architecture: x86_64
 Section: development
-Depends: curl, libarchive, libuv, nghttp2
 Description: CMake - Cross-platform build system generator
 Source: https://cmake.org/files/v4.1/cmake-4.1.0.tar.gz
+Source-SHA256:    81ee8170028865581a8e10eaf055afb620fa4baa0beb6387241241a975033508
+
+Build-Depends:    curl, libarchive, libuv, nghttp2
+Depends:          auto
+Provides:         auto
 
 [configure]
 # Fix lib64 issue

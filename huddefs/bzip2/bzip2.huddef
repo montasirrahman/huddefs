@@ -5,9 +5,13 @@ Package: bzip2
 Version: 1.0.8
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: High-quality data compressor
 Source: https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
+Source-SHA256:    ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [build]
 # Build shared library
