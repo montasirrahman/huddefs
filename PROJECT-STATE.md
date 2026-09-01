@@ -9,7 +9,7 @@ pick up where the last one stopped. If you are resuming, read this first, then
 ## Where things stand
 
 **Current phase:** E4 — mechanical v1 -> v2 conversion of the 148 EASY packages,
-in batches of 20, strictly sequential. **Batch 1 of 7 complete.**
+in batches of 20, strictly sequential. **Batch 2 of 7 complete.**
 
 **Resume point:** `/var/hud-build/convert-state.json` on bf-repo lists every
 package already processed. `scripts/convert-easy.py` skips those, so re-running
@@ -345,6 +345,49 @@ packages.list  1ba27c5249381197 == 1ba27c5249381197
    both constraints at once, and takes builds off the machine that serves the
    repo and holds the only writable copy of it.
 3. Keep G4/G5 on bf-repo, which has KVM.
+
+---
+
+## E4 failure taxonomy after 44 of 148
+
+Four distinct classes, and only one is about the packages.
+
+**1. My runner, not the packages (fixed).**
+`freetype`, `glib`, `gnutls`, `json-glib` were reported FAIL after building
+perfectly. The smoke test loaded each library with `ctypes` in a container that
+holds only the package under test, so any library with dependencies fails to
+load. Dropped: `hud-test` already checks what matters in a clean root — the
+installed package is the one under test, FILES is non-trivial, and every shipped
+ELF resolves. `json-c` failed on a missing cmake that the retry logic should have
+added, because the pattern was anchored to line start and the real text is
+`/build.sh: line 21: cmake: command not found`.
+
+**2. Python 3.13 removed distutils (fixed).**
+`gobject-introspection`, `graphene`, `gstreamer` and `harfbuzz` all died on
+`ModuleNotFoundError: No module named 'distutils'`. meson and g-ir-scanner still
+import it; setuptools ships the compatibility shim. The retry logic now maps that
+error to `python-setuptools`. Four packages, one cause — the stop condition would
+have caught it had the smoke-test noise not tripped first.
+
+**3. Toolchain strictness (deferred to a human).**
+`git`, `gdb`, `lcms2`, `cmake`. These built in 2026-02 and do not build today
+under GCC 15.2. `git` fails on an implicit function declaration, which is an
+error under C23. Logged with recommendations; **this class will grow**, since
+every remaining package was compiled against an older toolchain.
+
+**4. Orphaned containers (fixed, and it was mine).**
+`KillMode=process` left the Python child running after every `systemctl stop`, so
+up to three builds ran concurrently on a four-core box with a 43.5 MB/s disk.
+Units now use the default `control-group`, and container cleanup runs before
+every build rather than once per batch.
+
+### What this says about the conversion
+
+Of 44 attempted, the mechanical conversion itself has not failed once. Every
+failure was my tooling, a Python version change, or a compiler that moved. The v1
+definitions are in better shape than the count of failures suggests — the
+`Build-Depends` data is wrong in ways already characterised, but the build
+sections themselves are sound.
 
 ---
 

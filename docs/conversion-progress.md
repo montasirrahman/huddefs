@@ -34,3 +34,52 @@ that set.
 | `cups` | FAIL — [✗] build dependency install failed | — | 176 | — | — | — |
 | `curl` | FAIL — [✗] build dependency install failed | — | 194 | — | — | — |
 | `dav1d` | FAIL — [✗] build dependency install failed | — | 209 | — | — | — |
+
+## Batch 1
+
+18/20 built, average build 232s, cumulative elapsed 11.7h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `cups` | OK — [✗] smoke | FAIL | 363 | `libcups.so.2`, `libcupsimage.so.2`, `pkgconfig(cups)` | `exec(sh)`, `libacl.so.1`, `libc.so.6`, `libcrypt.so.2`, `libdbus-1.so.3`, `libgcc_s.so.1`, `libgnutls.so.30`, `libm.so.6`, `libstdc++.so.6`, `libsystemd.so.0`, `libusb-1.0.so.0`, `libz.so.1`, `pkgconfig(gnutls)` | — |
+| `curl` | OK — [✗] smoke | FAIL | 375 | `libcurl.so.4`, `pkgconfig(libcurl)` | `exec(sh)`, `libbrotlidec.so.1`, `libc.so.6`, `libcrypto.so.3`, `libidn2.so.0`, `libnghttp2.so.14`, `libpsl.so.5`, `libssh2.so.1`, `libssl.so.3`, `libz.so.1`, `libzstd.so.1`, `pkgconfig(libbrotlicommon)`, `pkgconfig(libbrotlidec)`, `pkgconfig(libidn2)`, `pkgconfig(libnghttp2)`, `pkgconfig(libpsl)`, `pkgconfig(libssh2)`, `pkgconfig(libzstd)`, `pkgconfig(openssl)`, `pkgconfig(zlib)` | — |
+| `dav1d` | OK | OK | 333 | `libdav1d.so.7`, `pkgconfig(dav1d)` | `libc.so.6` | — |
+| `dbus` | OK | OK | 164 | `libdbus-1.so.3`, `pkgconfig(dbus-1)` | `exec(python)`, `libc.so.6`, `libexpat.so.1`, `libsystemd.so.0`, `pkgconfig(libsystemd)` | — |
+| `dbus-python` | OK — [✗] dbus-python failed | FAIL | 230 | `pkgconfig(dbus-python)` | `libc.so.6`, `libdbus-1.so.3`, `libglib-2.0.so.0`, `pkgconfig(dbus-1)` | — |
+| `dejavu-fonts` | OK | OK | 178 | — | — | — |
+| `dmidecode` | OK | OK | 165 | — | `libc.so.6` | — |
+| `dtc` | OK | OK | 226 | `libfdt.so.1`, `pkgconfig(libfdt)` | `exec(bash)`, `libc.so.6` | — |
+| `duktape` | OK | OK | 187 | `libduktape.so.207`, `libduktaped.so.207`, `pkgconfig(duktape)` | `libc.so.6` | — |
+| `expat` | OK | OK | 170 | `libexpat.so.1`, `pkgconfig(expat)` | `libc.so.6`, `libm.so.6` | — |
+| `flac` | OK | OK | 230 | `libFLAC++.so.11`, `libFLAC.so.14`, `pkgconfig(flac)`, `pkgconfig(flac++)` | `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `font-alias` | OK | OK | 187 | — | — | — |
+| `font-util` | OK | OK | 197 | `pkgconfig(fontutil)` | `libc.so.6` | — |
+| `fontconfig` | OK — dropped dependency removed functionality: lost exec(bash) | — | 260 | `libfontconfig.so.1`, `pkgconfig(fontconfig)` | `libbz2.so.1.0`, `libc.so.6`, `libexpat.so.1`, `libfreetype.so.6`, `libm.so.6`, `libpng16.so.16`, `libz.so.1`, `pkgconfig(expat)`, `pkgconfig(freetype2)` | — |
+| `freetype` | OK — [✗] smoke | FAIL | 220 | `libfreetype.so.6`, `pkgconfig(freetype2)` | `exec(sh)`, `libbrotlidec.so.1`, `libbz2.so.1.0`, `libc.so.6`, `libm.so.6`, `libpng16.so.16`, `libz.so.1`, `pkgconfig(libbrotlidec)`, `pkgconfig(libpng)`, `pkgconfig(zlib)` | — |
+| `fribidi` | OK | OK | 198 | `libfribidi.so.0`, `pkgconfig(fribidi)` | `libc.so.6` | — |
+| `gdb` | FAIL — checking for library containing strerror... yes | — | 940 | — | — | — |
+| `git` | FAIL —   libgpg-error N.N (NKiB) | — | 289 | — | — | — |
+| `glib` | OK — [✗] smoke | FAIL | 290 | `libgio-2.0.so.0`, `libgirepository-2.0.so.0`, `libglib-2.0.so.0`, `libgmodule-2.0.so.0`, `libgobject-2.0.so.0`, `libgthread-2.0.so.0`, `pkgconfig(gio-2.0)`, `pkgconfig(gio-unix-2.0)`, `pkgconfig(girepository-2.0)`, `pkgconfig(glib-2.0)`, `pkgconfig(gmodule-2.0)`, `pkgconfig(gmodule-export-2.0)`, `pkgconfig(gmodule-no-export-2.0)`, `pkgconfig(gobject-2.0)`, `pkgconfig(gthread-2.0)` | `exec(python3)`, `exec(sh)`, `ld-linux-x86-64.so.2`, `libc.so.6`, `libelf.so.1`, `libffi.so.8`, `libm.so.6`, `libmount.so.1`, `libpcre2-8.so.0`, `libz.so.1`, `pkgconfig(libffi)`, `pkgconfig(libpcre2-8)`, `pkgconfig(mount)`, `pkgconfig(zlib)` | — |
+| `gmp` | OK | OK | 199 | `libgmp.so.10`, `libgmpxx.so.4`, `pkgconfig(gmp)`, `pkgconfig(gmpxx)` | `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+
+## Batch 2
+
+8/15 built, average build 313s, cumulative elapsed 13.1h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `gnutls` | OK — [✗] smoke | FAIL | 506 | `libgnutls.so.30`, `libgnutlsxx.so.30`, `pkgconfig(gnutls)` | `ld-linux-x86-64.so.2`, `libc.so.6`, `libgcc_s.so.1`, `libgmp.so.10`, `libhogweed.so.6`, `libidn2.so.0`, `libm.so.6`, `libnettle.so.8`, `libp11-kit.so.0`, `libstdc++.so.6`, `libtasn1.so.6`, `libunistring.so.5`, `pkgconfig(hogweed)`, `pkgconfig(libidn2)`, `pkgconfig(libtasn1)`, `pkgconfig(nettle)`, `pkgconfig(p11-kit-1)` | — |
+| `gobject-introspection` | FAIL — Program rncNrng found: NO | — | 181 | — | — | — |
+| `gperf` | OK | OK | 127 | — | `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `graphene` | FAIL — ModuleNotFoundError: No module named 'distutils' | — | 224 | — | — | — |
+| `gstreamer` | FAIL — ModuleNotFoundError: No module named 'distutils' | — | 263 | — | — | — |
+| `harfbuzz` | FAIL —   libgpg-error N.N (NKiB) | — | 225 | — | — | — |
+| `icu` | OK | OK | 963 | `libicudata.so.77`, `libicui18n.so.77`, `libicuio.so.77`, `libicutest.so.77`, `libicutu.so.77`, `libicuuc.so.77`, `pkgconfig(icu-i18n)`, `pkgconfig(icu-io)`, `pkgconfig(icu-uc)` | `exec(sh)`, `ld-linux-x86-64.so.2`, `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `iptables` | OK | OK | 122 | `libip4tc.so.2`, `libip6tc.so.2`, `libipq.so.0`, `libxtables.so.12`, `pkgconfig(libip4tc)`, `pkgconfig(libip6tc)`, `pkgconfig(libipq)`, `pkgconfig(libiptc)`, `pkgconfig(xtables)` | `exec(bash)`, `libc.so.6`, `libm.so.6` | — |
+| `jansson` | OK | OK | 139 | `libjansson.so.4`, `pkgconfig(jansson)` | `libc.so.6` | — |
+| `json-c` | FAIL — [✗] build failed — see /var/hud-build/logs/json-c-N.N-NTNZ.log | — | 159 | — | — | — |
+| `json-glib` | OK — [✗] smoke | FAIL | 232 | `libjson-glib-1.0.so.0`, `pkgconfig(json-glib-1.0)` | `libc.so.6`, `libgio-2.0.so.0`, `libglib-2.0.so.0`, `libgobject-2.0.so.0`, `pkgconfig(gio-2.0)` | — |
+| `kmod` | OK | OK | 189 | `libkmod.so.2`, `pkgconfig(kmod)`, `pkgconfig(libkmod)` | `libc.so.6`, `libcrypto.so.3`, `liblzma.so.5`, `libz.so.1`, `libzstd.so.1`, `pkgconfig(libcrypto)`, `pkgconfig(liblzma)`, `pkgconfig(libzstd)`, `pkgconfig(zlib)` | — |
+| `lame` | OK | OK | 223 | `libmp3lame.so.0` | `libc.so.6`, `libm.so.6`, `libncurses.so.6` | — |
+| `lcms2` | FAIL — checking for jerror.h... yes | — | 220 | — | — | — |
+| `libICE` | FAIL — [✗] build failed — see /var/hud-build/logs/libICE-N.N.N-NTNZ.log | — | 157 | — | — | — |

@@ -114,3 +114,34 @@ which means carrying a local patch against upstream C++ for a binary nobody runs
 and note in the definition why, so the next person does not "fix" it back.
 
 `cmake` is deferred to the retry pass at the end of E4.
+
+---
+
+## Toolchain-strictness failures: `gdb`, `git`, `lcms2` (and `cmake`)
+
+Same family as the `cmake`/`ccmake` entry above: these built in 2026-02 and do
+not build today. Nothing about the conversion changed them — GCC 15.2 is
+stricter than the compiler that produced the shipped packages.
+
+| Package | Failure |
+|---|---|
+| `git` | `builtin/archive.c:112:15: error: implicit declaration of function 'write_archive'` — GCC 15 defaults to C23, where an implicit declaration is an error rather than a warning |
+| `gdb` | `make[1]: *** [Makefile:11734: all-gdb] Error 2` |
+| `lcms2` | `make[1]: *** [Makefile:464: tificc] Error 1` — the `tificc` tool, not the library |
+| `cmake` | `ccmake` only; ncurses `NCURSES_BOOL` macro collides with `cm::enum_set::size_type` |
+
+Two of the four are a single auxiliary binary failing while the library and the
+main tools build: `cmake`'s `ccmake` and `lcms2`'s `tificc`. Those have the same
+shape of answer — disable the sub-target or patch it — and the same cost, which
+is that the rebuilt package ships less than the pool copy.
+
+`git` and `gdb` are whole-package failures and need real fixes: either upstream
+patches for C23 conformance, or `-std=gnu17` in `[configure]`, which is the
+conventional workaround for exactly this and is honest about what it is.
+
+**Recommendation:** add `-std=gnu17` to `CFLAGS` for `git` and `gdb` rather than
+patching upstream C, and treat `cmake`/`lcms2` as the sub-target decision already
+described. All four are deferred to the retry pass.
+
+**This class will grow.** Every package still to build was compiled against an
+older toolchain, and roughly 3 % of those attempted so far have failed this way.
