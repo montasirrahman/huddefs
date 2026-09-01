@@ -161,10 +161,41 @@ cat /opt/hud/share/hud/info/*/FILES 2>/dev/null \
 info "keeping $(wc -l < "$KEEP_MANIFEST") files for the bootstrap set: $BOOTSTRAP_PKGS"
 info "package payload to strip: $(wc -l < "$PKG_MANIFEST") files from $(ls -d /opt/hud/share/hud/info/*/ 2>/dev/null | wc -l) packages"
 
+# Trimmed from the MINIMAL image only; the full image keeps all of this so it
+# stays a faithful snapshot for reproducing an old build.
+#
+# Everything here is documentation, translations, or caches belonging to tools
+# that have no part in a build. Measured on the 4.9 GB minimal tree:
+#   /usr/share/doc 234M  locale 104M  man 79M  info 34M  i18n 17M
+#   /home 290M  /srv 40M
+#   /root/.claude 542M  /root/.npm-global 221M  /root/.npm 70M  /root/.cache 11M
+#
+# NOT excluded, despite being on the original list, because the claim did not
+# survive checking:
+#   *.la  — 28 KB in total across the whole tree, so there is nothing to save,
+#           and libtool is installed and reads them during linking.
+#   *.a   — 142 MB, but the bulk is libc.a, libstdc++.a, libasan.a and libtsan.a.
+#           Those are core toolchain: configure scripts probe for libc.a, and
+#           -fsanitize builds need the sanitiser archives. Saving 3% of the image
+#           is not worth a configure test failing in a way that looks like a
+#           missing dependency.
 MINIMAL_EXCLUDES=(
     --exclude-from="$PKG_MANIFEST"
     --exclude='./var/lib/hud/db/*'
     --exclude='./var/cache/hud'
+    --exclude='./usr/share/doc/*'
+    --exclude='./usr/share/man/*'
+    --exclude='./usr/share/info/*'
+    --exclude='./usr/share/locale/*'
+    --exclude='./usr/share/gtk-doc/*'
+    --exclude='./usr/share/i18n/*'
+    --exclude='./home/*'
+    --exclude='./srv/*'
+    --exclude='./var/www'
+    --exclude='./root/.claude'
+    --exclude='./root/.npm'
+    --exclude='./root/.npm-global'
+    --exclude='./root/.cache'
 )
 
 mkdir -p "$(dirname "$OUT")"
