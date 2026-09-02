@@ -95,6 +95,29 @@ The comparison is recorded per package in `dropped-deps.json` alongside the drop
 Tool and base-system drops — `texlive`, `doxygen`, `apache`, `samba`, `glibc`,
 `java`, `python`, `libuv` — never halt the run.
 
+
+## Precedent: disabling an optional sub-target that will not compile
+
+A toolchain-strictness failure confined to an optional sub-target may be resolved
+by disabling that sub-target **without asking**, when all three hold:
+
+- the failing target is **not a library** and provides **no soname**
+- **nothing in the repository** declares a dependency on it
+- the main library or binary **builds correctly**
+
+Record the disabled target and the reason as a comment in the definition, and
+list the package in `docs/reduced-packages.md`, so the divergence from the pool
+copy is auditable rather than silent.
+
+**Prefer a compiler flag over disabling a feature.** GCC 15 defaults to C23, so
+implicit-declaration errors in older C are resolved with `-std=gnu17`. That is
+the conventional fix across distributions, not a workaround, and it leaves the
+package shipping exactly what it shipped before. `git` and `gdb` were fixed this
+way; `cmake` and `lcms2` needed the sub-target route.
+
+**Never disable a library, anything providing a soname, or anything another
+package's `Requires` names.** Those still go to `docs/needs-human.md`.
+
 ## Working on a package
 
 ```bash

@@ -14,6 +14,12 @@ Depends:          auto
 Provides:         auto
 
 [configure]
+# GCC 15 defaults to C23, where an implicit function declaration is an error
+# rather than a warning. git 2.50.1 predates that and fails on
+#   builtin/archive.c: implicit declaration of function 'write_archive'
+# -std=gnu17 is the conventional fix across distributions for exactly this, and
+# changes nothing about what the package ships.
+export CFLAGS="${CFLAGS:-} -std=gnu17"
 ./configure --prefix=/opt/hud
 
 [build]

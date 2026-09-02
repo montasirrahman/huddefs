@@ -10,6 +10,7 @@ Description: X11 Inter-Client Exchange library
 Source: https://www.x.org/pub/individual/lib/libICE-1.1.2.tar.xz
 Source-SHA256:    974e4ed414225eb3c716985df9709f4da8d22a67a2890066bc6dfc89ad298625
 
+
 Build-Depends:    xorgproto, xtrans, util-macros
 Depends:          auto
 Provides:         auto

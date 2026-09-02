@@ -21,8 +21,16 @@ Provides:         auto
 sed -i '/"lib64"/s/64//' Modules/GNUInstallDirs.cmake
 
 # Bootstrap cmake - use system libs where available, bundle the rest
+# ccmake is DISABLED. It fails under GCC 15: ncurses defines NCURSES_BOOL as a
+# macro expanding to unsigned char, cmake's cm::enum_set uses size_type which is
+# also unsigned char, and once curses.h is included the two constructor
+# signatures collide. ccmake is an interactive ncurses front-end for editing a
+# CMake cache by hand — it is not a library, provides no soname, and nothing in
+# the repository depends on it. cmake, ctest and cpack all build normally.
+# Recorded in docs/reduced-packages.md.
 ./bootstrap --prefix=/opt/hud \
             --mandir=/opt/hud/share/man \
+            -- -DBUILD_CursesDialog=OFF \
             --no-system-jsoncpp \
             --no-system-cppdap \
             --no-system-librhash \

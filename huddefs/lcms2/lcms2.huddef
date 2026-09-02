@@ -15,7 +15,11 @@ Depends:          auto
 Provides:         auto
 
 [configure]
-./configure --prefix=/opt/hud --disable-static
+# The tificc tool is DISABLED. It links against libtiff and fails to build under
+# GCC 15 while liblcms2 itself builds correctly. tificc is a command-line colour
+# converter, not a library; it provides no soname and nothing in the repository
+# depends on it. Recorded in docs/reduced-packages.md.
+./configure --prefix=/opt/hud --disable-static --without-tiff
 
 [build]
 make -j$(nproc)
