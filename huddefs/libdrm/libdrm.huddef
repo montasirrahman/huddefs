@@ -4,9 +4,14 @@ Package: libdrm
 Version: 2.4.124
 Architecture: x86_64
 Section: graphics
-Depends: libpciaccess,meson,ninja
 Description: Direct Rendering Manager runtime library
 Source: https://dri.freedesktop.org/libdrm/libdrm-2.4.124.tar.xz
+Source-SHA256:    ac36293f61ca4aafaf4b16a2a7afff312aa4f5c37c9fbd797de9e3c0863ca379
+
+Build-Depends:    libpciaccess, meson, ninja
+Depends:          auto
+Provides:         auto
+
 [configure]
 mkdir -p build
 cd build

@@ -4,9 +4,14 @@ Package: libev
 Version: 4.33
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: High-performance event loop library
 Source: http://dist.schmorp.de/libev/libev-4.33.tar.gz
+Source-SHA256:    507eb7b8d1015fbec5b935f34ebed15bf346bed04a11ab82b8eee848c4205aea
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 ./configure --prefix=/opt/hud --disable-static
 [build]

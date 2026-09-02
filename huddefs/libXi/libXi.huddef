@@ -10,6 +10,7 @@ Description: X11 Input extension library
 Source: https://www.x.org/pub/individual/lib/libXi-1.8.2.tar.xz
 Source-SHA256:    d0e0555e53d6e2114eabfa44226ba162d2708501a25e18d99cfb35c094c6c104
 
+
 Build-Depends:    libX11, libXext, libXfixes, xorgproto, util-macros
 Depends:          auto
 Provides:         auto

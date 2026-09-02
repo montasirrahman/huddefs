@@ -9,7 +9,7 @@ pick up where the last one stopped. If you are resuming, read this first, then
 ## Where things stand
 
 **Current phase:** E4 — mechanical v1 -> v2 conversion of the 148 EASY packages,
-in batches of 20, strictly sequential. **Batch 2 of 7 complete.**
+in batches of 20, strictly sequential. **Batch 1 of 6 complete.**
 
 **Resume point:** `/var/hud-build/convert-state.json` on bf-repo lists every
 package already processed. `scripts/convert-easy.py` skips those, so re-running

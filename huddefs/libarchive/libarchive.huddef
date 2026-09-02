@@ -6,9 +6,13 @@ Package: libarchive
 Version: 3.8.1
 Architecture: x86_64
 Section: libraries
-Depends: zlib, xz, zstd, openssl
 Description: Library providing single interface for reading/writing various archive formats
 Source: https://github.com/libarchive/libarchive/releases/download/v3.8.1/libarchive-3.8.1.tar.xz
+Source-SHA256:    19f917d42d530f98815ac824d90c7eaf648e9d9a50e4f309c812457ffa5496b5
+
+Build-Depends:    zlib, xz, zstd, openssl
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud --disable-static

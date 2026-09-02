@@ -4,9 +4,14 @@ Package: liberation-fonts
 Version: 2.1.5
 Architecture: x86_64
 Section: fonts
-Depends: fontconfig
 Description: Liberation fonts compatible with Microsoft fonts
 Source: https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz
+Source-SHA256:    7191c669bf38899f73a2094ed00f7b800553364f90e2637010a69c0e268f25d0
+
+Build-Depends:    fontconfig
+Depends:          auto
+Provides:         auto
+
 [configure]
 echo "No configure needed for fonts"
 [build]

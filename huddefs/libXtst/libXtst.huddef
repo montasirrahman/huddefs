@@ -6,9 +6,13 @@ Package: libXtst
 Version: 1.2.5
 Architecture: x86_64
 Section: xorg
-Depends: libX11, libXext, libXi, xorgproto, util-macros
 Description: X11 Testing -- Record extension library
 Source: https://www.x.org/pub/individual/lib/libXtst-1.2.5.tar.xz
+Source-SHA256:    b50d4c25b97009a744706c1039c598f4d8e64910c9fde381994e1cae235d9242
+
+Build-Depends:    libX11, libXext, libXi, xorgproto, util-macros
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/opt/hud/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH}"

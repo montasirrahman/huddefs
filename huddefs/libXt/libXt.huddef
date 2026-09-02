@@ -6,9 +6,13 @@ Package: libXt
 Version: 1.3.1
 Architecture: x86_64
 Section: xorg
-Depends: libX11, libSM, libICE, xorgproto, util-macros
 Description: X Toolkit Intrinsics library
 Source: https://www.x.org/pub/individual/lib/libXt-1.3.1.tar.xz
+Source-SHA256:    e0a774b33324f4d4c05b199ea45050f87206586d81655f8bef4dba434d931288
+
+Build-Depends:    libX11, libSM, libICE, xorgproto, util-macros
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/opt/hud/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH}"

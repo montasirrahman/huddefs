@@ -124,3 +124,30 @@ that set.
 | `libXfixes` | FAIL — [✗] build failed — see /var/hud-build/logs/libXfixes-N.N.N-NTNZ.log | — | 221 | — | — | — |
 | `libXi` | FAIL — [✗] build failed — see /var/hud-build/logs/libXi-N.N.N-NTNZ.log | — | 220 | — | — | — |
 | `libXrandr` | FAIL — [✗] build failed — see /var/hud-build/logs/libXrandr-N.N.N-NTNZ.log | — | 227 | — | — | — |
+
+## Batch 1
+
+19/20 built, average build 205s, cumulative elapsed 25.3h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `libICE` | OK | OK | 186 | `libICE.so.6`, `pkgconfig(ice)` | `libc.so.6`, `pkgconfig(xproto)` | — |
+| `libSM` | OK | OK | 205 | `libSM.so.6`, `pkgconfig(sm)` | `libICE.so.6`, `libc.so.6`, `libuuid.so.1`, `pkgconfig(ice)`, `pkgconfig(uuid)`, `pkgconfig(xproto)` | — |
+| `libX11` | OK | OK | 292 | `libX11-xcb.so.1`, `libX11.so.6`, `pkgconfig(x11)`, `pkgconfig(x11-xcb)` | `libXau.so.6`, `libXdmcp.so.6`, `libc.so.6`, `libxcb.so.1`, `pkgconfig(kbproto)`, `pkgconfig(xcb)`, `pkgconfig(xproto)` | — |
+| `libXau` | OK | OK | 222 | `libXau.so.6`, `pkgconfig(xau)` | `libc.so.6`, `pkgconfig(xproto)` | — |
+| `libXdmcp` | OK | OK | 221 | `libXdmcp.so.6`, `pkgconfig(xdmcp)` | `libc.so.6`, `pkgconfig(xproto)` | — |
+| `libXext` | OK | OK | 223 | `libXext.so.6`, `pkgconfig(xext)` | `libX11.so.6`, `libXau.so.6`, `libXdmcp.so.6`, `libc.so.6`, `libxcb.so.1`, `pkgconfig(x11)`, `pkgconfig(xextproto)` | — |
+| `libXfixes` | OK | OK | 221 | `libXfixes.so.3`, `pkgconfig(xfixes)` | `libX11.so.6`, `libXau.so.6`, `libXdmcp.so.6`, `libc.so.6`, `libxcb.so.1`, `pkgconfig(fixesproto)`, `pkgconfig(x11)`, `pkgconfig(xproto)` | — |
+| `libXi` | OK | OK | 223 | `libXi.so.6`, `pkgconfig(xi)` | `libX11.so.6`, `libXau.so.6`, `libXdmcp.so.6`, `libXext.so.6`, `libc.so.6`, `libxcb.so.1`, `pkgconfig(inputproto)`, `pkgconfig(x11)`, `pkgconfig(xext)`, `pkgconfig(xfixes)` | — |
+| `libXrandr` | OK | OK | 219 | `libXrandr.so.2`, `pkgconfig(xrandr)` | `libX11.so.6`, `libXau.so.6`, `libXdmcp.so.6`, `libXext.so.6`, `libXrender.so.1`, `libc.so.6`, `libxcb.so.1`, `pkgconfig(randrproto)`, `pkgconfig(x11)`, `pkgconfig(xext)`, `pkgconfig(xproto)`, `pkgconfig(xrender)` | — |
+| `libXrender` | OK | OK | 162 | `libXrender.so.1`, `pkgconfig(xrender)` | `libX11.so.6`, `libXau.so.6`, `libXdmcp.so.6`, `libc.so.6`, `libxcb.so.1`, `pkgconfig(renderproto)`, `pkgconfig(x11)`, `pkgconfig(xproto)` | — |
+| `libXt` | FAIL — checking if gcc supports -Werror=unknown-warning-option... no | — | 232 | — | — | — |
+| `libXtst` | OK | OK | 195 | `libXtst.so.6`, `pkgconfig(xtst)` | `libX11.so.6`, `libXau.so.6`, `libXdmcp.so.6`, `libXext.so.6`, `libXi.so.6`, `libc.so.6`, `libxcb.so.1`, `pkgconfig(recordproto)`, `pkgconfig(x11)`, `pkgconfig(xext)`, `pkgconfig(xextproto)`, `pkgconfig(xi)` | — |
+| `libaio` | OK | OK | 151 | `libaio.so.1` | `libc.so.6` | — |
+| `libarchive` | OK | OK | 257 | `libarchive.so.13`, `pkgconfig(libarchive)` | `libacl.so.1`, `libbz2.so.1.0`, `libc.so.6`, `libcrypto.so.3`, `libexpat.so.1`, `liblz4.so.1`, `liblzma.so.5`, `libz.so.1`, `libzstd.so.1`, `pkgconfig(libcrypto)` | — |
+| `libcap` | OK | OK | 125 | `libcap.so.2`, `libpsx.so.2`, `pkgconfig(libcap)`, `pkgconfig(libpsx)` | `libc.so.6` | — |
+| `libdrm` | OK | OK | 236 | `libdrm.so.2`, `libdrm_amdgpu.so.1`, `libdrm_intel.so.1`, `libdrm_nouveau.so.2`, `libdrm_radeon.so.1`, `pkgconfig(libdrm)`, `pkgconfig(libdrm_amdgpu)`, `pkgconfig(libdrm_intel)`, `pkgconfig(libdrm_nouveau)`, `pkgconfig(libdrm_radeon)` | `libc.so.6`, `libpciaccess.so.0`, `pkgconfig(pciaccess)` | — |
+| `libedit` | OK | OK | 170 | `libedit.so.0`, `pkgconfig(libedit)` | `libc.so.6`, `libncursesw.so.6` | — |
+| `liberation-fonts` | OK | OK | 178 | — | — | — |
+| `libev` | OK | OK | 164 | `libev.so.4` | `libc.so.6`, `libm.so.6` | — |
+| `libevent` | OK | OK | 240 | `libevent-2.1.so.7`, `libevent_core-2.1.so.7`, `libevent_extra-2.1.so.7`, `libevent_openssl-2.1.so.7`, `libevent_pthreads-2.1.so.7`, `pkgconfig(libevent)`, `pkgconfig(libevent_core)`, `pkgconfig(libevent_extra)`, `pkgconfig(libevent_openssl)`, `pkgconfig(libevent_pthreads)` | `exec(python3)`, `libc.so.6`, `libcrypto.so.3`, `libssl.so.3` | — |

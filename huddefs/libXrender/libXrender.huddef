@@ -6,9 +6,13 @@ Package: libXrender
 Version: 0.9.12
 Architecture: x86_64
 Section: xorg
-Depends: libX11, xorgproto, util-macros
 Description: X Rendering Extension client library
 Source: https://www.x.org/pub/individual/lib/libXrender-0.9.12.tar.xz
+Source-SHA256:    b832128da48b39c8d608224481743403ad1691bf4e554e4be9c174df171d1b97
+
+Build-Depends:    libX11, xorgproto, util-macros
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/opt/hud/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH}"

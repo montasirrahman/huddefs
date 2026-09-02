@@ -5,9 +5,13 @@ Package: libcap
 Version: 2.73
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: POSIX capabilities library
 Source: https://kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.73.tar.xz
+Source-SHA256:    6405f6089cf4cdd8c271540cd990654d78dd0b1989b2d9bda20f933a75a795a5
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [build]
 make prefix=/opt/hud lib=lib -j$(nproc)

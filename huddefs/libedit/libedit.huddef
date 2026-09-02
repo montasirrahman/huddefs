@@ -6,9 +6,13 @@ Package: libedit
 Version: 20240808
 Architecture: x86_64
 Section: libraries
-Depends: ncurses
 Description: BSD editline and history libraries (readline alternative)
 Source: https://thrysoee.dk/editline/libedit-20240808-3.1.tar.gz
+Source-SHA256:    5f0573349d77c4a48967191cdd6634dd7aa5f6398c6a57fe037cc02696d6099f
+
+Build-Depends:    ncurses
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

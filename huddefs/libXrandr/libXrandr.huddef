@@ -10,6 +10,7 @@ Description: X Resize, Rotate and Reflection extension library
 Source: https://www.x.org/pub/individual/lib/libXrandr-1.5.4.tar.xz
 Source-SHA256:    1ad5b065375f4a85915aa60611cc6407c060492a214d7f9daf214be752c3b4d3
 
+
 Build-Depends:    libX11, libXext, libXrender, xorgproto, util-macros
 Depends:          auto
 Provides:         auto
