@@ -38,7 +38,11 @@ done_count() {
     python3 -c "import json;print(len(json.load(open('$STATE'))['done']))" 2>/dev/null || echo 0
 }
 
-used_gb() { du -sBG /var 2>/dev/null | tr -dc '0-9' | head -c 6; }
+# df's Used column is accurate — it is Available that lies, because the guest
+# cannot see that the VDI's backing store is smaller than its declared capacity.
+# Using df rather than `du -s /var` also matters for cost: du walks 57 GB of
+# files on a 30 MB/s disk every cycle, competing with the build it is watching.
+used_gb() { df -BG --output=used / 2>/dev/null | tail -1 | tr -dc '0-9'; }
 
 current_unit() {
     systemctl list-units 'e4[a-z0-9]*.service' --no-legend --all --no-pager 2>/dev/null \
