@@ -192,6 +192,23 @@ fi
     echo "export LD_LIBRARY_PATH=$PREFIX/lib:$PREFIX/lib64"
     echo "export CFLAGS=\"-I$PREFIX/include \${CFLAGS:-}\""
     echo "export LDFLAGS=\"-L$PREFIX/lib -L$PREFIX/lib64 \${LDFLAGS:-}\""
+    # Build sections run under `set -u`, deliberately — it is what turns a typo
+    # into a failed build instead of a silently wrong one. But v1 definitions
+    # were written for a shell without it and commonly append to variables the
+    # environment is assumed to already have:
+    #
+    #     export ACLOCAL_PATH="/opt/hud/share/aclocal:${ACLOCAL_PATH}"
+    #
+    # Under `set -u` that is fatal when the variable is unset, which is how 13
+    # xorg libraries — libX11, libXau, libXdmcp, libXext, libXfixes, libXi,
+    # libICE, libSM and the rest — all failed identically with
+    # "ACLOCAL_PATH: unbound variable".
+    #
+    # Defining them here is the fix rather than editing 13 definitions, and it
+    # matches what the spec already says: the builder supplies the environment,
+    # and definitions should not have to.
+    echo "export ACLOCAL_PATH=\"$PREFIX/share/aclocal\""
+    echo "export XDG_DATA_DIRS=\"\${XDG_DATA_DIRS:-$PREFIX/share:/usr/local/share:/usr/share}\""
     echo "cd \$SRCDIR"
 
     # patches: failure is fatal, no || true
