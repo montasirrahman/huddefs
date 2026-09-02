@@ -6,9 +6,13 @@ Package: dbus-python
 Version: 1.3.2
 Architecture: x86_64
 Section: python
-Depends: dbus, python3, glib
 Description: Python bindings for D-Bus interprocess communication
 Source: https://dbus.freedesktop.org/releases/dbus-python/dbus-python-1.3.2.tar.gz
+Source-SHA256:    ad67819308618b5069537be237f8e68ca1c7fcc95ee4a121fe6845b1418248f8
+
+Build-Depends:    dbus, python3, glib
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

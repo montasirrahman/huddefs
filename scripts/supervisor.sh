@@ -85,12 +85,17 @@ while true; do
         exit 0
     fi
 
-    nbuild=$(ps -eo args --no-headers | grep -c '/usr/local/bin/hud-build' || true)
+    # Bracket trick: without it the grep matches its own command line, so a
+    # single build counted as two. The supervisor then ran machinectl terminate
+    # on every registered machine — including the container of the build that was
+    # running at the time. A watchdog that kills the thing it is watching is
+    # worse than no watchdog.
+    nbuild=$(ps -eo args --no-headers | grep -c '[/]usr/local/bin/hud-build' || true)
+    # Only intervene when the conversion is NOT running. While it is active, a
+    # second build means orphans, but terminating machines blind would take the
+    # live one with it. Report it and let the per-package cleanup handle it.
     if [ "${nbuild:-0}" -gt 1 ]; then
-        say "WARN: $nbuild concurrent builds — clearing orphaned containers"
-        for m in $(machinectl list --no-legend 2>/dev/null | awk '{print $1}'); do
-            machinectl terminate "$m" >/dev/null 2>&1 || true
-        done
+        say "WARN: $nbuild concurrent builds detected (expected 1)"
     fi
 
     if [ "$active" = "active" ]; then
