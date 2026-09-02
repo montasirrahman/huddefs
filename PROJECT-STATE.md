@@ -482,6 +482,63 @@ package's `Requires` names.** Those still go to `docs/needs-human.md`.
 
 ---
 
+## Migration plan: move building to bf-build
+
+**Do not migrate mid-batch.** Finish E4, then move before G1. G1 rebuilds all 245
+from scratch and is by far the largest single piece of work left — it is the run
+that most deserves the faster machine, and the one whose results matter most.
+
+### Why move
+
+| | bf-build | bf-repo |
+|---|---|---|
+| overlayfs | **present** | `CONFIG_OVERLAY_FS` not set |
+| disk | **224 MB/s** | 30–43 MB/s |
+| storage | 94 G real | VDI on F:, ~332 G host headroom, **two I/O failures in two days** |
+| /dev/kvm | absent | present |
+| role | disposable | serves the repo, holds its only writable copy |
+
+overlayfs alone removes the per-package rootfs extract, which is most of the
+~300 s a small package currently costs. The disk is five times faster on top of
+that. And it takes builds off the machine that has failed twice and that holds
+the only writable copy of 251 packages.
+
+**Blocked on the resize.** bf-build is 1 core / 1 GB as of 2026-09-02. `binutils`
+took 847 s on bf-repo's four cores; on one core with 1 GB it would thrash or be
+OOM-killed. Migrate only once it reports more than one core.
+
+### What has to move
+
+1. **Base rootfs images** — `/var/hud-build/base-rootfs-minimal.tar.zst` (1.1 G)
+   and `base-rootfs.tar.zst` (2.7 G). These are the portable artifact;
+   `prepare-roots.sh` extracts them at the far end. Note the minimal image was
+   built *from bf-repo*, so it carries bf-repo's base system — acceptable, since
+   both machines run the same BlackFlag 1.0.0, but it should be regenerated on
+   bf-build once builds are happening there.
+2. **Source cache** — `/var/hud-build/cache`, 361 tarballs, ~1.2 G. All 245
+   sources are present, so the rebuild needs no network.
+3. **Scripts** — `hud-build`, `hud-scan-deps`, `hud-test`, `hud-build.conf`,
+   `prepare-roots.sh`, `convert-easy.py`, `supervisor.sh`, and the driver. All
+   are in `scripts/` in this repo, so a `git clone` is the transfer.
+4. **`sources.list`** — must point at **bf-repo's** repository over HTTP
+   (`hud http://172.19.1.7/hud-repo stable main`), since that is where
+   `Build-Depends` are resolved from. bf-build already reaches it.
+5. **`git`** — check it exists on bf-build and note its path. On bf-repo it is
+   only at `/opt/hud/bin/git`, which is not on systemd's default service PATH;
+   that cost a whole batch of uncommitted work before it was caught.
+
+### What must NOT move
+
+- `/dev/kvm` is absent on bf-build, so **G4 and G5 stay on bf-repo**.
+- Publishing stays manual and on bf-repo regardless.
+
+### Order
+
+Finish E4 → G3 (staging repo, on bf-repo) → E5/E6 → E7 → E8 → E9 → **migrate** →
+G1 on bf-build → G2 → G4/G5 back on bf-repo.
+
+---
+
 ## Next phases
 
 1. **Rebuild the kernel with `CONFIG_OVERLAY_FS=y` on bf-build.** This is the
