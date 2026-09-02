@@ -5,9 +5,13 @@ Package: libidn2
 Version: 2.3.8
 Architecture: x86_64
 Section: libraries
-Depends: libunistring
 Description: Library for Internationalized Domain Names (IDNA2008/TR46)
 Source: https://ftp.gnu.org/gnu/libidn/libidn2-2.3.8.tar.gz
+Source-SHA256:    f557911bf6171621e1f72ff35f5b1825bb35b52ed45325dcdee931e5d3c0787a
+
+Build-Depends:    libunistring
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure \

@@ -6,9 +6,13 @@ Package: libndp
 Version: 1.9
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: Library for IPv6 Neighbor Discovery Protocol
 Source: https://github.com/jpirko/libndp/releases/download/v1.9/libndp-1.9.tar.gz
+Source-SHA256:    a8ab214e01dc3a9b615276905395637f391298c84d77651f0cbf0b1082dd2dd4
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

@@ -5,9 +5,13 @@ Package: libnl
 Version: 3.11.0
 Architecture: x86_64
 Section: libraries
-Depends: 
 Description: Netlink Protocol Library Suite
 Source: https://github.com/thom311/libnl/releases/download/libnl3_11_0/libnl-3.11.0.tar.gz
+Source-SHA256:    2a56e1edefa3e68a7c00879496736fdbf62fc94ed3232c0baba127ecfa76874d
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc

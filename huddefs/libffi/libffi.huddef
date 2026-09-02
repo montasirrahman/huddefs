@@ -4,9 +4,14 @@ Package: libffi
 Version: 3.4.8
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: Portable foreign function interface library
 Source: https://github.com/libffi/libffi/releases/download/v3.4.8/libffi-3.4.8.tar.gz
+Source-SHA256:    bc9842a18898bfacb0ed1252c4febcc7e78fa139fd27fdc7a3e30d9d9356119b
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 ./configure --prefix=/opt/hud --disable-static --with-gcc-arch=native
 [build]

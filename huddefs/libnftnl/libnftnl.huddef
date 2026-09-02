@@ -5,9 +5,13 @@ Package: libnftnl
 Version: 1.2.8
 Architecture: x86_64
 Section: libraries
-Depends: libmnl
 Description: Netfilter nftables userspace library
 Source: https://netfilter.org/projects/libnftnl/files/libnftnl-1.2.8.tar.xz
+Source-SHA256:    37fea5d6b5c9b08de7920d298de3cdc942e7ae64b1a3e8b880b2d390ae67ad95
+
+Build-Depends:    libmnl
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure \

@@ -5,9 +5,13 @@ Package: libibverbs
 Version: 53.0
 Architecture: x86_64
 Section: libraries
-Depends: cmake,libnl,python3
 Description: RDMA verbs library
 Source: https://github.com/linux-rdma/rdma-core/releases/download/v53.0/rdma-core-53.0.tar.gz
+Source-SHA256:    388d6bb148f2ccda5bc716df2c2ee925fb7903589a01da4db3149f307ebf1933
+
+Build-Depends:    cmake, libnl, python3
+Depends:          auto
+Provides:         auto
 
 [configure]
 cmake -DCMAKE_INSTALL_PREFIX=/opt/hud .

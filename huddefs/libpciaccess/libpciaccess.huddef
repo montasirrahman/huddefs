@@ -4,9 +4,14 @@ Package: libpciaccess
 Version: 0.18.1
 Architecture: x86_64
 Section: xorg
-Depends: util-macros
 Description: Generic PCI Access library for X
 Source: https://www.x.org/pub/individual/lib/libpciaccess-0.18.1.tar.xz
+Source-SHA256:    4af43444b38adb5545d0ed1c2ce46d9608cc47b31c2387fc5181656765a6fa76
+
+Build-Depends:    util-macros
+Depends:          auto
+Provides:         auto
+
 [configure]
 mkdir -p build
 cd build

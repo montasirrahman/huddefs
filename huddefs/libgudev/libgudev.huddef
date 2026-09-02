@@ -5,10 +5,15 @@ Package: libgudev
 Version: 238
 Architecture: x86_64
 Section: libraries
-Depends: glib2
 Description: GObject bindings for libudev
 Source: https://download.gnome.org/sources/libgudev/238/libgudev-238.tar.xz
+Source-SHA256:    61266ab1afc9d73dbc60a8b2af73e99d2fdff47d99544d085760e4fa667b5dd1
 MD5sum: 46da30a1c69101c3a13fa660d9ab7b73
+
+
+Build-Depends:    glib, python-setuptools
+Depends:          auto
+Provides:         auto
 
 [configure]
 mkdir -p build && cd build && meson setup --prefix=/opt/hud --buildtype=release ..

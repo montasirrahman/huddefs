@@ -6,9 +6,13 @@ Package: libgpg-error
 Version: 1.55
 Architecture: x86_64
 Section: security
-Depends:
 Description: Library that defines common error values for all GnuPG components
 Source: https://www.gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.55.tar.bz2
+Source-SHA256:    95b178148863f07d45df0cea67e880a79b9ef71f5d230baddc0071128516ef78
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud
