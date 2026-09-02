@@ -433,6 +433,22 @@ compiler mostly idle. It is also the strongest argument for the
 up — and for moving builds to bf-build, whose disk runs at 224 MB/s and whose
 kernel already has overlayfs.
 
+### The guest-side gate is only a proxy
+
+The 120 GB used-space ceiling is **not** the authoritative measure and must not
+be treated as one. The VDI on the host grows monotonically: when the guest frees
+space, the guest's used figure drops but the VDI does not shrink, and none of it
+returns to F:. So the guest can report a comfortable 80 GB used while the host
+has already been consumed by scratch that was written and deleted hours earlier.
+
+**The authoritative figure is F:'s free space, which is invisible from inside the
+VM and is being watched externally.** The in-guest ceiling exists to catch runaway
+growth early, not to prove there is room.
+
+Two consequences worth remembering:
+- a falling guest used-figure is not evidence of recovered host space
+- the only way to return space to the host is to compact the VDI, offline
+
 ### Status
 
 F: cleared to 332 GB free. A 20 GB direct-write test passes at 30.8 MB/s.
