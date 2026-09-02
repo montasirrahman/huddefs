@@ -6,9 +6,13 @@ Package: libXfixes
 Version: 6.0.1
 Architecture: x86_64
 Section: xorg
-Depends: libX11, xorgproto, util-macros
 Description: X11 Fixes extension library
 Source: https://www.x.org/pub/individual/lib/libXfixes-6.0.1.tar.xz
+Source-SHA256:    b695f93cd2499421ab02d22744458e650ccc88c1d4c8130d60200213abc02d58
+
+Build-Depends:    libX11, xorgproto, util-macros
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/opt/hud/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH}"

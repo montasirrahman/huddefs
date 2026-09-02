@@ -6,9 +6,13 @@ Package: libSM
 Version: 1.2.6
 Architecture: x86_64
 Section: xorg
-Depends: libICE, xorgproto, xtrans, util-macros
 Description: X11 Session Management library
 Source: https://www.x.org/pub/individual/lib/libSM-1.2.6.tar.xz
+Source-SHA256:    be7c0abdb15cbfd29ac62573c1c82e877f9d4047ad15321e7ea97d1e43d835be
+
+Build-Depends:    libICE, xorgproto, xtrans, util-macros
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:/opt/hud/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH}"

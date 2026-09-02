@@ -9,6 +9,7 @@ Description: High-quality font rendering library
 Source: https://sourceforge.net/projects/freetype/files/freetype2/2.14.0/freetype-2.14.0.tar.xz
 Source-SHA256:    f8dfa8f15ef0576738dfb55b2e6e6b172fd5d09b6f03785a1df03239549f64d2
 
+
 Build-Depends:    zlib, bzip2, libpng
 Depends:          auto
 Provides:         auto

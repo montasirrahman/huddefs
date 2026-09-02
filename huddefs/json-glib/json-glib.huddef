@@ -5,10 +5,14 @@ Package: json-glib
 Version: 1.10.6
 Architecture: x86_64
 Section: libraries
-Depends: glib
 Description: Library providing serialization and deserialization support for JSON format
 Source: https://download.gnome.org/sources/json-glib/1.10/json-glib-1.10.6.tar.xz
+Source-SHA256:    77f4bcbf9339528f166b8073458693f0a20b77b7059dbc2db61746a1928b0293
 MD5sum: d4bf13ddd1e6d607d039d39286f9e3d0
+
+Build-Depends:    glib
+Depends:          auto
+Provides:         auto
 
 [configure]
 mkdir -p build && cd build && meson setup --prefix=/opt/hud --buildtype=release -Ddocumentation=disabled -Dintrospection=disabled -Dtests=false ..

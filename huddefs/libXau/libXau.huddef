@@ -7,9 +7,13 @@ Package: libXau
 Version: 1.0.12
 Architecture: x86_64
 Section: xorg
-Depends: xorgproto, util-macros
 Description: X Window System authorization protocol library
 Source: https://www.x.org/pub/individual/lib/libXau-1.0.12.tar.xz
+Source-SHA256:    74d0e4dfa3d39ad8939e99bda37f5967aba528211076828464d2777d477fc0fb
+
+Build-Depends:    xorgproto, util-macros
+Depends:          auto
+Provides:         auto
 
 [configure]
 # Ensure pkg-config can find xorgproto and util-macros

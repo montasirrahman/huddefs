@@ -5,9 +5,13 @@ Package: git
 Version: 2.50.1
 Architecture: x86_64
 Section: development
-Depends: tk,curl,apache,xmlto,valgrind,openssh,fcron,perl-io-socket-ssl,pcre2,asciidoc
 Description: Git-2.50.1
 Source: https://www.kernel.org/pub/software/scm/git/git-2.50.1.tar.xz
+Source-SHA256:    7e3e6c36decbd8f1eedd14d42db6674be03671c2204864befa2a41756c5c8fc4
+
+Build-Depends:    curl, xmlto, valgrind, pcre2
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud

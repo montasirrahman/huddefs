@@ -5,9 +5,13 @@ Package: gdb
 Version: 16.3
 Architecture: x86_64
 Section: development
-Depends: valgrind,doxygen,six,guile,rust
 Description: GDB-16.3
 Source: https://ftp.gnu.org/gnu/gdb/gdb-16.3.tar.xz
+Source-SHA256:    bcfcd095528a987917acf9fff3f1672181694926cc18d609c99d0042c00224c5
+
+Build-Depends:    valgrind
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud

@@ -6,9 +6,14 @@ Package: json-c
 Version: 0.18
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: JSON parsing library for C
 Source: https://s3.amazonaws.com/json-c_releases/releases/json-c-0.18.tar.gz
+Source-SHA256:    876ab046479166b869afc6896d288183bbc0e5843f141200c677b3e8dfb11724
+
+
+Build-Depends:    cmake
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

@@ -83,3 +83,44 @@ that set.
 | `lame` | OK | OK | 223 | `libmp3lame.so.0` | `libc.so.6`, `libm.so.6`, `libncurses.so.6` | — |
 | `lcms2` | FAIL — checking for jerror.h... yes | — | 220 | — | — | — |
 | `libICE` | FAIL — [✗] build failed — see /var/hud-build/logs/libICE-N.N.N-NTNZ.log | — | 157 | — | — | — |
+
+## Batch 1
+
+14/20 built, average build 377s, cumulative elapsed 22.8h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `aom` | OK | OK | 498 | `libaom.so.3`, `pkgconfig(aom)` | `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `attr` | OK | OK | 129 | `libattr.so.1`, `pkgconfig(libattr)` | `libc.so.6` | — |
+| `cups` | OK | OK | 325 | `libcups.so.2`, `libcupsimage.so.2`, `pkgconfig(cups)` | `exec(sh)`, `libacl.so.1`, `libc.so.6`, `libcrypt.so.2`, `libdbus-1.so.3`, `libgcc_s.so.1`, `libgnutls.so.30`, `libm.so.6`, `libstdc++.so.6`, `libsystemd.so.0`, `libusb-1.0.so.0`, `libz.so.1`, `pkgconfig(gnutls)` | — |
+| `curl` | OK | OK | 391 | `libcurl.so.4`, `pkgconfig(libcurl)` | `exec(sh)`, `libbrotlidec.so.1`, `libc.so.6`, `libcrypto.so.3`, `libidn2.so.0`, `libnghttp2.so.14`, `libpsl.so.5`, `libssh2.so.1`, `libssl.so.3`, `libz.so.1`, `libzstd.so.1`, `pkgconfig(libbrotlicommon)`, `pkgconfig(libbrotlidec)`, `pkgconfig(libidn2)`, `pkgconfig(libnghttp2)`, `pkgconfig(libpsl)`, `pkgconfig(libssh2)`, `pkgconfig(libzstd)`, `pkgconfig(openssl)`, `pkgconfig(zlib)` | — |
+| `dav1d` | OK | OK | 311 | `libdav1d.so.7`, `pkgconfig(dav1d)` | `libc.so.6` | — |
+| `dbus-python` | OK | OK | 235 | `pkgconfig(dbus-python)` | `libc.so.6`, `libdbus-1.so.3`, `libglib-2.0.so.0`, `pkgconfig(dbus-1)` | — |
+| `freetype` | OK | OK | 224 | `libfreetype.so.6`, `pkgconfig(freetype2)` | `exec(sh)`, `libbrotlidec.so.1`, `libbz2.so.1.0`, `libc.so.6`, `libm.so.6`, `libpng16.so.16`, `libz.so.1`, `pkgconfig(libbrotlidec)`, `pkgconfig(libpng)`, `pkgconfig(zlib)` | — |
+| `gdb` | FAIL — checking for library containing strerror... no | — | 993 | — | — | — |
+| `git` | FAIL —   libgpg-error N.N (NKiB) | — | 331 | — | — | — |
+| `glib` | OK | OK | 312 | `libgio-2.0.so.0`, `libgirepository-2.0.so.0`, `libglib-2.0.so.0`, `libgmodule-2.0.so.0`, `libgobject-2.0.so.0`, `libgthread-2.0.so.0`, `pkgconfig(gio-2.0)`, `pkgconfig(gio-unix-2.0)`, `pkgconfig(girepository-2.0)`, `pkgconfig(glib-2.0)`, `pkgconfig(gmodule-2.0)`, `pkgconfig(gmodule-export-2.0)`, `pkgconfig(gmodule-no-export-2.0)`, `pkgconfig(gobject-2.0)`, `pkgconfig(gthread-2.0)` | `exec(python3)`, `exec(sh)`, `ld-linux-x86-64.so.2`, `libc.so.6`, `libelf.so.1`, `libffi.so.8`, `libm.so.6`, `libmount.so.1`, `libpcre2-8.so.0`, `libz.so.1`, `pkgconfig(libffi)`, `pkgconfig(libpcre2-8)`, `pkgconfig(mount)`, `pkgconfig(zlib)` | — |
+| `gnutls` | OK | OK | 455 | `libgnutls.so.30`, `libgnutlsxx.so.30`, `pkgconfig(gnutls)` | `ld-linux-x86-64.so.2`, `libc.so.6`, `libgcc_s.so.1`, `libgmp.so.10`, `libhogweed.so.6`, `libidn2.so.0`, `libm.so.6`, `libnettle.so.8`, `libp11-kit.so.0`, `libstdc++.so.6`, `libtasn1.so.6`, `libunistring.so.5`, `pkgconfig(hogweed)`, `pkgconfig(libidn2)`, `pkgconfig(libtasn1)`, `pkgconfig(nettle)`, `pkgconfig(p11-kit-1)` | — |
+| `gobject-introspection` | OK — [✗] install | FAIL | 544 | `libgirepository-1.0.so.1`, `pkgconfig(gobject-introspection-1.0)`, `pkgconfig(gobject-introspection-no-export-1.0)` | `exec(python3)`, `libc.so.6`, `libffi.so.8`, `libgio-2.0.so.0`, `libglib-2.0.so.0`, `libgmodule-2.0.so.0`, `libgobject-2.0.so.0`, `libm.so.6`, `pkgconfig(glib-2.0)`, `pkgconfig(gobject-2.0)` | **`python-setuptools`** |
+| `graphene` | OK | OK | 521 | `libgraphene-1.0.so.0`, `pkgconfig(graphene-1.0)`, `pkgconfig(graphene-gobject-1.0)` | `exec(python3)`, `libc.so.6`, `libglib-2.0.so.0`, `libgobject-2.0.so.0`, `libm.so.6`, `pkgconfig(gobject-2.0)` | **`python-setuptools`** |
+| `gstreamer` | OK | OK | 644 | `libgstbase-1.0.so.0`, `libgstcheck-1.0.so.0`, `libgstcontroller-1.0.so.0`, `libgstcoreelements.so`, `libgstcoretracers.so`, `libgstnet-1.0.so.0`, `libgstreamer-1.0.so.0`, `pkgconfig(gstreamer-1.0)`, `pkgconfig(gstreamer-base-1.0)`, `pkgconfig(gstreamer-check-1.0)`, `pkgconfig(gstreamer-controller-1.0)`, `pkgconfig(gstreamer-net-1.0)` | `exec(python3)`, `libc.so.6`, `libgio-2.0.so.0`, `libglib-2.0.so.0`, `libgmodule-2.0.so.0`, `libgobject-2.0.so.0`, `libm.so.6`, `pkgconfig(gio-2.0)`, `pkgconfig(gio-unix-2.0)`, `pkgconfig(glib-2.0)`, `pkgconfig(gmodule-no-export-2.0)`, `pkgconfig(gobject-2.0)` | **`python-setuptools`** |
+| `harfbuzz` | FAIL —   libgpg-error N.N (NKiB) | — | 283 | — | — | — |
+| `json-c` | OK | OK | 435 | `libjson-c.so.5`, `pkgconfig(json-c)` | `ld-linux-x86-64.so.2`, `libc.so.6`, `libm.so.6` | **`cmake`** |
+| `json-glib` | OK | OK | 260 | `libjson-glib-1.0.so.0`, `pkgconfig(json-glib-1.0)` | `libc.so.6`, `libgio-2.0.so.0`, `libglib-2.0.so.0`, `libgobject-2.0.so.0`, `pkgconfig(gio-2.0)` | — |
+| `lcms2` | FAIL — checking for jerror.h... yes | — | 249 | — | — | — |
+| `libICE` | FAIL — [✗] build failed — see /var/hud-build/logs/libICE-N.N.N-NTNZ.log | — | 186 | — | — | — |
+| `libSM` | FAIL — [✗] build failed — see /var/hud-build/logs/libSM-N.N.N-NTNZ.log | — | 196 | — | — | — |
+
+## Batch 2
+
+0/7 built, average build 0s, cumulative elapsed 23.2h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `libX11` | FAIL — [✗] build failed — see /var/hud-build/logs/libXN-N.N.N-NTNZ.log | — | 214 | — | — | — |
+| `libXau` | FAIL — [✗] build failed — see /var/hud-build/logs/libXau-N.N.N-NTNZ.log | — | 206 | — | — | — |
+| `libXdmcp` | FAIL — [✗] build failed — see /var/hud-build/logs/libXdmcp-N.N.N-NTNZ.log | — | 193 | — | — | — |
+| `libXext` | FAIL — [✗] build failed — see /var/hud-build/logs/libXext-N.N.N-NTNZ.log | — | 235 | — | — | — |
+| `libXfixes` | FAIL — [✗] build failed — see /var/hud-build/logs/libXfixes-N.N.N-NTNZ.log | — | 221 | — | — | — |
+| `libXi` | FAIL — [✗] build failed — see /var/hud-build/logs/libXi-N.N.N-NTNZ.log | — | 220 | — | — | — |
+| `libXrandr` | FAIL — [✗] build failed — see /var/hud-build/logs/libXrandr-N.N.N-NTNZ.log | — | 227 | — | — | — |

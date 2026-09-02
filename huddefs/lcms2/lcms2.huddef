@@ -6,9 +6,13 @@ Package: lcms2
 Version: 2.17
 Architecture: x86_64
 Section: graphics
-Depends: libjpeg-turbo, libtiff
 Description: Small-footprint color management engine with focus on accuracy and performance
 Source: https://github.com/mm2/Little-CMS/releases/download/lcms2.17/lcms2-2.17.tar.gz
+Source-SHA256:    d11af569e42a1baa1650d20ad61d12e41af4fead4aa7964a01f93b08b53ab074
+
+Build-Depends:    libjpeg-turbo, libtiff
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud --disable-static
