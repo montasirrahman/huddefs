@@ -2,28 +2,34 @@
 # =============================================================================
 # supervisor.sh — keep the conversion running without a human watching it
 #
-# Checks every 10 minutes:
-#   - is the conversion unit still active?
-#   - is exactly one build running, or have containers been orphaned?
-#   - is the current build's log still growing, or is it wedged?
-#   - is there disk left?
-#   - did the block device start rejecting writes again?
+# Checks every 10 minutes and restarts the conversion when it has stopped with
+# work remaining. The converter resumes from convert-state.json, so a restart
+# repeats nothing.
 #
-# Restarts the conversion when it has stopped and there is work left. The
-# converter resumes from convert-state.json, so a restart repeats nothing.
+# -----------------------------------------------------------------------------
+# WHY THE DISK CHECK MEASURES USED SPACE, NOT FREE SPACE
+# -----------------------------------------------------------------------------
+# bf-repo is a VirtualBox guest on a Windows laptop. Its VDI lives on drive F:
+# with a declared capacity of 1000 GB, but F: has never had anywhere near that
+# free. The guest's df therefore reports space that does not exist: it showed
+# 852 GB available while the block device was rejecting writes. Two I/O failures
+# resulted, at ~143 GB and ~183 GB into the device.
 #
-# HALTS rather than restarting when:
-#   - I/O errors reappear in dmesg (the 2026-09-01 fault may be dormant, and a
-#     second event during a phase touching the live repo would be far worse)
-#   - free disk drops below 100 G
-#   - the same unit has been restarted more than 5 times without progressing
+# So a "free space" floor is worthless here — df will happily report hundreds of
+# gigabytes free right up to the moment writes fail. What can be trusted is how
+# much has been WRITTEN, because the VDI grows with every write and never shrinks
+# when files are deleted. Deleting scratch frees space inside the guest and
+# returns none of it to the host.
+#
+# Real host headroom is ~332 GB. The ceiling below is deliberately well under
+# that.
 # =============================================================================
 set -u
 SD=/var/hud-build/e4
 LOG=$SD/supervisor.log
 STATE=/var/hud-build/convert-state.json
 TOTAL=148
-MIN_FREE_GB=100
+MAX_USED_GB=120          # halt if /var exceeds this; host headroom is ~332 GB
 MAX_RESTARTS=5
 
 say() { echo "$(date '+%F %T') $*" >> "$LOG"; }
@@ -32,27 +38,36 @@ done_count() {
     python3 -c "import json;print(len(json.load(open('$STATE'))['done']))" 2>/dev/null || echo 0
 }
 
+used_gb() { du -sBG /var 2>/dev/null | tr -dc '0-9' | head -c 6; }
+
 current_unit() {
-    systemctl list-units 'e4[a-z]*.service' --no-legend --all --no-pager 2>/dev/null \
+    systemctl list-units 'e4[a-z0-9]*.service' --no-legend --all --no-pager 2>/dev/null \
         | awk '{print $1}' | grep -v supervisor | tail -1
 }
 
 restarts=0
 last_progress=$(done_count)
-say "supervisor started; $last_progress/$TOTAL done"
+say "supervisor started; $last_progress/$TOTAL done, /var at $(used_gb)G used"
 
 while true; do
     sleep 600
 
-    # --- storage health comes first: a repeat fault must stop everything ---
-    if dmesg 2>/dev/null | tail -200 | grep -qiE 'I/O error|EXT4-fs error|remount-ro'; then
-        say "HALT: I/O errors in dmesg — not restarting. The 2026-09-01 fault may have recurred."
+    # --- storage health, in a 15 minute window ---------------------------------
+    # Previously this grepped the whole dmesg ring buffer, so it matched the
+    # failures from the day before and halted on stale history. The halt is
+    # right; only the window was wrong.
+    if journalctl -k --since "15 minutes ago" --no-pager 2>/dev/null \
+        | grep -qiE 'I/O error|Buffer I/O|remount.*read-only'; then
+        say "HALT: fresh I/O errors in the last 15 minutes — not restarting."
         systemctl stop "$(current_unit)" 2>/dev/null
         exit 20
     fi
-    free_gb=$(df -BG --output=avail / | tail -1 | tr -dc '0-9')
-    if [ "${free_gb:-0}" -lt "$MIN_FREE_GB" ]; then
-        say "HALT: only ${free_gb}G free, below the ${MIN_FREE_GB}G floor"
+
+    used=$(used_gb)
+    if [ "${used:-0}" -gt "$MAX_USED_GB" ]; then
+        say "HALT: /var at ${used}G used, over the ${MAX_USED_GB}G ceiling."
+        say "      The VDI never shrinks; deleting files inside the guest does"
+        say "      not return space to the host. Needs host-side attention."
         systemctl stop "$(current_unit)" 2>/dev/null
         exit 21
     fi
@@ -62,14 +77,13 @@ while true; do
     active=$(systemctl is-active "$unit" 2>/dev/null)
 
     if [ "$done_now" -ge "$TOTAL" ]; then
-        say "COMPLETE: $done_now/$TOTAL processed"
+        say "COMPLETE: $done_now/$TOTAL processed, /var at ${used}G used"
         exit 0
     fi
 
-    # --- orphaned containers: more than one build means a previous stop leaked ---
     nbuild=$(ps -eo args --no-headers | grep -c '/usr/local/bin/hud-build' || true)
     if [ "${nbuild:-0}" -gt 1 ]; then
-        say "WARN: $nbuild concurrent builds — clearing orphans"
+        say "WARN: $nbuild concurrent builds — clearing orphaned containers"
         for m in $(machinectl list --no-legend 2>/dev/null | awk '{print $1}'); do
             machinectl terminate "$m" >/dev/null 2>&1 || true
         done
@@ -77,22 +91,21 @@ while true; do
 
     if [ "$active" = "active" ]; then
         if [ "$done_now" -gt "$last_progress" ]; then
-            say "ok: $unit active, $done_now/$TOTAL (+$((done_now - last_progress)))"
+            say "ok: $unit active, $done_now/$TOTAL (+$((done_now - last_progress))), /var ${used}G used"
             last_progress=$done_now
             restarts=0
         else
-            say "ok: $unit active, $done_now/$TOTAL (no completion this interval — long build)"
+            say "ok: $unit active, $done_now/$TOTAL (no completion this interval), /var ${used}G used"
         fi
         continue
     fi
 
-    # --- not active: restart if there is work left ---
     if [ "$restarts" -ge "$MAX_RESTARTS" ]; then
         say "HALT: restarted $restarts times without progress past $done_now — needs a human"
         exit 22
     fi
     restarts=$((restarts + 1))
-    say "unit $unit is '$active' at $done_now/$TOTAL — restart $restarts/$MAX_RESTARTS"
+    say "unit $unit is '$active' at $done_now/$TOTAL, /var ${used}G — restart $restarts/$MAX_RESTARTS"
 
     for m in $(machinectl list --no-legend 2>/dev/null | awk '{print $1}'); do
         machinectl terminate "$m" >/dev/null 2>&1 || true

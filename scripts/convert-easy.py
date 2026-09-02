@@ -27,7 +27,10 @@ H      = f"{REPO}/huddefs"
 CACHE  = "/var/hud-build/cache"
 OUT    = "/var/hud-build/output"
 STATE  = "/var/hud-build/convert-state.json"
-MIN_FREE_GB = 100
+# NOT a free-space floor: this guest's df reports space that does not exist
+# (852 GB "free" while the block device was rejecting writes). The supervisor
+# enforces a ceiling on space USED instead. Kept only for the statvfs helper.
+MIN_FREE_GB = 0
 
 # Always present in the minimal rootfs because the hud client cannot fetch
 # anything without them. A Build-Depends naming only these cannot be shown to be
@@ -314,6 +317,19 @@ def clear_stale_containers():
     sh("umount /run/systemd/nspawn/unix-export/* 2>/dev/null; "
        "rm -rf /run/systemd/nspawn/unix-export/* 2>/dev/null", timeout=120)
 
+
+def reclaim_scratch():
+    """Delete the build and test roots immediately after each package.
+
+    bf-repo is a VirtualBox guest whose VDI grows with every write and never
+    shrinks when files are deleted. A 3.3 GB build root and a 3.3 GB test root
+    per package permanently consume host disk unless they are removed as soon as
+    they are finished with — and host headroom, not guest free space, is the
+    binding constraint. Waiting until the end of a batch means twenty packages'
+    worth of scratch has already been written.
+    """
+    sh("rm -rf /var/hud-build/work/* /var/hud-test/run-* 2>/dev/null", timeout=1800)
+
 def do_package(pkg, prov):
     rec = {"pkg": pkg, "build": "", "test": "", "provides": "", "requires": "",
            "added": [], "note": "", "build_s": 0, "test_s": 0, "build_depends": []}
@@ -342,6 +358,7 @@ def do_package(pkg, prov):
 
     if rc != 0:
         rec.update(build="FAIL", note=failure_signature(log))
+        reclaim_scratch()
         return rec, failure_signature(log)
 
     p = re.search(r"^Provides: (.*)$", log, re.M)
@@ -369,6 +386,7 @@ def do_package(pkg, prov):
     art = artifact(pkg)
     if not art:
         rec.update(test="FAIL", note="no artifact produced")
+        reclaim_scratch()
         return rec, None
 
     # Pick the smoke target from the archive's real paths, not from Provides.
@@ -408,6 +426,7 @@ def do_package(pkg, prov):
     if trc != 0:
         m = re.search(r"\[✗\].*", strip_ansi(tlog))
         rec["note"] = m.group(0)[:80] if m else "test failed"
+    reclaim_scratch()
     return rec, None
 
 # ---------------------------------------------------------------- reporting

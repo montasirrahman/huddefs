@@ -391,6 +391,57 @@ sections themselves are sound.
 
 ---
 
+## bf-repo is a VirtualBox guest — its `df` cannot be trusted
+
+**This is the single most important operational fact about the machine.**
+
+bf-repo is a VirtualBox VM on a Windows laptop. Its VDI lives on drive **F:**,
+declared as 1000 GB, but F: has never had anywhere near that free. The guest
+believes it has a 980 GB filesystem. **Real host headroom is ~332 GB.**
+
+The consequence: `df` inside the guest reports space that does not exist. It
+showed **852 GB available while the block device was rejecting writes.** Two I/O
+failures resulted:
+
+```
+2026-09-01 22:10   writes rejected at ~143 GB (logical block 34995203+)
+2026-09-02 00:02   writes rejected at ~183 GB
+```
+
+Both remounted the root filesystem read-only via `errors=remount-ro`, aborting
+the journal and failing every write including git. Recovered by offline fsck both
+times; the repository was verified intact afterwards.
+
+### What follows from this
+
+**Never gate on free space.** A free-space floor is worthless when df lies in the
+optimistic direction — it will report hundreds of gigabytes free right up to the
+moment writes fail. The supervisor enforces a **ceiling on space used** instead:
+halt if `/var` exceeds 120 GB, well under the ~332 GB of real headroom.
+
+**The VDI never shrinks.** Deleting files inside the guest frees space in the
+guest and returns none of it to the host. Every byte ever written to scratch is
+permanently consumed host disk. Build and test roots are therefore deleted
+immediately after each package rather than at the end of a batch — 3.3 GB each,
+twice per package, is 132 GB across a batch of twenty if left to accumulate.
+
+**Sustained throughput is 30–43 MB/s**, measured both before and after the
+failures. That is why builds are disk-bound rather than CPU-bound, why extracting
+a 3.3 GB rootfs takes 103 s, and why a small package costs ~300 s with the
+compiler mostly idle. It is also the strongest argument for the
+`CONFIG_OVERLAY_FS=y` rebuild, which removes the extract rather than speeding it
+up — and for moving builds to bf-build, whose disk runs at 224 MB/s and whose
+kernel already has overlayfs.
+
+### Status
+
+F: cleared to 332 GB free. A 20 GB direct-write test passes at 30.8 MB/s.
+`journalctl -k` shows nothing newer than 00:02. Whether the fault is resolved or
+dormant is still unknown, so the supervisor halts on any I/O error in the last
+15 minutes rather than restarting through it.
+
+---
+
 ## Next phases
 
 1. **Rebuild the kernel with `CONFIG_OVERLAY_FS=y` on bf-build.** This is the
