@@ -242,6 +242,14 @@ def convert(pkg, extra_bd=None):
 
 ERR_PATTERNS = [
     (re.compile(r"No package '([^']+)' found"), "pc"),
+    # configure scripts phrase a missing dependency in many ways; these three
+    # cost libvorbis, libxcb and libxslt a build each because none matched:
+    #   "configure: error: must have Ogg installed!"
+    #   "Package requirements (xcb-proto >= 1.17.0) were not met"
+    #   "configure: error: Could not find libxml2 anywhere."
+    (re.compile(r"Package requirements \(([A-Za-z0-9_.+-]+)[^)]*\) were not met"), "pc"),
+    (re.compile(r"[Cc]ould not find ([A-Za-z0-9_.+-]+) anywhere"), "pc"),
+    (re.compile(r"must have ([A-Za-z0-9_.+-]+) installed"), "pc"),
     (re.compile(r"Package '([^']+)', required by"), "pc"),
     (re.compile(r"Dependency \"?([A-Za-z0-9_.+-]+)\"? not found"), "pc"),
     (re.compile(r"fatal error: ([A-Za-z0-9_./+-]+\.h(?:pp)?): No such file"), "hdr"),
@@ -275,6 +283,21 @@ def guess_dep(log, prov):
                 continue
             cand = prov[kind].get(key) or (prov[kind].get(os.path.basename(key))
                                            if kind == "hdr" else None)
+            if not cand:
+                # Configure scripts name things loosely: "must have Ogg
+                # installed" means the libogg package. Try a case-insensitive
+                # pkg-config match, then the repository's own package names.
+                low = key.lower()
+                for table in (prov["pc"], prov["bin"]):
+                    for k2, v2 in table.items():
+                        if k2.lower() == low:
+                            cand = v2
+                            break
+                    if cand:
+                        break
+            if not cand:
+                keep, _ = normalise_deps([key])
+                cand = keep[0] if keep else None
             if cand:
                 return cand, f"{kind}:{key}"
     return None, None
@@ -419,8 +442,15 @@ def do_package(pkg, prov):
     # hud-test rather than the deployed one; nothing is installed to /usr/local/bin.
     predeps = " ".join(rec.get("build_depends") or [])
     dflag = f'--deps "{predeps}" ' if predeps else ""
-    trc, tlog = sh(f"/root/blackflag/scripts/hud-test {dflag}--local {art} {smoke}".strip(),
-                   timeout=7200)
+    # Resolve hud-test rather than hardcoding a path. It was pinned to
+    # /root/blackflag/scripts/hud-test on bf-repo to avoid deploying to
+    # /usr/local/bin; on bf-build that directory holds only the converters, so
+    # every install test failed instantly with test=0s and the package was
+    # recorded FAIL despite building correctly.
+    hudtest = "/root/blackflag/scripts/hud-test"
+    if not os.path.exists(hudtest):
+        hudtest = shutil.which("hud-test") or "/usr/local/bin/hud-test"
+    trc, tlog = sh(f"{hudtest} {dflag}--local {art} {smoke}".strip(), timeout=7200)
     rec["test_s"] = int(time.time() - t1)
     rec["test"] = "OK" if trc == 0 else "FAIL"
     if trc != 0:

@@ -252,6 +252,10 @@ fi
     # matches what the spec already says: the builder supplies the environment,
     # and definitions should not have to.
     echo "export ACLOCAL_PATH=\"$PREFIX/share/aclocal\""
+    # CPPFLAGS for the same reason: `export CPPFLAGS="-I/opt/hud/include $CPPFLAGS"`
+    # is fatal under set -u when unset, which is how nettle failed.
+    echo "export CPPFLAGS=\"-I$PREFIX/include \${CPPFLAGS:-}\""
+    echo "export LIBRARY_PATH=\"\${LIBRARY_PATH:-$PREFIX/lib:$PREFIX/lib64}\""
     echo "export XDG_DATA_DIRS=\"\${XDG_DATA_DIRS:-$PREFIX/share:/usr/local/share:/usr/share}\""
     echo "cd \$SRCDIR"
 
