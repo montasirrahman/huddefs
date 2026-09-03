@@ -156,11 +156,21 @@ def normalise_deps(deps):
     return keep, dropped
 
 def record_dropped(pkg, dropped):
+    """Record dropped dependencies, tolerating either shape already on disk.
+
+    An entry starts as a list of names and is later REPLACED by verify_drops
+    with a dict holding the verdict. Re-processing an already-verified package
+    then did `dict + list` and crashed the whole run — which is exactly what
+    re-queueing 52 packages caused.
+    """
     try:
         data = json.load(open(DROPPED_LOG))
     except Exception:
         data = {}
-    data[pkg] = sorted(set(data.get(pkg, []) + dropped))
+    prev = data.get(pkg, [])
+    if isinstance(prev, dict):
+        prev = prev.get("dropped", [])
+    data[pkg] = sorted(set(list(prev) + list(dropped)))
     json.dump(data, open(DROPPED_LOG, "w"), indent=1)
 
 # ---------------------------------------------------------------- conversion

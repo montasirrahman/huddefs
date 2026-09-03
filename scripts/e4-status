@@ -1,0 +1,27 @@
+#!/bin/bash
+# e4-status [-f]   — status of the conversion, whichever unit is current.
+# The unit name changes on every restart (e4g, e4h, e4s...), so never hardcode it.
+# --plain drops the leading bullet: a failed unit prints "● name.service" and
+# awk '{print $1}' then returns the bullet instead of the unit name, which made
+# systemctl report Invalid unit name "●".
+U=$(systemctl list-units 'e4*.service' --no-legend --all --no-pager --plain 2>/dev/null \
+    | awk '{print $1}' | grep -v supervisor \
+    | while read -r u; do [ "$(systemctl is-active "$u")" = active ] && echo "$u"; done | tail -1)
+[ -z "$U" ] && U=$(systemctl list-units 'e4*.service' --no-legend --all --no-pager --plain 2>/dev/null \
+    | awk '{print $1}' | grep -v supervisor | tail -1)
+
+if [ "${1:-}" = "-f" ]; then exec journalctl -u "$U" -f; fi
+
+DONE=$(python3 -c "import json;print(len(json.load(open('/var/hud-build/convert-state.json'))['done']))" 2>/dev/null)
+echo "unit      : $U  ($(systemctl is-active "$U" 2>/dev/null))"
+echo "supervisor: $(systemctl is-active e4-supervisor 2>/dev/null)"
+echo "progress  : ${DONE:-?}/148   /var $(df -BG --output=used / | tail -1 | tr -dc '0-9')G used (ceiling 120G)"
+echo "builds    : $(ps -eo args --no-headers | grep -c '[/]usr/local/bin/hud-build') running (expect 1)"
+echo "io errors : $(journalctl -k --since '15 minutes ago' --no-pager 2>/dev/null | grep -ciE 'I/O error|Buffer I/O|remount.*read-only') in last 15 min"
+echo
+echo "--- last 8 results ---"
+journalctl -u "$U" --no-pager 2>/dev/null | grep -E 'OK/|FAIL/|retry|BATCH|STOP' | tail -8
+echo
+echo "--- currently ---"
+ps -eo etime,args --no-headers | grep -E '[/]usr/local/bin/hud-build|[/]blackflag/scripts/hud-test' \
+  | sed 's/\(.\{100\}\).*/\1/' || echo "(between packages)"
