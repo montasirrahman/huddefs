@@ -5,9 +5,13 @@ Package: libseccomp
 Version: 2.6.0
 Architecture: x86_64
 Section: security
-Depends:
 Description: High-level interface to the Linux Kernel seccomp filter
 Source: https://github.com/seccomp/libseccomp/releases/download/v2.6.0/libseccomp-2.6.0.tar.gz
+Source-SHA256:    83b6085232d1588c379dc9b9cae47bb37407cf262e6e74993c61ba72d2a784dc
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud --disable-static

@@ -5,9 +5,13 @@ Package: libssh2
 Version: 1.11.1
 Architecture: x86_64
 Section: security
-Depends: openssl,zlib
 Description: Library implementing the SSH2 protocol
 Source: https://github.com/libssh2/libssh2/releases/download/libssh2-1.11.1/libssh2-1.11.1.tar.gz
+Source-SHA256:    d9ec76cbe34db98eec3539fe2c899d26b0c837cb3eb466a56b0f109cabf658f7
+
+Build-Depends:    openssl, zlib
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure \

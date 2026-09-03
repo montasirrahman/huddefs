@@ -10,6 +10,7 @@ Description:      PNG reference library for reading and writing PNG images
 Source:           https://downloads.sourceforge.net/libpng/libpng-1.6.50.tar.xz
 Source-SHA256:    4df396518620a7aa3651443e87d1b2862e4e88cad135a8b93423e01706232307
 
+
 Build-Depends:    zlib
 Depends:          auto
 Provides:         auto

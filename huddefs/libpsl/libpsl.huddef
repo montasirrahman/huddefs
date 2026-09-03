@@ -6,9 +6,13 @@ Package: libpsl
 Version: 0.21.5
 Architecture: x86_64
 Section: libraries
-Depends: libidn2, libunistring
 Description: Library for accessing the Public Suffix List (PSL)
 Source: https://github.com/rockdaboot/libpsl/releases/download/0.21.5/libpsl-0.21.5.tar.gz
+Source-SHA256:    1dcc9ceae8b128f3c0b3f654decd0e1e891afc6ff81098f227ef260449dae208
+
+Build-Depends:    libidn2, libunistring
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

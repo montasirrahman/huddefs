@@ -5,10 +5,14 @@ Package: libsndfile
 Version: 1.2.2
 Architecture: x86_64
 Section: libraries
-Depends: flac,opus,libvorbis
 Description: Library of C routines for reading and writing files containing sampled audio data
 Source: https://github.com/libsndfile/libsndfile/releases/download/1.2.2/libsndfile-1.2.2.tar.xz
+Source-SHA256:    3799ca9924d3125038880367bf1468e53a1b7e3686a934f098b7e1d286cdb80e
 MD5sum: 04e2e6f726da7c5dc87f8cf72f250d04
+
+Build-Depends:    flac, opus, libvorbis
+Depends:          auto
+Provides:         auto
 
 [configure]
 sed '/typedef enum/,/bool ;/d' -i src/ALAC/alac_{en,de}coder.c
