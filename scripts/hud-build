@@ -24,6 +24,7 @@ HUD_BUILD_CONF="${HUD_BUILD_CONF:-/etc/hud-build.conf}"
 # shellcheck source=/dev/null
 [ -r "$HUD_BUILD_CONF" ] && . "$HUD_BUILD_CONF"
 
+ROOTS_DIR="${HUD_ROOTS_DIR:-$BUILD_ROOT/roots}"
 CACHE_DIR="$BUILD_ROOT/cache"
 OUTPUT_DIR="$BUILD_ROOT/output"
 LOG_DIR="$BUILD_ROOT/logs"
@@ -126,12 +127,55 @@ fi
 
 WORK=$(mktemp -d "$BUILD_ROOT/work/${NAME}-XXXXXX")
 ROOT="$WORK/root"
-cleanup() { rm -rf "$WORK"; }
+
+# Cleanup must unmount before deleting. If $ROOT is still a mountpoint, `rm -rf`
+# would delete straight through the overlay into the pristine lower tree, which
+# is the golden rootfs every build depends on. Never remove a mountpoint.
+cleanup() {
+    if mountpoint -q "$ROOT" 2>/dev/null; then
+        umount "$ROOT" 2>/dev/null || umount -l "$ROOT" 2>/dev/null
+    fi
+    if mountpoint -q "$ROOT" 2>/dev/null; then
+        warn "$ROOT is still mounted; leaving $WORK in place rather than deleting through it"
+        return
+    fi
+    rm -rf "$WORK"
+}
 trap cleanup EXIT INT TERM
 
 mkdir -p "$ROOT"
-info "Unpacking clean build root"
-tar --zstd -xf "$BASE_ROOTFS" -C "$ROOT"
+
+# Prefer an overlay over the pre-extracted tree. Extracting a 3.3 GB rootfs per
+# package was most of what a build cost — on bf-repo it was ~100 s of the ~150 s
+# a small package took. An overlay makes it a mount.
+#
+# Requires CONFIG_OVERLAY_FS, which bf-build's kernel has and bf-repo's does not,
+# so the tar path below remains the fallback and is not dead code.
+#
+# The upper layer is on disk rather than tmpfs: hud-build runs two separate
+# nspawn invocations (Build-Depends install, then the network-isolated build) and
+# has to retrieve the artifact from /dest afterwards. `--volatile=overlay` uses a
+# tmpfs upper and discards it when the container exits, which would lose the
+# installed dependencies between the two and then the package itself.
+RO_ROOT="$ROOTS_DIR/$(basename "$BASE_ROOTFS" | sed 's/^base-rootfs-//; s/^base-rootfs/full/; s/\.tar\.zst$//')"
+if grep -q '\boverlay\b' /proc/filesystems 2>/dev/null && [ -d "$RO_ROOT/usr" ]; then
+    mkdir -p "$WORK/upper" "$WORK/ovlwork"
+    if mount -t overlay overlay \
+         -o "lowerdir=$RO_ROOT,upperdir=$WORK/upper,workdir=$WORK/ovlwork" \
+         "$ROOT" 2>/dev/null; then
+        ROOT_MODE="overlay over $RO_ROOT"
+    else
+        warn "overlay mount failed; falling back to extracting the image"
+        ROOT_MODE=""
+    fi
+fi
+
+if [ -z "${ROOT_MODE:-}" ]; then
+    ROOT_MODE="extracted from $(basename "$BASE_ROOTFS")"
+    info "Unpacking clean build root"
+    tar --zstd -xf "$BASE_ROOTFS" -C "$ROOT"
+fi
+info "Build root: $ROOT_MODE"
 
 mkdir -p "$ROOT/build" "$ROOT/dest"
 

@@ -26,6 +26,7 @@ HUD_BUILD_CONF="${HUD_BUILD_CONF:-/etc/hud-build.conf}"
 
 BASE_ROOTFS="${HUD_BASE_ROOTFS:-${HUD_ROOTFS_DEFAULT:-$BUILD_ROOT/base-rootfs-minimal.tar.zst}}"
 TEST_ROOT="${HUD_TEST_ROOT:-/var/hud-test}"
+ROOTS_DIR="${HUD_ROOTS_DIR:-$BUILD_ROOT/roots}"
 
 RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'
 BLUE=$'\033[0;34m'; NC=$'\033[0m'
@@ -63,14 +64,44 @@ info "Rootfs: $BASE_ROOTFS"
 command -v systemd-nspawn >/dev/null || die "systemd-nspawn not found"
 
 RUN="$TEST_ROOT/run-$$"
-cleanup() { rm -rf "$RUN"; }
+
+# Unmount before deleting. If $RUN is still a mountpoint, `rm -rf` deletes
+# through the overlay into the pristine lower tree that every build depends on.
+cleanup() {
+    if mountpoint -q "$RUN" 2>/dev/null; then
+        umount "$RUN" 2>/dev/null || umount -l "$RUN" 2>/dev/null
+    fi
+    if mountpoint -q "$RUN" 2>/dev/null; then
+        warn "$RUN still mounted; not deleting through it"
+        return
+    fi
+    rm -rf "$RUN" "$RUN.upper" "$RUN.work"
+}
 # INT/TERM as well as EXIT: an interrupted run used to leave an 8 GB unpacked
 # root behind in $TEST_ROOT, which then got swept into the next base rootfs.
 trap cleanup EXIT INT TERM
 
 mkdir -p "$RUN"
-info "Unpacking clean root"
-tar --zstd -xf "$BASE_ROOTFS" -C "$RUN"
+
+# Same overlay approach as hud-build: mount over the pre-extracted tree rather
+# than unpacking 3.3 GB for every install test. Falls back to extracting where
+# the kernel has no overlayfs.
+RO_ROOT="$ROOTS_DIR/$(basename "$BASE_ROOTFS" | sed 's/^base-rootfs-//; s/^base-rootfs/full/; s/\.tar\.zst$//')"
+RUN_MODE=""
+if grep -q '\boverlay\b' /proc/filesystems 2>/dev/null && [ -d "$RO_ROOT/usr" ]; then
+    mkdir -p "$RUN.upper" "$RUN.work"
+    if mount -t overlay overlay \
+         -o "lowerdir=$RO_ROOT,upperdir=$RUN.upper,workdir=$RUN.work" \
+         "$RUN" 2>/dev/null; then
+        RUN_MODE="overlay over $RO_ROOT"
+    fi
+fi
+if [ -z "$RUN_MODE" ]; then
+    RUN_MODE="extracted"
+    info "Unpacking clean root"
+    tar --zstd -xf "$BASE_ROOTFS" -C "$RUN"
+fi
+info "Test root: $RUN_MODE"
 
 FAILED=0
 step() {

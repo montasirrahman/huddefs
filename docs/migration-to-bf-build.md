@@ -189,3 +189,72 @@ git@github.com: Permission denied (publickey)
 Batch commits will succeed locally and fail to push. Fix by adding that public
 key at github.com → Settings → SSH and GPG keys. Until then, pushes must be made
 by pulling from bf-build to bf-repo, or by hand.
+
+---
+
+## Overlay build roots implemented 2026-09-03
+
+The F5 design, finally possible. `hud-build` and `hud-test` now mount an overlay
+over the pre-extracted tree at `/var/hud-build/roots/<name>` instead of unpacking
+3.3 GB per package.
+
+### Measured
+
+| | bf-repo (USB, extract) | bf-build (NVMe, overlay) |
+|---|---|---|
+| `zlib` build | 118–150 s | **5 s** |
+| `zlib` install test | ~120 s | **6 s** |
+| rootfs extract (one-time) | 103 s | 16 s |
+
+Roughly **25x**. Two independent gains: the USB-to-NVMe move alone took the build
+from ~150 s to 27 s, and the overlay took it from 27 s to 5 s by removing the
+per-package extract entirely.
+
+### The upper layer is on disk, not tmpfs
+
+`--volatile=overlay` was rejected. It uses a tmpfs upper and discards everything
+when the container exits, but `hud-build` runs **two** separate nspawn
+invocations — the Build-Depends install, then the network-isolated build — and
+then has to retrieve the artifact from `/dest`. A tmpfs upper would lose the
+installed dependencies between the two, and then the package itself. `hud-test`
+runs five invocations and has the same problem.
+
+An explicit `mount -t overlay` with `upperdir` on disk survives between
+invocations and costs nothing on NVMe.
+
+### Cleanup unmounts before deleting
+
+This is the dangerous part and it is handled explicitly:
+
+```bash
+cleanup() {
+    if mountpoint -q "$ROOT"; then umount "$ROOT" || umount -l "$ROOT"; fi
+    if mountpoint -q "$ROOT"; then
+        warn "still mounted; leaving $WORK rather than deleting through it"
+        return
+    fi
+    rm -rf "$WORK"
+}
+```
+
+If `$ROOT` were still mounted, `rm -rf` would delete **through** the overlay into
+the pristine lower tree that every build depends on. The script refuses to delete
+a mountpoint and leaves the directory instead.
+
+### Isolation verified
+
+A 62,289-file manifest of the pristine tree was taken before and after a real
+build:
+
+```
+RESULT: pristine tree UNCHANGED — overlay isolation verified
+```
+
+This is the test the `cp -al` hardlink farm failed on bf-repo, where a single
+`hud install` rewrote `/etc/profile.d/hud-env.sh` through a shared inode. The
+overlay does what the hardlink farm only appeared to.
+
+### Fallback retained
+
+Where the kernel has no overlayfs — bf-repo — both scripts fall back to
+extracting the image, so they still work there. The fallback is not dead code.
