@@ -211,3 +211,21 @@ that set.
 | `popt` | FAIL — checking for strerror... yes | — | 10 | — | — | — |
 | `postgresql` | FAIL — checking whether gcc supports -Werror=vla, for CFLAGS... yes | — | 19 | — | — | — |
 | `pygobject` | FAIL — [✗] build failed — see /var/hud-build/logs/pygobject-N.N.N-NTNZ.log | — | 2 | — | — | — |
+
+## Batch 1
+
+4/11 built, average build 125s, cumulative elapsed 51.4h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `curl` | FAIL — checking whether to enable compiler warnings as errors... no | — | 12 | — | — | — |
+| `dav1d` | OK | OK | 196 | `libdav1d.so.7`, `pkgconfig(dav1d)` | `libc.so.6` | **`nasm`** |
+| `dbus-python` | OK — [✗] dbus-python failed | FAIL | 49 | `pkgconfig(dbus-python)` | `libc.so.6`, `libdbus-1.so.3`, `libglib-2.0.so.0`, `pkgconfig(dbus-1)` | **`glib`** |
+| `freetype` | FAIL — configure: error: libpng support requested but library not found | — | 6 | — | — | — |
+| `gdb` | FAIL — checking for sys/sysmp.h... checking for strerror... no | — | 912 | — | — | — |
+| `git` | OK | OK | 245 | — | `exec(perl)`, `exec(python)`, `exec(sh)`, `libc.so.6`, `libcrypto.so.3`, `libcurl.so.4`, `libexpat.so.1`, `libssl.so.3`, `libz.so.1` | — |
+| `glib` | FAIL — Compiler for C supports arguments -Werror=format=N: YES  | — | 196 | — | — | **`valgrind`** |
+| `gnutls` | FAIL — checking for error.h... yes | — | 7 | — | — | — |
+| `gobject-introspection` | FAIL — [✗] build failed — see /var/hud-build/logs/gobject-introspection-N.N.N-NTNZ.log | — | 2 | — | — | — |
+| `graphene` | OK | OK | 10 | `libgraphene-1.0.so.0`, `pkgconfig(graphene-1.0)` | `libc.so.6`, `libm.so.6` | — |
+| `gstreamer` | FAIL — [✗] build failed — see /var/hud-build/logs/gstreamer-N.N.N-NTNZ.log | — | 7 | — | — | — |
