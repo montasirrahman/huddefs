@@ -4,9 +4,14 @@ Package: mtdev
 Version: 1.1.7
 Architecture: x86_64
 Section: system
-Depends:
 Description: Multitouch protocol translation library
 Source: https://bitmath.org/code/mtdev/mtdev-1.1.7.tar.bz2
+Source-SHA256:    a107adad2101fecac54ac7f9f0e0a0dd155d954193da55c2340c97f2ff1d814e
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 ./configure --prefix=/opt/hud --disable-static
 [build]

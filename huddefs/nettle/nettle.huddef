@@ -5,9 +5,13 @@ Package: nettle
 Version: 3.10.2
 Architecture: x86_64
 Section: security
-Depends:
 Description: Low-level cryptographic library designed to fit easily in many contexts
 Source: https://ftp.gnu.org/gnu/nettle/nettle-3.10.2.tar.gz
+Source-SHA256:    fe9ff51cb1f2abb5e65a6b8c10a92da0ab5ab6eaf26e7fc2b675c45f1fb519b5
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:$PKG_CONFIG_PATH"

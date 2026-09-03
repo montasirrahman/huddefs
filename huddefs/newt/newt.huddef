@@ -6,9 +6,15 @@ Package: newt
 Version: 0.52.25
 Architecture: x86_64
 Section: libraries
-Depends: popt, slang, gpm, python
 Description: Text-mode widget-based user interface library
 Source: https://releases.pagure.org/newt/newt-0.52.25.tar.gz
+Source-SHA256:    ef0ca9ee27850d1a5c863bb7ff9aa08096c9ed312ece9087b30f3a426828de82
+
+
+
+Build-Depends:    slang, popt
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

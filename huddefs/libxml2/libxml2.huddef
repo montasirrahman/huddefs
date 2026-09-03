@@ -5,9 +5,13 @@ Package: libxml2
 Version: 2.14.5
 Architecture: x86_64
 Section: libraries
-Depends: icu
 Description: libxml2 - XML parsing library with ICU support
 Source: https://download.gnome.org/sources/libxml2/2.14/libxml2-2.14.5.tar.xz
+Source-SHA256:    03d006f3537616833c16c53addcdc32a0eb20e55443cba4038307e3fa7d8d44b
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud           \

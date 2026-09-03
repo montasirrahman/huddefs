@@ -5,9 +5,14 @@ Package: libzip
 Version: 1.11.3
 Architecture: x86_64
 Section: libraries
-Depends: zlib, bzip2, openssl, zstd
 Description: C library for reading, creating, and modifying zip archives
 Source: https://libzip.org/download/libzip-1.11.3.tar.xz
+Source-SHA256:    9509d878ba788271c8b5abca9cfde1720f075335686237b7e9a9e7210fe67c1b
+
+
+Build-Depends:    cmake
+Depends:          auto
+Provides:         auto
 
 [configure]
 mkdir -p build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=/opt/hud -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON

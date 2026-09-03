@@ -5,9 +5,13 @@ Package: nghttp2
 Version: 1.66.0
 Architecture: x86_64
 Section: misc
-Depends: libxml2,jansson,c-ares,sphinx
 Description: nghttp2-1.66.0
 Source: https://github.com/nghttp2/nghttp2/releases/download/v1.66.0/nghttp2-1.66.0.tar.xz
+Source-SHA256:    00ba1bdf0ba2c74b2a4fe6c8b1069dc9d82f82608af24442d430df97c6f9e631
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud

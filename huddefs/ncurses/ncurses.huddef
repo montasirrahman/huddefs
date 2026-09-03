@@ -6,9 +6,13 @@ Package: ncurses
 Version: 6.5.20250809
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: New curses library - terminal handling (LFS 12.4)
 Source: https://invisible-mirror.net/archives/ncurses/current/ncurses-6.5-20250809.tgz
+Source-SHA256:    b071468b8c79099a378ed9bea937a605509f71e720402e2541abe20ad753c555
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure \

@@ -5,9 +5,13 @@ Package: libyaml
 Version: 0.2.5
 Architecture: x86_64
 Section: libraries
-Depends: 
 Description: YAML 1.1 parser and emitter
 Source: https://github.com/yaml/libyaml/releases/download/0.2.5/yaml-0.2.5.tar.gz
+Source-SHA256:    c642ae9b75fee120b2d96c712538bd2cf283228d2337df2cf2988e3c02678ef4
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud

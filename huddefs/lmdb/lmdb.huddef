@@ -6,9 +6,13 @@ Package: lmdb
 Version: 0.9.33
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: Lightning Memory-Mapped Database - ultra-fast key-value store
 Source: https://github.com/LMDB/lmdb/archive/LMDB_0.9.33.tar.gz
+Source-SHA256:    9c352fa9bdad53d920128ac6a62296f2850c7e29862a610d3a72f5f49a1cd7ea
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 # LMDB uses a simple Makefile, no configure script

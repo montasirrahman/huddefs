@@ -5,9 +5,13 @@ Package: libvorbis
 Version: 1.3.7
 Architecture: x86_64
 Section: libraries
-Depends: libogg
 Description: General purpose audio and music encoding format (patent free)
 Source: https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.xz
+Source-SHA256:    b33cc4934322bcbf6efcbacf49e3ca01aadbea4114ec9589d1b1e9d20f72954b
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud --disable-static --with-ogg-prefix=/opt/hud

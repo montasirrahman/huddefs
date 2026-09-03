@@ -151,3 +151,30 @@ that set.
 | `liberation-fonts` | OK | OK | 178 | — | — | — |
 | `libev` | OK | OK | 164 | `libev.so.4` | `libc.so.6`, `libm.so.6` | — |
 | `libevent` | OK | OK | 240 | `libevent-2.1.so.7`, `libevent_core-2.1.so.7`, `libevent_extra-2.1.so.7`, `libevent_openssl-2.1.so.7`, `libevent_pthreads-2.1.so.7`, `pkgconfig(libevent)`, `pkgconfig(libevent_core)`, `pkgconfig(libevent_extra)`, `pkgconfig(libevent_openssl)`, `pkgconfig(libevent_pthreads)` | `exec(python3)`, `libc.so.6`, `libcrypto.so.3`, `libssl.so.3` | — |
+
+## Batch 1
+
+14/20 built, average build 26s, cumulative elapsed 50.5h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `liburcu` | OK — test failed | FAIL | 44 | `liburcu-bp.so.8`, `liburcu-cds.so.8`, `liburcu-common.so.8`, `liburcu-mb.so.8`, `liburcu-memb.so.8`, `liburcu-qsbr.so.8`, `liburcu-signal.so.8`, `liburcu.so.8`, `pkgconfig(liburcu)`, `pkgconfig(liburcu-bp)`, `pkgconfig(liburcu-cds)`, `pkgconfig(liburcu-mb)`, `pkgconfig(liburcu-memb)`, `pkgconfig(liburcu-qsbr)`, `pkgconfig(liburcu-signal)` | `ld-linux-x86-64.so.2`, `libc.so.6` | — |
+| `libusb` | OK — test failed | FAIL | 12 | `libusb-1.0.so.0`, `pkgconfig(libusb-1.0)` | `ld-linux-x86-64.so.2`, `libc.so.6`, `libudev.so.1` | — |
+| `libvorbis` | FAIL — *** exact error that occured. This usually means Ogg was incorrectly installed | — | 5 | — | — | — |
+| `libvpx` | FAIL — don't see any useful error messages above, the next step is to look | — | 1 | — | — | — |
+| `libwebp` | OK — test failed | FAIL | 37 | `libsharpyuv.so.0`, `libwebp.so.7`, `libwebpdemux.so.2`, `libwebpmux.so.3`, `pkgconfig(libsharpyuv)`, `pkgconfig(libwebp)`, `pkgconfig(libwebpdemux)`, `pkgconfig(libwebpmux)` | `libc.so.6`, `libm.so.6` | — |
+| `libxcb` | FAIL — checking if gcc supports -Werror=unknown-warning-option... no | — | 7 | — | — | — |
+| `libxml2` | OK — test failed | FAIL | 22 | `libxml2.so.16`, `libxml2mod.so`, `pkgconfig(libxml-2.0)` | `exec(sh)`, `libc.so.6`, `libhistory.so.8`, `libicuuc.so.77`, `libm.so.6`, `libreadline.so.8`, `pkgconfig(icu-uc)` | — |
+| `libxslt` | FAIL — configure: error: Could not find libxmlN anywhere. | — | 6 | — | — | — |
+| `libyaml` | OK — test failed | FAIL | 13 | `libyaml-0.so.2`, `pkgconfig(yaml-0.1)` | `libc.so.6` | — |
+| `libzip` | OK — test failed | FAIL | 44 | `libzip.so.5`, `pkgconfig(libzip)` | `libbz2.so.1.0`, `libc.so.6`, `libcrypto.so.3`, `liblzma.so.5`, `libz.so.1`, `libzstd.so.1` | **`cmake`** |
+| `lmdb` | OK — test failed | FAIL | 4 | `pkgconfig(lmdb)` | `libc.so.6` | — |
+| `make-ca` | OK — test failed | FAIL | 0 | — | `exec(bash)` | — |
+| `mpc` | OK — test failed | FAIL | 15 | `libmpc.so.3` | `libc.so.6`, `libgmp.so.10`, `libm.so.6`, `libmpfr.so.6` | — |
+| `mpfr` | OK — test failed | FAIL | 36 | `libmpfr.so.6`, `pkgconfig(mpfr)` | `ld-linux-x86-64.so.2`, `libc.so.6`, `libgmp.so.10` | — |
+| `mtdev` | OK — test failed | FAIL | 8 | `libmtdev.so.1`, `pkgconfig(mtdev)` | `libc.so.6` | — |
+| `nasm` | OK — test failed | FAIL | 29 | — | `libc.so.6` | — |
+| `ncurses` | FAIL — /dest/opt/hud/include/curses.h: No such file or directory | — | 77 | — | — | — |
+| `nettle` | FAIL — [✗] build failed — see /var/hud-build/logs/nettle-N.N.N-NTNZ.log | — | 0 | — | — | — |
+| `newt` | OK — test failed | FAIL | 61 | `libnewt.so.0.52`, `pkgconfig(libnewt)` | `libc.so.6`, `libm.so.6`, `libpopt.so.0`, `libpython3.13.so.1.0`, `libslang.so.2`, `libtcl8.6.so`, `pkgconfig(slang)` | **`slang`, `popt`** |
+| `nghttp2` | OK — test failed | FAIL | 34 | `libnghttp2.so.14`, `pkgconfig(libnghttp2)` | `libc.so.6` | — |

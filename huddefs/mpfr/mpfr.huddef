@@ -5,9 +5,13 @@ Package: mpfr
 Version: 4.2.2
 Architecture: x86_64
 Section: libraries
-Depends: gmp
 Description: Multiple Precision Floating-Point Reliable Library
 Source: https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz
+Source-SHA256:    b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud --disable-static --with-gmp=/opt/hud
