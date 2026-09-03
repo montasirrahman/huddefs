@@ -5,9 +5,13 @@ Package: openjdk
 Version: 24.0.2
 Architecture: x86_64
 Section: development
-Depends: alsa-lib,java,git,graphviz,ojdk-conf,mercurial,cups,make-ca,harfbuzz,libarchive,zip,libjpeg,xorg7-lib,libpng,which
 Description: OpenJDK-24.0.2
 Source: https://github.com/openjdk/jdk24u/archive/jdk-24.0.2-ga.tar.gz
+Source-SHA256:    d5a1b364de4335d86590d2e91eb8fce0560ade28759734c531915b8293e502e8
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 bash configure --prefix=/opt/hud --with-boot-jdk=/usr/lib/jvm/java-21-openjdk --disable-warnings-as-errors

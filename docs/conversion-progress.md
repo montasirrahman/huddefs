@@ -259,3 +259,30 @@ that set.
 | `libvpx` | FAIL — don't see any useful error messages above, the next step is to look | — | 3 | — | — | — |
 | `libwebp` | OK | OK | 67 | `libsharpyuv.so.0`, `libwebp.so.7`, `libwebpdemux.so.2`, `libwebpmux.so.3`, `pkgconfig(libsharpyuv)`, `pkgconfig(libwebp)`, `pkgconfig(libwebpdemux)`, `pkgconfig(libwebpmux)` | `libc.so.6`, `libm.so.6` | — |
 | `libxcb` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 25 | — | — | **`xcb-proto`** |
+
+## Batch 1
+
+15/20 built, average build 24s, cumulative elapsed 60.8h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `libxml2` | OK | OK | 25 | `libxml2.so.16`, `libxml2mod.so`, `pkgconfig(libxml-2.0)` | `exec(sh)`, `libc.so.6`, `libhistory.so.8`, `libicuuc.so.77`, `libm.so.6`, `libreadline.so.8`, `pkgconfig(icu-uc)` | — |
+| `libxslt` | FAIL — Could not find libxmlN anywhere | — | 5 | — | — | — |
+| `libyaml` | OK | OK | 13 | `libyaml-0.so.2`, `pkgconfig(yaml-0.1)` | `libc.so.6` | — |
+| `libzip` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 4 | — | — | **`cmake`** |
+| `lmdb` | OK | OK | 5 | `pkgconfig(lmdb)` | `libc.so.6` | — |
+| `make-ca` | OK | OK | 0 | — | `exec(bash)` | — |
+| `mpc` | OK | OK | 22 | `libmpc.so.3` | `libc.so.6`, `libgmp.so.10`, `libm.so.6`, `libmpfr.so.6` | — |
+| `mpfr` | OK | OK | 35 | `libmpfr.so.6`, `pkgconfig(mpfr)` | `ld-linux-x86-64.so.2`, `libc.so.6`, `libgmp.so.10` | — |
+| `mtdev` | OK | OK | 7 | `libmtdev.so.1`, `pkgconfig(mtdev)` | `libc.so.6` | — |
+| `nasm` | OK | OK | 29 | — | `libc.so.6` | — |
+| `ncurses` | FAIL — /dest/opt/hud/include/curses.h: No such file or directory | — | 73 | — | — | — |
+| `nettle` | OK | OK | 29 | `libhogweed.so.6`, `libnettle.so.8`, `pkgconfig(hogweed)`, `pkgconfig(nettle)` | `libc.so.6`, `libgmp.so.10`, `pkgconfig(#)` | — |
+| `newt` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 7 | — | — | **`slang`** |
+| `nghttp2` | OK | OK | 33 | `libnghttp2.so.14`, `pkgconfig(libnghttp2)` | `libc.so.6` | — |
+| `ninja` | OK | OK | 102 | — | `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `nspr` | OK | OK | 16 | `libnspr4.so`, `libplc4.so`, `libplds4.so`, `pkgconfig(nspr)` | `exec(sh)`, `libc.so.6` | — |
+| `numactl` | OK | OK | 11 | `libnuma.so.1`, `pkgconfig(numa)` | `ld-linux-x86-64.so.2`, `libatomic.so.1`, `libc.so.6`, `libm.so.6` | — |
+| `oniguruma` | OK | OK | 9 | `libonig.so.5`, `pkgconfig(oniguruma)` | `exec(sh)`, `libc.so.6` | — |
+| `openjdk` | FAIL — configure: error: Could not find required tool for ZIPEXE | — | 16 | — | — | — |
+| `opus` | OK | OK | 29 | `libopus.so.0`, `pkgconfig(opus)` | `libc.so.6`, `libm.so.6` | — |
