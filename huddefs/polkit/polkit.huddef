@@ -5,9 +5,14 @@ Package: polkit
 Version: 126
 Architecture: x86_64
 Section: security
-Depends: glib2,expat,linux-pam,duktape,elogind
 Description: Application-level authorization toolkit
 Source: https://gitlab.freedesktop.org/polkit/polkit/-/archive/126/polkit-126.tar.gz
+Source-SHA256:    2814a7281989f6baa9e57bd33bbc5e148827e2721ccef22aaf28ab2b376068e8
+
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 mkdir -p build && cd build && meson setup .. \

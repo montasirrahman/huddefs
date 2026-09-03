@@ -5,9 +5,15 @@ Package: pixman
 Version: 0.46.4
 Architecture: x86_64
 Section: graphics
-Depends: glib
 Description: Low-level pixel manipulation library providing image compositing and trapezoid rasterization
 Source: https://www.cairographics.org/releases/pixman-0.46.4.tar.gz
+Source-SHA256:    d09c44ebc3bd5bee7021c79f922fe8fb2fb57f7320f55e97ff9914d2346a591c
+
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
 export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"

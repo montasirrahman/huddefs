@@ -6,9 +6,14 @@ Package: popt
 Version: 1.19
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: Library for parsing command-line options
 Source: https://ftp.osuosl.org/pub/rpm/popt/releases/popt-1.x/popt-1.19.tar.gz
+Source-SHA256:    c25a4838fc8e4c1c8aacb8bd620edb3084a3d63bf8987fdad3ca2758c63240f9
+
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

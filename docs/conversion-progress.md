@@ -178,3 +178,22 @@ that set.
 | `nettle` | FAIL — [✗] build failed — see /var/hud-build/logs/nettle-N.N.N-NTNZ.log | — | 0 | — | — | — |
 | `newt` | OK — test failed | FAIL | 61 | `libnewt.so.0.52`, `pkgconfig(libnewt)` | `libc.so.6`, `libm.so.6`, `libpopt.so.0`, `libpython3.13.so.1.0`, `libslang.so.2`, `libtcl8.6.so`, `pkgconfig(slang)` | **`slang`, `popt`** |
 | `nghttp2` | OK — test failed | FAIL | 34 | `libnghttp2.so.14`, `pkgconfig(libnghttp2)` | `libc.so.6` | — |
+
+## Batch 2
+
+5/12 built, average build 35s, cumulative elapsed 50.5h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `ninja` | OK — test failed | FAIL | 106 | — | `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `nspr` | OK — test failed | FAIL | 17 | `libnspr4.so`, `libplc4.so`, `libplds4.so`, `pkgconfig(nspr)` | `exec(sh)`, `libc.so.6` | — |
+| `numactl` | OK — test failed | FAIL | 13 | `libnuma.so.1`, `pkgconfig(numa)` | `ld-linux-x86-64.so.2`, `libatomic.so.1`, `libc.so.6`, `libm.so.6` | — |
+| `oniguruma` | OK — test failed | FAIL | 11 | `libonig.so.5`, `pkgconfig(oniguruma)` | `exec(sh)`, `libc.so.6` | — |
+| `openjdk` | FAIL — configure: error: Could not find required tool for ZIPEXE | — | 18 | — | — | — |
+| `opus` | OK — test failed | FAIL | 30 | `libopus.so.0`, `pkgconfig(opus)` | `libc.so.6`, `libm.so.6` | — |
+| `pcre2` | FAIL — checking whether the -Werror option is usable... yes | — | 10 | — | — | — |
+| `perl` | FAIL — [✗] build failed — see /var/hud-build/logs/perl-N.N.N-NTNZ.log | — | 3 | — | — | — |
+| `pixman` | FAIL — tar: Error is not recoverable: exiting now | — | 0 | — | — | — |
+| `polkit` | FAIL — [✗] build failed — see /var/hud-build/logs/polkit-N-NTNZ.log | — | 1 | — | — | — |
+| `popt` | FAIL — [✗] build failed — see /var/hud-build/logs/popt-N.N-NTNZ.log | — | 1 | — | — | — |
+| `postgresql` | FAIL — tar: postgresql-N.N/src/backend/jit/llvm/llvmjit_error.cpp: Cannot open: No such | — | 10 | — | — | — |

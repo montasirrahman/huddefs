@@ -4,9 +4,15 @@ Package: perl
 Version: 5.42.0
 Architecture: x86_64
 Section: development
-Depends: zlib
 Description: Practical Extraction and Report Language - programming language
 Source: https://www.cpan.org/src/5.0/perl-5.42.0.tar.xz
+Source-SHA256:    73cf6cc1ea2b2b1c110a18c14bbbc73a362073003893ffcedc26d22ebdbdd0c3
+
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 sh Configure -des \
              -D prefix=/opt/hud \
