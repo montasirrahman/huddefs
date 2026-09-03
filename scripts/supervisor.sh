@@ -9,20 +9,19 @@
 # -----------------------------------------------------------------------------
 # WHY THE DISK CHECK MEASURES USED SPACE, NOT FREE SPACE
 # -----------------------------------------------------------------------------
-# bf-repo is a VirtualBox guest on a Windows laptop. Its VDI lives on drive F:
-# with a declared capacity of 1000 GB, but F: has never had anywhere near that
-# free. The guest's df therefore reports space that does not exist: it showed
-# 852 GB available while the block device was rejecting writes. Two I/O failures
-# resulted, at ~143 GB and ~183 GB into the device.
+# NOTE (2026-09-03): this gate was built on a wrong diagnosis. The real cause of
+# the three I/O failures was that bf-repo's VDI sits on a USB-attached external
+# disk whose link drops under sustained heavy write load. Capacity was never the
+# constraint — F: had 332 GB free when the third failure happened.
 #
-# So a "free space" floor is worthless here — df will happily report hundreds of
-# gigabytes free right up to the moment writes fail. What can be trusted is how
-# much has been WRITTEN, because the VDI grows with every write and never shrinks
-# when files are deleted. Deleting scratch frees space inside the guest and
-# returns none of it to the host.
+# The ceiling is kept because it is harmless and still catches runaway growth,
+# but it does NOT protect against the actual failure mode, which is sustained
+# write RATE over time rather than disk fullness. The I/O-error check above is
+# the one that matters.
 #
-# Real host headroom is ~332 GB. The ceiling below is deliberately well under
-# that.
+# Building has moved to bf-build (internal NVMe). Nothing should be building on
+# bf-repo at all.
+#
 # =============================================================================
 set -u
 SD=/var/hud-build/e4

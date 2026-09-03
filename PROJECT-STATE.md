@@ -220,8 +220,10 @@ Not a routine interruption. **The block device rejected writes at ~143 GB**
 (logical block 34995203+). ext4 remounted read-only via `errors=remount-ro`, the
 journal aborted, and every write for the rest of that run failed — including git.
 
-The root filesystem had been grown from ~94 G to 980 G with `resize2fs` earlier
-the same day, on **thin-provisioned storage**.
+At the time this was attributed to capacity on thin-provisioned storage. **That
+was wrong** — see the root-cause section below. The VDI is on a USB-attached
+external disk whose link drops under sustained write load. Capacity was never the
+constraint.
 
 **Recovery:** offline fsck repaired it, the machine rebooted, filesystem state is
 clean, a 2 GB direct-write test passes. The repository was verified intact
@@ -391,94 +393,70 @@ sections themselves are sound.
 
 ---
 
-## bf-repo is a VirtualBox guest — its `df` cannot be trusted
+## ROOT CAUSE of the three I/O failures: bf-repo's VDI is on a USB disk
 
-**This is the single most important operational fact about the machine.**
+**Established 2026-09-03. This replaces the earlier speculation about thin
+provisioning, which was wrong.**
 
-bf-repo is a VirtualBox VM on a Windows laptop. Its VDI lives on drive **F:**,
-declared as 1000 GB, but F: has never had anywhere near that free. The guest
-believes it has a 980 GB filesystem. **Real host headroom is ~332 GB.**
+bf-repo's VDI lives on drive **F:, a TOSHIBA EXTERNAL_USB disk**. The drive
+reports Healthy — the media is fine. **The USB link is the problem.** Under
+sustained heavy write load the link drops, the controller resets, and writes
+already in flight are lost.
 
-The consequence: `df` inside the guest reports space that does not exist. It
-showed **852 GB available while the block device was rejecting writes.** Two I/O
-failures resulted:
+That explains all three failures, and it explains them better than capacity ever
+did:
 
 ```
-2026-09-01 22:10   writes rejected at ~143 GB (logical block 34995203+)
-2026-09-02 00:02   writes rejected at ~183 GB
+2026-09-01 22:10   ~143 GB into the device
+2026-09-02 00:02   ~183 GB
+2026-09-03 11:51   ~165 GB   DID_TIME_OUT, cmd_age=38s, "potential data loss"
 ```
 
-Both remounted the root filesystem read-only via `errors=remount-ro`, aborting
-the journal and failing every write including git. Recovered by offline fsck both
-times; the repository was verified intact afterwards.
+The third is the clearest: `DID_TIME_OUT` after 38 seconds is a **link stall**,
+not a rejected write. The offsets never mattered; the sustained load did. It also
+explains the 30–43 MB/s throughput, which is USB-attached spinning-disk territory
+rather than anything wrong with the filesystem.
 
-### What follows from this
+**The conversion was doing precisely what breaks USB attachment**: roughly 20 GB
+of I/O per package, continuously, for hours.
 
-**Never gate on free space.** A free-space floor is worthless when df lies in the
-optimistic direction — it will report hundreds of gigabytes free right up to the
-moment writes fail. The supervisor enforces a **ceiling on space used** instead:
-halt if `/var` exceeds 120 GB, well under the ~332 GB of real headroom.
+### What this means for the earlier reasoning
 
-**The VDI never shrinks.** Deleting files inside the guest frees space in the
-guest and returns none of it to the host. Every byte ever written to scratch is
-permanently consumed host disk. Build and test roots are therefore deleted
-immediately after each package rather than at the end of a batch — 3.3 GB each,
-twice per package, is 132 GB across a batch of twenty if left to accumulate.
+The guest-side used-space ceiling was a reasonable proxy and it did no harm, but
+**it was measuring the wrong thing.** The constraint was never capacity — F: had
+332 GB free when the third failure happened. Clearing space did not help because
+space was never the issue. Any gate based on disk *fullness* would have missed
+this, because the failure mode is sustained *write rate* over time.
 
-**Sustained throughput is 30–43 MB/s**, measured both before and after the
-failures. That is why builds are disk-bound rather than CPU-bound, why extracting
-a 3.3 GB rootfs takes 103 s, and why a small package costs ~300 s with the
-compiler mostly idle. It is also the strongest argument for the
-`CONFIG_OVERLAY_FS=y` rebuild, which removes the extract rather than speeding it
-up — and for moving builds to bf-build, whose disk runs at 224 MB/s and whose
-kernel already has overlayfs.
+The honest lesson: three failures were attributed to capacity on the strength of
+a plausible story and no evidence about the physical device. The physical device
+was the answer.
 
-### The guest-side gate is only a proxy
+### Where the work belongs
 
-The 120 GB used-space ceiling is **not** the authoritative measure and must not
-be treated as one. The VDI on the host grows monotonically: when the guest frees
-space, the guest's used figure drops but the VDI does not shrink, and none of it
-returns to F:. So the guest can report a comfortable 80 GB used while the host
-has already been consumed by scratch that was written and deleted hours earlier.
+bf-build's VDI is on **Disk 0, the internal KIOXIA NVMe SSD**, which matches its
+measured 224 MB/s. That is where building belongs.
 
-**The authoritative figure is F:'s free space, which is invisible from inside the
-VM and is being watched externally.** The in-guest ceiling exists to catch runaway
-growth early, not to prove there is room.
+bf-repo keeps nginx, `packages.db`, `pool/` and publishing: **serving an index
+over HTTP is light, intermittent I/O that USB handles perfectly well.** It is
+sustained multi-gigabyte writes that break the link, and those all belong to
+building.
 
-Two consequences worth remembering:
-- a falling guest used-figure is not evidence of recovered host space
-- the only way to return space to the host is to compact the VDI, offline
+G4 and G5 also stay on bf-repo, because it has the only `/dev/kvm`.
 
-### Status
+### Standing rule
 
-F: cleared to 332 GB free. A 20 GB direct-write test passes at 30.8 MB/s.
-`journalctl -k` shows nothing newer than 00:02. Whether the fault is resolved or
-dormant is still unknown, so the supervisor halts on any I/O error in the last
-15 minutes rather than restarting through it.
+**Do not build on bf-repo.** Not "prefer not to" — the failure mode is known,
+reproducible, and loses writes. An offline `fsck` is pending before the machine
+is trusted again.
 
----
+Once migrated, bf-build's kernel **has overlayfs**, so the `--volatile=overlay`
+build root from F5 — impossible on bf-repo, whose kernel has
+`CONFIG_OVERLAY_FS` unset — becomes available. Combined with NVMe, that should
+remove nearly all of the per-package I/O cost rather than merely reducing it.
 
-### Precedent: disabling an optional sub-target that will not compile
+The migration steps are in `docs/migration-to-bf-build.md`.
 
-A toolchain-strictness failure confined to an optional sub-target may be resolved
-by disabling that sub-target **without asking**, when all three hold:
-
-- the failing target is **not a library** and provides **no soname**
-- **nothing in the repository** declares a dependency on it
-- the main library or binary **builds correctly**
-
-Record the disabled target and the reason as a comment in the definition, and
-list the package in `docs/reduced-packages.md`, so the divergence from the pool
-copy is auditable rather than silent.
-
-**Prefer a compiler flag over disabling a feature.** GCC 15 defaults to C23, so
-implicit-declaration errors in older C are resolved with `-std=gnu17`. That is
-the conventional fix across distributions, not a workaround, and it leaves the
-package shipping exactly what it shipped before. `git` and `gdb` were fixed this
-way; `cmake` and `lcms2` needed the sub-target route.
-
-**Never disable a library, anything providing a soname, or anything another
-package's `Requires` names.** Those still go to `docs/needs-human.md`.
 
 ---
 
