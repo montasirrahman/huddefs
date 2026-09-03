@@ -5,9 +5,14 @@ Package: python
 Version: 3.13.7
 Architecture: x86_64
 Section: development
-Depends: tk,gdb,libnsl,valgrind,bluez,sqlite
 Description: Python-3.13.7
 Source: https://www.python.org/ftp/python/3.13.7/Python-3.13.7.tar.xz
+Source-SHA256:    5462f9099dfd30e238def83c71d91897d8caa5ff6ebc7a50f14d4802cdaaa79a
+
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud --enable-shared --with-system-expat --enable-optimizations

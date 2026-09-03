@@ -286,3 +286,18 @@ that set.
 | `oniguruma` | OK | OK | 9 | `libonig.so.5`, `pkgconfig(oniguruma)` | `exec(sh)`, `libc.so.6` | — |
 | `openjdk` | FAIL — configure: error: Could not find required tool for ZIPEXE | — | 16 | — | — | — |
 | `opus` | OK | OK | 29 | `libopus.so.0`, `pkgconfig(opus)` | `libc.so.6`, `libm.so.6` | — |
+
+## Batch 2
+
+1/8 built, average build 22s, cumulative elapsed 60.8h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `pcre2` | OK | OK | 22 | `libpcre2-16.so.0`, `libpcre2-32.so.0`, `libpcre2-8.so.0`, `libpcre2-posix.so.3`, `pkgconfig(libpcre2-16)`, `pkgconfig(libpcre2-32)`, `pkgconfig(libpcre2-8)`, `pkgconfig(libpcre2-posix)` | `exec(sh)`, `libbz2.so.1.0`, `libc.so.6`, `libz.so.1` | — |
+| `perl` | FAIL — dlerror() found. | — | 57 | — | — | — |
+| `pixman` | FAIL — [✗] build failed — see /var/hud-build/logs/pixman-N.N.N-NTNZ.log | — | 1 | — | — | — |
+| `polkit` | FAIL — [✗] build failed — see /var/hud-build/logs/polkit-N-NTNZ.log | — | 1 | — | — | — |
+| `popt` | FAIL — [✗] build failed — see /var/hud-build/logs/popt-N.N-NTNZ.log | — | 1 | — | — | — |
+| `postgresql` | FAIL — [✗] build failed — see /var/hud-build/logs/postgresql-N.N-NTNZ.log | — | 14 | — | — | — |
+| `pygobject` | FAIL — FileNotFoundError: [Errno N] No such file or directory: '/build/pygobject-N.N.N/ | — | 2 | — | — | — |
+| `python3` | FAIL — [✗] build failed — see /var/hud-build/logs/python-N.N.N-NTNZ.log | — | 4 | — | — | — |
