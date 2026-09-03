@@ -243,3 +243,19 @@ that set.
 | `liburcu` | FAIL — [✗] build failed — see /var/hud-build/logs/liburcu-N.N.N-NTNZ.log | — | 1 | — | — | — |
 | `libusb` | FAIL — tar: Error is not recoverable: exiting now | — | 0 | — | — | — |
 | `libvorbis` | FAIL — confdefs.h: No such file or directory | — | 2 | — | — | — |
+
+## Batch 1
+
+2/9 built, average build 42s, cumulative elapsed 55.4h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `json-c` | FAIL — [✗] build dependency install failed | — | 1 | — | — | **`cmake`** |
+| `json-glib` | FAIL — [✗] build failed — see /var/hud-build/logs/json-glib-N.N.N-NTNZ.log | — | 2 | — | — | — |
+| `lcms2` | FAIL — [✗] build failed — see /var/hud-build/logs/lcmsN-N.N-NTNZ.log | — | 2 | — | — | — |
+| `liburcu` | FAIL — [✗] build failed — see /var/hud-build/logs/liburcu-N.N.N-NTNZ.log | — | 1 | — | — | — |
+| `libusb` | OK | OK | 16 | `libusb-1.0.so.0`, `pkgconfig(libusb-1.0)` | `ld-linux-x86-64.so.2`, `libc.so.6`, `libudev.so.1` | — |
+| `libvorbis` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 101 | — | — | **`libogg`** |
+| `libvpx` | FAIL — don't see any useful error messages above, the next step is to look | — | 3 | — | — | — |
+| `libwebp` | OK | OK | 67 | `libsharpyuv.so.0`, `libwebp.so.7`, `libwebpdemux.so.2`, `libwebpmux.so.3`, `pkgconfig(libsharpyuv)`, `pkgconfig(libwebp)`, `pkgconfig(libwebpdemux)`, `pkgconfig(libwebpmux)` | `libc.so.6`, `libm.so.6` | — |
+| `libxcb` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 25 | — | — | **`xcb-proto`** |
