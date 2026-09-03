@@ -129,3 +129,63 @@ orphaned containers that blocked every subsequent build.
 `docs/WORKFLOW.md` and `PROJECT-STATE.md` both describe bf-repo as the interim
 build host. Update them once this is done, so the next person is not sent to the
 wrong machine.
+
+
+---
+
+## Migration executed 2026-09-03
+
+Completed and verified. bf-build was resized to **4 cores / 5.8 GB**.
+
+### Transferred
+
+| What | Result |
+|---|---|
+| `huddefs` repo (626 files, full history) | HEAD `cb61753`, clean, origin intact |
+| `convert-state.json` | 87 packages recorded — **existed nowhere else** |
+| `dropped-deps.json` | transferred |
+| `e4/` driver and supervisor | transferred |
+| `base-rootfs-minimal.tar.zst` (1.1 G) | sha256 `2d79ecd7c35bac70` — **identical** |
+| source cache | 362 tarballs, zlib sha `9a93b2b7dfdac77c` — **identical** |
+
+`rsync` is not installed on bf-repo, so transfers used `tar` over ssh.
+
+### Installed on bf-build
+
+`hud-build`, `hud-scan-deps`, `hud-test`, `prepare-roots.sh` into
+`/usr/local/bin`; `hud-build.conf` into `/etc`; the converters into
+`/root/blackflag/scripts`. All prerequisites present.
+
+**`git` was missing** and was installed from the repo (2.50.1). Note it landed at
+`/opt/hud/bin/git` — the same location that is off systemd's default service PATH
+on bf-repo and silently broke a batch of commits. The driver's explicit `PATH`
+export covers it, but it is the same trap.
+
+### Verified by building
+
+```
+zlib   build 27s   test 18s   both green
+       Provides: libz.so.1, pkgconfig(zlib)   Requires: libc.so.6
+```
+
+|  | bf-repo (USB) | bf-build (NVMe) |
+|---|---|---|
+| zlib build | 118–150 s | **27 s** |
+| storage | 30–43 MB/s | 224 MB/s |
+
+**A 5x improvement before overlayfs is implemented at all**, purely from moving
+off the USB-attached disk. The remaining 27 s is still mostly the 3.3 GB rootfs
+extract, which overlayfs removes.
+
+### Outstanding
+
+**bf-build cannot push to GitHub.** Its key
+(`ssh-ed25519 AAAA…zQwl root@hud-test1`) is not on the account:
+
+```
+git@github.com: Permission denied (publickey)
+```
+
+Batch commits will succeed locally and fail to push. Fix by adding that public
+key at github.com → Settings → SSH and GPG keys. Until then, pushes must be made
+by pulling from bf-build to bf-repo, or by hand.

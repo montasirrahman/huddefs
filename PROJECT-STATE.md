@@ -8,8 +8,15 @@ pick up where the last one stopped. If you are resuming, read this first, then
 
 ## Where things stand
 
-**Current phase:** E4 — mechanical v1 -> v2 conversion of the 148 EASY packages,
-in batches of 20, strictly sequential. **Batch 1 of 6 complete.**
+**Current phase:** E4 — 87/148 EASY converted. **Building has MOVED to bf-build**
+(2026-09-03). bf-repo's VDI is on a USB disk whose link drops under sustained
+write load; three failures resulted. Do not build on bf-repo.
+
+bf-build: 4 cores, 5.8 GB, internal NVMe, overlayfs available. First build there
+took **27 s against bf-repo's 118–150 s** for the same package. See
+`docs/migration-to-bf-build.md`.
+
+**bf-build cannot push to GitHub yet** — its key is not on the account. **Batch 1 of 6 complete.**
 
 **Resume point:** `/var/hud-build/convert-state.json` on bf-repo lists every
 package already processed. `scripts/convert-easy.py` skips those, so re-running
