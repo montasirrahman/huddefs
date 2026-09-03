@@ -197,3 +197,17 @@ that set.
 | `polkit` | FAIL — [✗] build failed — see /var/hud-build/logs/polkit-N-NTNZ.log | — | 1 | — | — | — |
 | `popt` | FAIL — [✗] build failed — see /var/hud-build/logs/popt-N.N-NTNZ.log | — | 1 | — | — | — |
 | `postgresql` | FAIL — tar: postgresql-N.N/src/backend/jit/llvm/llvmjit_error.cpp: Cannot open: No such | — | 10 | — | — | — |
+
+## Batch 1
+
+0/7 built, average build 0s, cumulative elapsed 50.5h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `pcre2` | FAIL — [✗] build failed — see /var/hud-build/logs/pcreN-N.N-NTNZ.log | — | 4 | — | — | — |
+| `perl` | FAIL — [✗] build failed — see /var/hud-build/logs/perl-N.N.N-NTNZ.log | — | 2 | — | — | — |
+| `pixman` | FAIL — [✗] build failed — see /var/hud-build/logs/pixman-N.N.N-NTNZ.log | — | 0 | — | — | — |
+| `polkit` | FAIL — [✗] build failed — see /var/hud-build/logs/polkit-N-NTNZ.log | — | 1 | — | — | — |
+| `popt` | FAIL — checking for strerror... yes | — | 10 | — | — | — |
+| `postgresql` | FAIL — checking whether gcc supports -Werror=vla, for CFLAGS... yes | — | 19 | — | — | — |
+| `pygobject` | FAIL — [✗] build failed — see /var/hud-build/logs/pygobject-N.N.N-NTNZ.log | — | 2 | — | — | — |

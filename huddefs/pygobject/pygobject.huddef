@@ -6,9 +6,13 @@ Package: pygobject
 Version: 3.50.0
 Architecture: x86_64
 Section: python
-Depends: python3, glib, gobject-introspection, libffi
 Description: Python bindings for GObject introspection libraries
 Source: https://download.gnome.org/sources/pygobject/3.50/pygobject-3.50.0.tar.xz
+Source-SHA256:    8d836e75b5a881d457ee1622cae4a32bcdba28a0ba562193adb3bbb472472212
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
