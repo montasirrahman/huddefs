@@ -11,7 +11,8 @@ Source-SHA256:    b1dde191a4ae2760c47220c82ca6155a28c382701e6c1a0159d1054990231d
 
 
 
-Build-Depends:    gnutls, libpng, libjpeg, libtiff, dbus, libusb
+
+Build-Depends:    
 Depends:          auto
 Provides:         auto
 

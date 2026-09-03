@@ -11,7 +11,9 @@ Source-SHA256:    9e9775180dec7dfd61a79e00bda3809d43891aee6b2e331ff7f26986207ea2
 
 
 
-Build-Depends:    cmake, nasm
+
+
+Build-Depends:    cmake
 Depends:          auto
 Provides:         auto
 
