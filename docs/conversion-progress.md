@@ -229,3 +229,17 @@ that set.
 | `gobject-introspection` | FAIL — [✗] build failed — see /var/hud-build/logs/gobject-introspection-N.N.N-NTNZ.log | — | 2 | — | — | — |
 | `graphene` | OK | OK | 10 | `libgraphene-1.0.so.0`, `pkgconfig(graphene-1.0)` | `libc.so.6`, `libm.so.6` | — |
 | `gstreamer` | FAIL — [✗] build failed — see /var/hud-build/logs/gstreamer-N.N.N-NTNZ.log | — | 7 | — | — | — |
+
+## Batch 1
+
+0/7 built, average build 0s, cumulative elapsed 55.4h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `harfbuzz` | FAIL — [✗] build failed — see /var/hud-build/logs/harfbuzz-N.N.N-NTNZ.log | — | 3 | — | — | — |
+| `json-c` | FAIL — [✗] build dependency install failed | — | 14172 | — | — | **`cmake`** |
+| `json-glib` | FAIL — FileNotFoundError: [Errno N] No such file or directory: '/build/json-glib-N.N.N/ | — | 2 | — | — | — |
+| `lcms2` | FAIL — [✗] build failed — see /var/hud-build/logs/lcmsN-N.N-NTNZ.log | — | 0 | — | — | — |
+| `liburcu` | FAIL — [✗] build failed — see /var/hud-build/logs/liburcu-N.N.N-NTNZ.log | — | 1 | — | — | — |
+| `libusb` | FAIL — tar: Error is not recoverable: exiting now | — | 0 | — | — | — |
+| `libvorbis` | FAIL — confdefs.h: No such file or directory | — | 2 | — | — | — |
