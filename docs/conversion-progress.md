@@ -301,3 +301,18 @@ that set.
 | `postgresql` | FAIL — [✗] build failed — see /var/hud-build/logs/postgresql-N.N-NTNZ.log | — | 14 | — | — | — |
 | `pygobject` | FAIL — FileNotFoundError: [Errno N] No such file or directory: '/build/pygobject-N.N.N/ | — | 2 | — | — | — |
 | `python3` | FAIL — [✗] build failed — see /var/hud-build/logs/python-N.N.N-NTNZ.log | — | 4 | — | — | — |
+
+## Batch 1
+
+1/8 built, average build 20s, cumulative elapsed 60.8h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `polkit` | FAIL — [✗] build failed — see /var/hud-build/logs/polkit-N-NTNZ.log | — | 0 | — | — | — |
+| `popt` | FAIL — [✗] build failed — see /var/hud-build/logs/popt-N.N-NTNZ.log | — | 0 | — | — | — |
+| `postgresql` | FAIL — confdefs.h: No such file or directory | — | 15 | — | — | — |
+| `pygobject` | FAIL — [✗] build failed — see /var/hud-build/logs/pygobject-N.N.N-NTNZ.log | — | 0 | — | — | — |
+| `python3` | FAIL — confdefs.h: No such file or directory | — | 9 | — | — | — |
+| `rdma-core` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 5 | — | — | **`cmake`** |
+| `readline` | OK | OK | 20 | `libhistory.so.8`, `libreadline.so.8`, `pkgconfig(history)`, `pkgconfig(readline)` | `libc.so.6`, `libncursesw.so.6`, `pkgconfig(ncurses)` | — |
+| `sanlock` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 8 | — | — | **`libaio`** |

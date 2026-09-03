@@ -4,9 +4,14 @@ Package: readline
 Version: 8.3
 Architecture: x86_64
 Section: libraries
-Depends: ncurses
 Description: GNU Readline library for command line editing
 Source: https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz
+Source-SHA256:    fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 sed -i '/MV.*old/d' Makefile.in
 sed -i '/{OLDSUFF}/c:' support/shlib-install
