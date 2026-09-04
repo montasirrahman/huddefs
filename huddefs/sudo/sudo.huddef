@@ -5,9 +5,13 @@ Package: sudo
 Version: 1.9.17p2
 Architecture: x86_64
 Section: security
-Depends:
 Description: Execute commands as another user
 Source: https://www.sudo.ws/dist/sudo-1.9.17p2.tar.gz
+Source-SHA256:    4a38a1ab3adb1199257edc2a7c4a2bd714665eb605b04368843b06dada2cfcfb
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure \
