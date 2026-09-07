@@ -194,3 +194,37 @@ cause.
 
 Keep the current root until a batch has been rebuilt against the new one. It is
 the only thing every result so far was produced against.
+
+---
+
+## A second class of defect the same sweep found: `Source:` naming the wrong project
+
+Not a rootfs problem, recorded here because it was found the same way — by
+running something and reading what it said rather than by inspecting a
+definition that looked fine.
+
+`openldap`'s `Source:` pointed at `db-5.3.28.tar.gz`, Berkeley DB, while its
+`[configure]` passed openldap's own flags. `Source-SHA256` had been computed
+over that wrong tarball, so verification passed. The build fetched Berkeley DB,
+extracted it, and died with `./configure: No such file or directory`.
+
+**The published openldap was therefore never built from its definition.** It was
+built by hand, and nothing in the pipeline could have noticed.
+
+Sweeping every definition for a `Source:` filename that does not resemble its
+package name turns up eleven, and ten are legitimate:
+
+| Package | Source file | Why it is fine |
+|---|---|---|
+| `brotli`, `libseat`, `ninja`, `tree`, `vim`, `yajl`, `python3-distlib` | `v1.1.0.tar.gz`, `0.9.1.tar.gz`, … | GitHub release tarballs, named for the tag |
+| `java-bin` | `OpenJDK-24.0.2+12-x86_64-bin.tar.xz` | the package is a repackaged JDK |
+| `libibverbs` | `rdma-core-53.0.tar.gz` | libibverbs is a component of rdma-core |
+| `liburcu` | `userspace-rcu-0.14.1.tar.bz2` | upstream's own name |
+
+`openldap` was the only real one. The sweep is worth re-running whenever
+definitions are edited in bulk:
+
+```bash
+# a Source whose filename bears no resemblance to the package it claims to build
+grep -H '^Source:' huddefs/*/*.huddef
+```
