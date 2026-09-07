@@ -306,3 +306,91 @@ until `python-setuptools` was added to `Build-Depends`; the shipped package is
 intact at 938 files and installing it repairs the tree. This is very likely a
 casualty of the F6 rootfs shrink and may well affect non-Python packages that
 run `setup.py` during configure.
+
+---
+
+## E7 — ten packages need one decision about who owns `/etc`, not ten decisions
+
+Ten of the twenty-four ABSOLUTE-PATH packages were fixed mechanically under
+`CLAUDE.md` rule 5 and are done. The other ten are blocked on the same question,
+asked thirty-five times.
+
+Four of the original twenty-four are **triage false positives** and need
+nothing: `postgresql-ha`, `postgresql-ldap` and `postgresql-ldap-ha` were
+matched on `ExecStartPre=/bin/mkdir -p /run/postgresql`, a line *inside* a
+systemd unit being written into `$DESTDIR`; `python3-py3c` on `make
+prefix=/opt/hud install`, which stages correctly because hud-build exports
+`DESTDIR` and autotools honours it. The real category is 20.
+
+Full inventory in `docs/e7-inventory.json`; regenerate with
+`scripts/e7-scan.py`.
+
+### The question
+
+Rule 5 says a config file belongs in `[install]` under `$DESTDIR`, shipped as a
+`.default` and copied by `[postinst]` only if the target is absent. That rule
+was written for a config file the package owns. These thirty-five writes are not
+all that, and three groups genuinely differ:
+
+**1. systemd units in `/etc/systemd/system/` — 13 writes, 5 packages.**
+`/etc/systemd/system` is the *administrator's* directory; a package's own units
+belong in `/usr/lib/systemd/system` (or `/opt/hud/lib/systemd/system`, which is
+what `dhcpcd` uses and what E7 shipped for it). Writing a package unit into
+`/etc/systemd/system` means it outranks anything the admin puts there and cannot
+be overridden the normal way. **Recommendation: ship them under
+`/opt/hud/lib/systemd/system` like dhcpcd, and add that directory to systemd's
+unit path once, rather than per package.** That second half is a distribution
+decision, which is why this is here.
+
+**2. Admin-editable config — 14 writes, 7 packages.** `/etc/pam.d/system-auth`,
+`/etc/libvirt/*.conf`, `/etc/NetworkManager/*`, `/etc/dnsmasq.conf`,
+`/etc/nftables/nftables.conf`, `/etc/firewalld/firewalld.conf`,
+`/etc/qemu/bridge.conf`. Rule 5's `.default` pattern fits these, but two things
+need saying out loud before applying it thirty-five times:
+
+- `/etc/pam.d/*` is **shared, and getting it wrong locks everyone out.** v1
+  overwrites `system-auth`, `system-account`, `system-session`,
+  `system-password` and `other` unconditionally on every install of
+  `linux-pam`. That is the highest-risk write in the whole set and should not be
+  changed by a script.
+- **`firewalld` and `libvirt` both write `/etc/firewalld/zones/libvirt.xml`.**
+  Two packages, one file, whichever installs last wins. Under the `.default`
+  scheme they would ship two files with the same path and conflict at install
+  time — which is better than silently overwriting, but it is still a
+  package-boundary question: the zone describes libvirt, so it should probably
+  ship with `libvirt` alone.
+
+**3. Executables written into `/usr/bin` — 6 writes, 3 packages.**
+`firewalld` writes a `firewall-cmd` wrapper into `/usr/bin` and chmods it;
+`libvirt` chmods `/usr/bin/virsh`; both `libvirt` and `networkmanager` write
+polkit rules into `/usr/share/polkit-1/rules.d/`. These are not config and not
+symlinks — they are program files placed outside the prefix by a shell script at
+install time, and nothing tracks or removes them. **Recommendation: ship the
+wrapper as a real file in `[install]` under `$DESTDIR/usr/bin`, and ship the
+polkit rules the same way.** The `chmod /usr/bin/virsh` is dead code — libvirt
+installs `virsh` to `/opt/hud/bin`.
+
+### Why this is one decision and not ten
+
+Every one of the thirty-five is an instance of "may a hud package own a file
+outside `/opt/hud`, and if so which directories". Answer that once and the ten
+packages are mechanical, like the first ten were. Answer it per package and the
+tree ends up with three conventions.
+
+The FHS-versus-`/opt/hud` decision in the hard gate is the same question at
+larger scale, so this is worth settling before it, not after.
+
+### What was done meanwhile
+
+The ten mechanical ones are converted, fixed, built and published to unstable.
+Two findings from them that do not depend on this decision:
+
+- **`docbook-xsl` shipped nothing.** Its `[install]` wrote every path as an
+  absolute `/opt/hud` path with no `$DESTDIR`, so the stylesheets went into the
+  build container. Fixed, and the package went from 5 KB to 24 MB. **The
+  under-5 KB check that found the 66 empty python3-* packages should be run
+  against all 245**, because this one was not a `python3-*` and nothing was
+  looking for it.
+- **`openldap`'s `.la`-to-`.so` sed ran against `/etc/openldap` on the build
+  host** while `make install` had just written those files into `$DESTDIR`, so
+  the shipped `slapd.conf` still names `.la` files that are not installed.
