@@ -5,11 +5,15 @@ Package: docbook
 Version: 4.5
 Architecture: noarch
 Section: xml
-Depends: libarchive,libxml2
 Description: DocBook XML DTD 4.5 - document type definitions for XML validation
 Source: https://archive.docbook.org/xml/4.5/docbook-xml-4.5.zip
+Source-SHA256:    4e4e037a2b83c98c6c94818390d4bdd3f6e10f6ec62dd79188594e26190dc7b4
 # Note: This zip extracts flat (no subdirectory). hud-build may cd into 'ent/' subdir.
 ExtractDir: .
+
+Build-Depends:    libarchive, libxml2
+Depends:          auto
+Provides:         auto
 
 [configure]
 # No configuration needed - this is a data-only package
