@@ -4,16 +4,19 @@ Package: python3-asciidoc
 Version: 10.2.1
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: AsciiDoc-10.2.1 - text document format for writing documentation
 Source: https://files.pythonhosted.org/packages/source/a/asciidoc/asciidoc-10.2.1.tar.gz
+Source-SHA256:    d9f13c285981b3c7eb660d02ca0a2779981e88d48105de81bb40445e60dddb83
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user asciidoc
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist asciidoc --break-system-packages
+
 [postinst]
 echo "python3-asciidoc 10.2.1 installed"
-[prerm]
-pip3 uninstall -y asciidoc 2>/dev/null || true
-[postrm]
-# Cleanup if needed

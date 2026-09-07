@@ -4,16 +4,19 @@ Package: python3-sphinxcontrib-jsmath
 Version: 1.0.1
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: sphinxcontrib-jsmath-1.0.1 - Sphinx extension for math via JavaScript
 Source: https://files.pythonhosted.org/packages/source/s/sphinxcontrib-jsmath/sphinxcontrib-jsmath-1.0.1.tar.gz
+Source-SHA256:    a9925e4a4587247ed2191a22df5f6970656cb8ca2bd6284309578f2153e0c4b8
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user sphinxcontrib-jsmath
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist sphinxcontrib-jsmath --break-system-packages
+
 [postinst]
 echo "python3-sphinxcontrib-jsmath 1.0.1 installed"
-[prerm]
-pip3 uninstall -y sphinxcontrib-jsmath 2>/dev/null || true
-[postrm]
-# Cleanup if needed

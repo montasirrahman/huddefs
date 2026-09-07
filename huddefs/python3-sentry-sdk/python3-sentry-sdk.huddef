@@ -4,16 +4,19 @@ Package: python3-sentry-sdk
 Version: 2.35.0
 Architecture: x86_64
 Section: python
-Depends: python3,python3-certifi,python3-urllib3
 Description: sentry-sdk-2.35.0 - official Python SDK for Sentry.io
 Source: https://github.com/getsentry/sentry-python/releases/download/2.35.0/sentry_sdk-2.35.0.tar.gz
+Source-SHA256:    5ea58d352779ce45d17bc2fa71ec7185205295b83a9dbb5707273deb64720092
+
+Build-Depends:    python3, python3-certifi, python3-urllib3, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user sentry-sdk
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist sentry-sdk --break-system-packages
+
 [postinst]
 echo "python3-sentry-sdk 2.35.0 installed"
-[prerm]
-pip3 uninstall -y sentry-sdk 2>/dev/null || true
-[postrm]
-# Cleanup if needed

@@ -4,16 +4,19 @@ Package: python3-markdown
 Version: 3.8.2
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: Markdown-3.8.2 - Python parser for John Gruber's Markdown
 Source: https://files.pythonhosted.org/packages/source/M/Markdown/markdown-3.8.2.tar.gz
+Source-SHA256:    247b9a70dd12e27f67431ce62523e675b866d254f900c4fe75ce3dda62237c45
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user Markdown
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist Markdown --break-system-packages
+
 [postinst]
 echo "python3-markdown 3.8.2 installed"
-[prerm]
-pip3 uninstall -y Markdown 2>/dev/null || true
-[postrm]
-# Cleanup if needed

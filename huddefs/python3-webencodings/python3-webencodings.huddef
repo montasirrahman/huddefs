@@ -4,16 +4,19 @@ Package: python3-webencodings
 Version: 0.5.1
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: webencodings-0.5.1 - Python implementation of WHATWG Encoding standard
 Source: https://files.pythonhosted.org/packages/source/w/webencodings/webencodings-0.5.1.tar.gz
+Source-SHA256:    b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user webencodings
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist webencodings --break-system-packages
+
 [postinst]
 echo "python3-webencodings 0.5.1 installed"
-[prerm]
-pip3 uninstall -y webencodings 2>/dev/null || true
-[postrm]
-# Cleanup if needed

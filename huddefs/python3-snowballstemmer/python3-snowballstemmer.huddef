@@ -4,16 +4,19 @@ Package: python3-snowballstemmer
 Version: 3.0.1
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: Snowballstemmer-3.0.1 - stemming algorithms for Information Retrieval
 Source: https://files.pythonhosted.org/packages/source/s/snowballstemmer/snowballstemmer-3.0.1.tar.gz
+Source-SHA256:    6d5eeeec8e9f84d4d56b847692bacf79bc2c8e90c7f80ca4444ff8b6f2e52895
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user snowballstemmer
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist snowballstemmer --break-system-packages
+
 [postinst]
 echo "python3-snowballstemmer 3.0.1 installed"
-[prerm]
-pip3 uninstall -y snowballstemmer 2>/dev/null || true
-[postrm]
-# Cleanup if needed

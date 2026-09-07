@@ -4,16 +4,19 @@ Package: python3-lxml
 Version: 6.0.0
 Architecture: x86_64
 Section: python
-Depends: python3,libxslt
 Description: lxml-6.0.0 - Python bindings for libxslt and libxml2
 Source: https://files.pythonhosted.org/packages/source/l/lxml/lxml-6.0.0.tar.gz
+Source-SHA256:    032e65120339d44cdc3efc326c9f660f5f7205f3a535c1fdbf898b29ea01fb72
+
+Build-Depends:    python3, libxslt, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user lxml
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist lxml --break-system-packages
+
 [postinst]
 echo "python3-lxml 6.0.0 installed"
-[prerm]
-pip3 uninstall -y lxml 2>/dev/null || true
-[postrm]
-# Cleanup if needed

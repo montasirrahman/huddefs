@@ -4,16 +4,19 @@ Package: python3-pytz
 Version: 2025.2
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: Pytz-2025.2 - brings IANA tz database into Python
 Source: https://files.pythonhosted.org/packages/source/p/pytz/pytz-2025.2.tar.gz
+Source-SHA256:    360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user pytz
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist pytz --break-system-packages
+
 [postinst]
 echo "python3-pytz 2025.2 installed"
-[prerm]
-pip3 uninstall -y pytz 2>/dev/null || true
-[postrm]
-# Cleanup if needed

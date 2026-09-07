@@ -4,16 +4,19 @@ Package: python3-imagesize
 Version: 1.4.1
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: imagesize-1.4.1 - analyzes image file headers and returns size and DPI
 Source: https://files.pythonhosted.org/packages/source/i/imagesize/imagesize-1.4.1.tar.gz
+Source-SHA256:    69150444affb9cb0d5cc5a92b3676f0b2fb7cd9ae39e947a5e11a36b4497cd4a
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user imagesize
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist imagesize --break-system-packages
+
 [postinst]
 echo "python3-imagesize 1.4.1 installed"
-[prerm]
-pip3 uninstall -y imagesize 2>/dev/null || true
-[postrm]
-# Cleanup if needed

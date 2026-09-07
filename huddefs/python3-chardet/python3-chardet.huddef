@@ -4,16 +4,19 @@ Package: python3-chardet
 Version: 5.2.0
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: Chardet-5.2.0 - universal character encoding detector
 Source: https://files.pythonhosted.org/packages/source/c/chardet/chardet-5.2.0.tar.gz
+Source-SHA256:    1b3b6ff479a8c414bc3fa2c0852995695c4a026dcd6d0633b2dd092ca39c1cf7
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user chardet
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist chardet --break-system-packages
+
 [postinst]
 echo "python3-chardet 5.2.0 installed"
-[prerm]
-pip3 uninstall -y chardet 2>/dev/null || true
-[postrm]
-# Cleanup if needed
