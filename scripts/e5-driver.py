@@ -86,14 +86,26 @@ def declared_depends(art):
             text = t.extractfile(meta[0]).read().decode("utf-8", "replace")
     except Exception:
         return []
-    m = re.search(r"^Requires:\s*(.*)$", text, re.M)
-    if not m:
-        return []
     pkgs = set()
-    for cap in (c.strip() for c in m.group(1).split(",")):
-        # libc.so.6 and friends come from the base system, not from a package
-        if cap in smap:
-            pkgs.add(smap[cap])
+
+    m = re.search(r"^Requires:\s*(.*)$", text, re.M)
+    if m:
+        for cap in (c.strip() for c in m.group(1).split(",")):
+            # libc.so.6 and friends come from the base system, not a package
+            if cap in smap:
+                pkgs.add(smap[cap])
+
+    # Depends may be an explicit package list rather than derived capabilities.
+    # The v2 spec allows that exactly when auto-detection cannot see the
+    # dependency — "a binary invoked by exec" — which is docbook-xsl's case: its
+    # postinst runs xmlcatalog, from libxml2. Reading only Requires meant the
+    # one dependency that was declared BECAUSE auto could not find it was the
+    # one the test root did not install, and the install test failed at postinst.
+    d = re.search(r"^Depends:\s*(.*)$", text, re.M)
+    if d:
+        for name in (x.strip() for x in d.group(1).split(",")):
+            if name and name != "auto" and "(" not in name and ".so" not in name:
+                pkgs.add(name)
     return sorted(pkgs)
 
 
