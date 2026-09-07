@@ -147,3 +147,50 @@ class to "toolchain strictness" that was never separated from this defect.**
 `git` and `cmake` are toolchain failures — their errors were read and are in the
 source. The rest were not distinguished, and cannot be until the rootfs is
 regenerated and they are retried.
+
+---
+
+## The regeneration works — 2026-09-07
+
+`scripts/make-minimal-rootfs.sh` was run on bf-build. It builds the root by
+installing the nine bootstrap packages onto the base system rather than by
+deleting 236 packages out of a populated tree, and the difference is not
+marginal:
+
+```
+                              current root      regenerated
+packages registered           242               9
+dangling symlinks             2226              0
+escaped pip dist-info trees   66                0
+base-system dist-info trees   11                11
+```
+
+The eleven that survive are the genuine base system — `cffi`, `cryptography`,
+`flit_core`, `jinja2`, `markupsafe`, `meson`, `packaging`, `pip`, `pycparser`,
+`setuptools`, `wheel` — and the removal was checked for collisions before it ran:
+no top-level name belongs to both a kept and a removed distribution, so the
+date-based split is safe rather than merely plausible.
+
+The bootstrap floor works in the result:
+
+```
+curl : /usr/bin/curl
+curl 8.15.0 (x86_64-pc-linux-gnu) libcurl/8.15.0 OpenSSL/3.5.2 zlib/1.3.1
+  brotli/1.1.0 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.5 nghttp2/1.66.0
+HTTP 200 47166B   from http://172.19.1.7/hud-unstable/packages.list
+245 packages available (251 total versions)
+```
+
+All nine libraries are linked into the curl that the client depends on, which is
+the thing the floor exists to guarantee.
+
+**What still has to happen:** pack it, put it where the builder overlays, and
+**retry the E4 failures against it**. The list to retry first is the one above —
+`freetype`, `libxslt`, `libvorbis`, `ncurses`, `libXt`, `libxcb` — because each
+failed with an error meaning "the library is there but unusable", which is
+exactly what 2,226 dangling symlinks produce. Until that retry runs, the
+connection between them is a well-supported hypothesis and not a demonstrated
+cause.
+
+Keep the current root until a batch has been rebuilt against the new one. It is
+the only thing every result so far was produced against.
