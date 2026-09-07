@@ -20,7 +20,11 @@
 # drops bf-repo's USB link.
 set -euo pipefail
 
-SRC="${SRC:-/var/hud-build/base-rootfs.tar.zst}"     # the FULL populated snapshot
+# Either snapshot works as the base, because only /usr is taken from it and
+# both carry the same base system. The minimal one is the default simply because
+# it is 1.1 G instead of 2.8 G and is already on bf-build; /opt/hud is discarded
+# from whichever is used, so its state does not matter.
+SRC="${SRC:-/var/hud-build/base-rootfs-minimal.tar.zst}"
 POOL="${POOL:-/var/hud-build/pool}"                  # .hud files for the nine
 OUT="${OUT:-/var/hud-build/base-rootfs-minimal-clean.tar.zst}"
 WORK="${WORK:-/var/hud-build/work/mkroot}"
