@@ -92,3 +92,58 @@ that happens:
 **Never clean a root while an overlay is mounted over it.** `hud-build` uses
 `/var/hud-build/roots/minimal` as an overlay `lowerdir`; deleting through it
 while a build runs is the failure that corrupted the golden tree in F5.
+
+---
+
+## Which E4 failures this implicates, and which it does not
+
+Every E4 failure checked names a library that is present in the rootfs **as a
+dangling symlink**:
+
+```
+E4 failure    dangling link it named
+freetype      libpng.pc, libpng.so
+libxslt       libxml2.so
+libvorbis     libogg.so
+ncurses       ncurses.pc, libncursesw.so
+pcre2         libpcre2-8.so
+libXt         libX11.so, libSM.so, libICE.so
+libxcb        libXau.so, libXdmcp.so
+lcms2         libjpeg.so, libtiff.so
+git           libpcre2-8.so
+gdb           libexpat.so
+newt          libslang.so, libpopt.so
+libzip        libbz2.so
+```
+
+1,779 distinct dangling link names exist under `/opt/hud`, so **a correlation
+this broad is not by itself evidence.** Almost any package would name one. The
+distinction that matters is what the *error message* said.
+
+**Strongly implicated — the error is "the library is there but unusable":**
+
+| Package | Error | Reading |
+|---|---|---|
+| `freetype` | `libpng support requested but library not found` | configure found `libpng.pc`, could not use it |
+| `libxslt` | `Could not find libxml2 anywhere` | `libxml2.so` present, target gone |
+| `libvorbis` | `This usually means Ogg was incorrectly installed` | upstream's own words for a half-present Ogg |
+| `ncurses` | `/dest/opt/hud/include/curses.h: No such file` | headers gone, links kept |
+| `libXt`, `libxcb` | probe for a compiler/X feature fails oddly | X11 links dangle |
+
+These should be **retried against a regenerated rootfs before any further
+diagnosis**, and it would not be surprising if most of them simply build.
+
+**Not implicated — the error is in the source, and was read:**
+
+| Package | Error | Reading |
+|---|---|---|
+| `git` | `implicit declaration of function 'write_archive'` | GCC 15 defaults to C23; genuine |
+| `cmake` | `NCURSES_BOOL` collides with `cm::enum_set::size_type` | genuine C++ overload collision |
+| `gdb` | `all-gdb Error 2` | unread; retry before diagnosing |
+| `vim` | `configure` spins at 99.6% CPU | a probe loop, not a missing library |
+
+**The honest summary: the E4 failure taxonomy in `PROJECT-STATE.md` attributes a
+class to "toolchain strictness" that was never separated from this defect.**
+`git` and `cmake` are toolchain failures — their errors were read and are in the
+source. The rest were not distinguished, and cannot be until the rootfs is
+regenerated and they are retried.
