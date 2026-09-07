@@ -28,6 +28,12 @@ SRC="${SRC:-/var/hud-build/base-rootfs-minimal.tar.zst}"
 POOL="${POOL:-/var/hud-build/pool}"                  # .hud files for the nine
 OUT="${OUT:-/var/hud-build/base-rootfs-minimal-clean.tar.zst}"
 WORK="${WORK:-/var/hud-build/work/mkroot}"
+# DRYRUN=1 reports what the escaped-pip removal would do, against any root, and
+# exits without writing anything. Verified this way before the destructive path
+# was ever run: 66 trees removed, 11 base-system ones kept — cffi, cryptography,
+# flit_core, jinja2, markupsafe, meson, packaging, pip, pycparser, setuptools,
+# wheel — and zero collisions between the two sets.
+DRYRUN="${DRYRUN:-0}"
 
 # The bootstrap floor: the hud client cannot fetch anything without these, so
 # they are the one set that must be present before any package can be installed.
@@ -37,8 +43,64 @@ WORK="${WORK:-/var/hud-build/work/mkroot}"
 FLOOR="curl openssl zlib zstd brotli nghttp2 libidn2 libpsl libunistring"
 
 die() { echo -e "\033[31m[✗]\033[0m $*" >&2; exit 1; }
+
+# Shared by the dry run and the real one, so the thing verified is the thing
+# that runs.
+prune_escaped_pip() {
+    python3 - "$1" "${2:-0}" <<'PY'
+import datetime, os, sys, shutil
+sp, dry = sys.argv[1], sys.argv[2] == "1"
+if not os.path.isdir(sp):
+    print(f"    no site-packages at {sp}"); raise SystemExit(0)
+# The genuine base-system entries are dated 2025; the 66 that escaped from the
+# empty python3-* builds are all dated 2026-01-28. Going by date rather than by
+# name means one added to the set later is still caught.
+CUTOFF = datetime.date(2026, 1, 1)
+removed = kept = 0
+kept_targets, drop_targets, drops = set(), set(), []
+def tops(distinfo):
+    rec = os.path.join(distinfo, "RECORD")
+    out = set()
+    if os.path.exists(rec):
+        for line in open(rec, errors="replace"):
+            f = line.split(",")[0].strip()
+            if f and not f.startswith(("..", "/")):
+                out.add(f.split("/")[0])
+    return out
+for d in sorted(os.listdir(sp)):
+    if not d.endswith(".dist-info"):
+        continue
+    p = os.path.join(sp, d)
+    if datetime.date.fromtimestamp(os.stat(p).st_mtime) < CUTOFF:
+        kept += 1; kept_targets |= tops(p); continue
+    t = tops(p); drop_targets |= t; drops.append((p, t)); removed += 1
+clash = drop_targets & kept_targets
+if clash:
+    print(f"    REFUSING: these belong to both a kept and a removed dist: {sorted(clash)}")
+    raise SystemExit(1)
+if dry:
+    print(f"    dry run: would remove {removed} escaped trees, keep {kept} base-system ones")
+    raise SystemExit(0)
+for p, t in drops:
+    for name in t:
+        q = os.path.join(sp, name)
+        if os.path.isdir(q):
+            shutil.rmtree(q, ignore_errors=True)
+        elif os.path.exists(q):
+            os.remove(q)
+    shutil.rmtree(p, ignore_errors=True)
+print(f"    removed {removed} escaped dist-info trees, kept {kept} base-system ones")
+PY
+}
 ok()  { echo -e "\033[32m[✓]\033[0m $*"; }
 step(){ echo -e "\033[34m==>\033[0m $*"; }
+
+if [ "$DRYRUN" = 1 ]; then
+    TARGET="${1:-/var/hud-build/roots/minimal}/usr/lib/python3.13/site-packages"
+    echo "dry run against $TARGET"
+    prune_escaped_pip "$TARGET" 1
+    exit $?
+fi
 
 [ -f "$SRC" ] || die "no source rootfs at $SRC"
 [ -d "$POOL" ] || die "no pool at $POOL — copy the nine .hud files there, or set POOL"
@@ -49,6 +111,11 @@ done
 ok "all nine bootstrap packages present in $POOL"
 
 R="$WORK/root"
+# systemd-nspawn derives the machine name from the directory's basename, so a
+# root at .../mkroot/root registers as "root" — and collides with any build
+# running at the same time ("Machine 'root' already exists"), which shows up as
+# the postinsts and the curl check failing for no visible reason. Name it.
+MACHINE="mkroot-$$"
 rm -rf "$WORK"; mkdir -p "$R"
 
 step "extracting the populated base ($(du -h "$SRC" | cut -f1))"
@@ -76,8 +143,10 @@ step "running the floor's postinst scripts"
 for p in $FLOOR; do
     s="$R/opt/hud/share/hud/info/$p/postinst"
     [ -x "$s" ] || continue
-    systemd-nspawn -q -D "$R" /bin/bash -c "/opt/hud/share/hud/info/$p/postinst" \
-        >/dev/null 2>&1 || echo "    warning: $p postinst returned non-zero"
+    if ! systemd-nspawn -q --machine="$MACHINE" -D "$R" \
+            /bin/bash -c "/opt/hud/share/hud/info/$p/postinst" >/dev/null 2>&1; then
+        echo "    warning: $p postinst returned non-zero"
+    fi
 done
 
 # ------------------------------------------------- the escaped pip installs ---
@@ -86,42 +155,7 @@ step "removing the payloads that escaped into the base system's Python"
 # payloads installed into the BUILD SERVER's own Python and this snapshot
 # inherited them. A build root that carries them silently satisfies imports that
 # no package provides.
-SP="$R/usr/lib/python3.13/site-packages"
-if [ -d "$SP" ]; then
-    python3 - "$SP" <<'PY'
-import datetime, os, sys, shutil
-sp = sys.argv[1]
-# The genuine base-system entries are dated 2025; the 66 escaped ones are all
-# dated 2026-01-28. Going by date rather than by name means a package added to
-# the 66 later is still caught.
-CUTOFF = datetime.date(2026, 1, 1)
-removed = kept = 0
-for d in sorted(os.listdir(sp)):
-    if not d.endswith(".dist-info"):
-        continue
-    p = os.path.join(sp, d)
-    if datetime.date.fromtimestamp(os.stat(p).st_mtime) < CUTOFF:
-        kept += 1
-        continue
-    # RECORD lists every file the install placed, relative to site-packages.
-    rec = os.path.join(p, "RECORD")
-    targets = set()
-    if os.path.exists(rec):
-        for line in open(rec, errors="replace"):
-            f = line.split(",")[0].strip()
-            if f and not f.startswith(("..", "/")):
-                targets.add(f.split("/")[0])
-    for t in targets:
-        q = os.path.join(sp, t)
-        if os.path.isdir(q):
-            shutil.rmtree(q, ignore_errors=True)
-        elif os.path.exists(q):
-            os.remove(q)
-    shutil.rmtree(p, ignore_errors=True)
-    removed += 1
-print(f"    removed {removed} escaped dist-info trees, kept {kept} base-system ones")
-PY
-fi
+prune_escaped_pip "$R/usr/lib/python3.13/site-packages" 0
 
 # ------------------------------------------------------------------ verify ---
 step "verifying"
@@ -133,7 +167,7 @@ echo "    dangling symlinks   : $dangling   (expected 0)"
 [ "$registered" -eq 9 ] || die "expected 9 registered packages, found $registered"
 [ "$dangling" -eq 0 ]   || die "$dangling dangling symlinks remain — the whole point of this script"
 
-systemd-nspawn -q -D "$R" /bin/bash -c \
+systemd-nspawn -q --machine="$MACHINE" -D "$R" /bin/bash -c \
     'command -v curl >/dev/null && curl --version >/dev/null' \
     || die "curl does not run in the new root — the bootstrap floor is incomplete"
 ok "curl runs; the client can fetch"
