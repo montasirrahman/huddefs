@@ -4,9 +4,14 @@ Package: lame
 Version: 3.100
 Architecture: x86_64
 Section: multimedia
-Depends:
 Description: LAME - High quality MP3 encoder
 Source: https://downloads.sourceforge.net/lame/lame-3.100.tar.gz
+Source-SHA256:    ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 sed -i -e 's/^\(\s*hardcode_libdir_flag_spec\s*=\).*/\1/' configure
 ./configure --prefix=/opt/hud --enable-mp3rtp --disable-static

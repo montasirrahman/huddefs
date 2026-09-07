@@ -7,9 +7,13 @@ Package: dmidecode
 Version: 3.6
 Architecture: x86_64
 Section: system
-Depends:
 Description: Tool to dump DMI (SMBIOS) hardware information
 Source: https://download.savannah.gnu.org/releases/dmidecode/dmidecode-3.6.tar.xz
+Source-SHA256:    e40c65f3ec3dafe31ad8349a4ef1a97122d38f65004ed66575e1a8d575dd8bae
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 # dmidecode uses make directly, no configure needed

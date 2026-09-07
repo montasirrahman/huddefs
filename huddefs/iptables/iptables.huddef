@@ -6,9 +6,13 @@ Package: iptables
 Version: 1.8.11
 Architecture: x86_64
 Section: networking
-Depends:
 Description: Userspace command line program for kernel packet filtering
 Source: https://www.netfilter.org/projects/iptables/files/iptables-1.8.11.tar.xz
+Source-SHA256:    d87303d55ef8c92bcad4dd3f978b26d272013642b029425775f5bad1009fe7b2
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
