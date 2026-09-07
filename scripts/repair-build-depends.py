@@ -19,22 +19,48 @@ Idempotent: a second run finds nothing missing and rewrites nothing.
 import json, os, re, subprocess, sys
 
 H = "huddefs"
-INDEX = sys.argv[1] if len(sys.argv) > 1 else "/var/www/hud-unstable/packages.list"
+
+# Same resolution order as convert-easy.py's repo_names(). The index lives on
+# bf-repo, and this script has to run wherever the definitions were converted —
+# which is bf-build. Defaulting to a bf-repo-only path is the exact mistake
+# being repaired here.
+INDEX_CANDIDATES = (
+    "/var/www/hud-unstable/packages.list",
+    "/var/www/hud-repo/packages.list",
+    "http://172.19.1.7/hud-unstable/packages.list",
+    "http://172.19.1.7/hud-repo/packages.list",
+)
+INDEX = sys.argv[1] if len(sys.argv) > 1 else None
 
 
 def sh(cmd):
     return subprocess.run(cmd, shell=True, capture_output=True, text=True).stdout
 
 
-def load_index(path):
-    have = {}
-    for line in open(path):
-        if not line.startswith("#") and "|" in line:
-            n = line.split("|")[0]
-            have[n.lower()] = n
-    if not have:
-        raise RuntimeError(f"{path} parsed to zero names")
-    return have
+def read_index(src):
+    if src.startswith("http://") or src.startswith("https://"):
+        import urllib.request
+        with urllib.request.urlopen(src, timeout=20) as fh:
+            return fh.read().decode("utf-8", "replace")
+    return open(src).read()
+
+
+def load_index(path=None):
+    for src in ([path] if path else INDEX_CANDIDATES):
+        try:
+            text = read_index(src)
+        except Exception:
+            continue
+        have = {}
+        for line in text.splitlines():
+            if not line.startswith("#") and "|" in line:
+                n = line.split("|")[0]
+                have[n.lower()] = n
+        if have:
+            print(f"index: {src} ({len(have)} names)")
+            return have
+    raise RuntimeError("no repository index found; tried "
+                       + ", ".join([path] if path else INDEX_CANDIDATES))
 
 
 def normalise(deps, have):
