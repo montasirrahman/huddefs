@@ -178,13 +178,34 @@ prune_escaped_pip "$R/usr/lib/python3.13/site-packages" 0
 
 # ------------------------------------------------------------------ verify ---
 step "verifying"
-dangling=$(find "$R/opt/hud" -xtype l 2>/dev/null | wc -l)
 registered=$(ls "$R/opt/hud/share/hud/info" 2>/dev/null | wc -l)
-echo "    packages registered : $registered   (expected 9)"
-echo "    dangling symlinks   : $dangling   (expected 0)"
+
+# Two kinds of dangling link, and only one is a defect.
+#
+# The shrink debris this script exists to eliminate always points WITHIN
+# /opt/hud: libpng.so -> libpng16.so, both under the prefix, target deleted.
+# Those must be zero.
+#
+# A link pointing OUTSIDE the prefix is a deliberate reference to host state.
+# openssl's postinst makes /opt/hud/etc/ssl/cert.pem -> /etc/pki/tls/certs/
+# ca-bundle.crt, which dangles until make-ca is installed and is supposed to.
+# Failing on it would mean the script could never accept a correct root.
+inside=0; outside=0
+while IFS= read -r l; do
+    t=$(readlink -f "$l" 2>/dev/null || readlink "$l")
+    case "$t" in
+        /opt/hud/*|"$R"/opt/hud/*) inside=$((inside + 1)) ;;
+        *) outside=$((outside + 1)); echo "    external link (expected): ${l#$R} -> $(readlink "$l")" ;;
+    esac
+done < <(find "$R/opt/hud" -xtype l 2>/dev/null)
+
+echo "    packages registered      : $registered   (expected 9)"
+echo "    dangling inside /opt/hud : $inside   (expected 0 — this is the defect)"
+echo "    dangling outside         : $outside   (deliberate host references)"
 
 [ "$registered" -eq 9 ] || die "expected 9 registered packages, found $registered"
-[ "$dangling" -eq 0 ]   || die "$dangling dangling symlinks remain — the whole point of this script"
+[ "$inside" -eq 0 ] \
+    || die "$inside symlinks dangle within /opt/hud — that is exactly the defect this script exists to remove"
 
 systemd-nspawn -q --machine="$MACHINE" -D "$R" /bin/bash -c \
     'command -v curl >/dev/null && curl --version >/dev/null' \
