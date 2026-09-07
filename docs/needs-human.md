@@ -145,3 +145,46 @@ described. All four are deferred to the retry pass.
 
 **This class will grow.** Every package still to build was compiled against an
 older toolchain, and roughly 3 % of those attempted so far have failed this way.
+
+---
+
+## `vim` 9.1.0 — configure spins at 100% CPU and never finishes
+
+Not a compile error and not definition data. `./configure` enters an infinite
+loop and had to be killed after 11 minutes at **99.6% CPU**, with the log frozen
+at `>>> [configure]` and nothing written after it.
+
+```
+462   11:25  99.6  /bin/sh /build/vim-9.1.0/configure --prefix=/opt/hud
+                   --with-features=huge --enable-multibyte --enable-cscope
+                   --disable-gui --without-x --with-tlib=ncurses ...
+```
+
+The build had a four-hour timeout, so left alone it would have burned four hours
+and then failed anyway.
+
+### Where to look
+
+`--with-tlib=ncurses` is the first suspect. vim's terminal-library probe runs a
+test program and some paths loop when the library is found but does not behave as
+the probe expects — plausible here, since ncurses comes from `/opt/hud` with
+`CPPFLAGS="-I/opt/hud/include -I/opt/hud/include/ncurses"` rather than a standard
+location.
+
+Worth trying, in order:
+
+1. Reproduce interactively and find the last line of `config.log` — that names the
+   check it is stuck in, which this run never captured because the container was
+   killed.
+2. Drop `--with-tlib=ncurses` and let configure detect the terminal library.
+3. `--with-tlib=tinfo` if ncurses was built with a separate tinfo.
+
+### Recommendation
+
+Do not disable a feature to work around this. Unlike `ccmake` or `tificc`, the
+loop is in the probe rather than in a component we could drop, so the fix is to
+make the probe succeed. This needs someone to run configure by hand and read
+`config.log`; it is not a mechanical fix and not a candidate for the sub-target
+precedent.
+
+`vim` is deferred. Everything else in the batch continued normally.
