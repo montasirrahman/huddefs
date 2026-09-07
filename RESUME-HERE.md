@@ -46,10 +46,18 @@ E5/E6 (33 of 66), E7 (10 of 24), E8 (all four patches now in the repo), E9
 (docbook fixed), G2 (capability graph), G4 (boot gate passes).
 
 QUEUE, in order:
-  1. THE ROOTFS. docs/rootfs-audit.md — the "minimal" root has 2,226 dangling
-     symlinks and 242 registered packages where it should have nine. Several E4
-     failures are explained by it. Nothing downstream is trustworthy until this
-     is regenerated, G1 least of all.
+  1. THE ROOTFS — regenerated, now PROVE it. docs/rootfs-audit.md.
+     The old root has 2,226 dangling symlinks and 242 registered packages where
+     it should have nine. A clean one is BUILT and PACKED:
+         bf-build:/var/hud-build/roots/minimal-clean          (9 pkgs, 0 debris)
+         bf-build:/var/hud-build/base-rootfs-minimal-clean.tar.zst   (961 M)
+     Next step is the experiment, not more building:
+         ssh bf-build 'bash /root/github-repo/huddefs/scripts/retry-against-clean-root.sh'
+     It builds freetype, libxslt, libvorbis, ncurses, libXt, libxcb, gdb and
+     lcms2 against BOTH roots and prints a verdict per package. Until it runs,
+     "the dangling symlinks caused those failures" is a hypothesis.
+     Do NOT delete the old root until a batch has been rebuilt against the new
+     one — it is what every result so far was produced against.
   2. The three blocking decisions in docs/needs-human.md:
      - flit_core, packaging, calver are not packaged; they block 33 of the 66
      - who owns files outside /opt/hud; blocks the other 10 of E7

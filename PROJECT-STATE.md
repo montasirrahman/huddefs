@@ -44,6 +44,44 @@ Results land in `docs/conversion-progress.md`, one section per batch.
 
 ---
 
+## The build rootfs has been regenerated — 2026-09-07
+
+The root everything so far was built against is not what it claims to be:
+`docs/rootfs-audit.md`. F6 produced it by deleting package files from a
+populated tree, which left 2,226 dangling symlinks, 242 packages still
+registered, and 5,002 orphaned files. `libpng.pc -> libpng16.pc -> gone` makes a
+configure test answer "present" and then fail to link, which is worse than
+answering "absent" because the failure gets blamed on the package's source.
+
+`scripts/make-minimal-rootfs.sh` builds one properly — install the nine
+bootstrap packages onto the base system rather than delete 236 out of it — and
+it has been run:
+
+```
+                              old root      regenerated
+packages registered           242           9
+dangling inside /opt/hud      2226          0
+escaped pip dist-info trees   66            0
+base-system dist-info trees   11            11
+```
+
+Available on bf-build as `roots/minimal-clean` and
+`base-rootfs-minimal-clean.tar.zst` (961 M against the old 1.1 G). The client
+works in it: curl 8.15.0 linked against all nine, 245 packages available from
+unstable.
+
+**The old root stays until a batch has been rebuilt against the new one.** It is
+what every result so far was produced against, and replacing it silently would
+make those results unreproducible.
+
+**The next step is an experiment, not more building.**
+`scripts/retry-against-clean-root.sh` builds the suspect E4 failures against
+both roots and prints a verdict per package. Until it runs, "the dangling
+symlinks caused freetype, libxslt, libvorbis, ncurses, libXt and libxcb to fail"
+is a well-supported hypothesis and nothing more.
+
+---
+
 ## G4 — the boot gate passes, and it is what found the rootfs problem
 
 ```
@@ -292,6 +330,7 @@ Verify by format, not by the state file, before declaring E4 finished.
 | E9 | `docbook` no longer searches the build host for its own source |
 | G2 | Capability graph + `hud-graph deps/rdeps/why/orphans/missing`, exact joins |
 | G4 | **Boot gate passes all four stages**, including installing from unstable inside the VM |
+| — | **Build rootfs regenerated**: 9 packages, 0 dangling links, escaped pip installs removed |
 
 ---
 
