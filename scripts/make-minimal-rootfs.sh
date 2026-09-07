@@ -149,6 +149,25 @@ for p in $FLOOR; do
     fi
 done
 
+step "pointing the client at the staging repository"
+# The source snapshot carries bf-repo's own sources.list, which names the LIVE
+# repo. A build root must not resolve Build-Depends from there: unstable is
+# where fixed packages are published, and it carries a full copy of stable, so
+# one entry resolves everything. See docs/staging-repo.md for why listing both
+# is worse than listing one.
+mkdir -p "$R/etc/hud"
+cat > "$R/etc/hud/sources.list" <<'SRCLIST'
+# HUD Package Sources
+# Format: hud <url> <release> <component>
+#
+# The STAGING repository, deliberately the only entry. hud update loads every
+# repository into one available table keyed UNIQUE(name, version, repo_url), and
+# install then selects with "AND version='X' LIMIT 1" and no ORDER BY — so with
+# both listed, a fixed package published at the same upstream version loses to
+# the broken one in whichever repo comes first.
+hud http://172.19.1.7/hud-unstable unstable main
+SRCLIST
+
 # ------------------------------------------------- the escaped pip installs ---
 step "removing the payloads that escaped into the base system's Python"
 # The 66 empty python3-* packages ran pip without --root=$DESTDIR, so their
@@ -170,7 +189,15 @@ echo "    dangling symlinks   : $dangling   (expected 0)"
 systemd-nspawn -q --machine="$MACHINE" -D "$R" /bin/bash -c \
     'command -v curl >/dev/null && curl --version >/dev/null' \
     || die "curl does not run in the new root — the bootstrap floor is incomplete"
-ok "curl runs; the client can fetch"
+ok "curl runs"
+
+# The floor exists to make the client work. Prove that, not just that curl is
+# on the path: hud update exits 0 when it fails, so check its output.
+upd=$(systemd-nspawn -q --machine="$MACHINE" -D "$R" /bin/bash -c 'hud update 2>&1' || true)
+echo "$upd" | grep -q 'packages available' \
+    || die "hud update produced no package list in the new root:
+$upd"
+ok "the client fetches: $(echo "$upd" | grep -o '[0-9]* packages available.*' | head -1)"
 
 step "packing $OUT"
 tar -C "$R" -cf - . | zstd -T0 -19 -q -o "$OUT" -f
