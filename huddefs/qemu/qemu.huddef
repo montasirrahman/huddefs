@@ -7,10 +7,14 @@ Package: qemu
 Version: 10.0.3
 Architecture: x86_64
 Section: virtualization
-Depends: glib, pixman, alsa-lib, dtc, libslirp, sdl2, python3-distlib
 Description: Full virtualization solution for Linux with KVM support
 Source: https://download.qemu.org/qemu-10.0.3.tar.xz
+Source-SHA256:    5c891267b1534a774465db8b1a0dfcb0c5e6d7ecb6f71345625adf4e0889945b
 Patches:          qemu-10.0.3-python_fixes-1.patch
+
+Build-Depends:    glib, pixman, alsa-lib, dtc, libslirp, sdl2, python3-distlib
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

@@ -6,10 +6,14 @@ Package: giflib
 Version: 5.2.2
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: Library for reading and writing GIF images
 Source: https://sourceforge.net/projects/giflib/files/giflib-5.2.2.tar.gz
+Source-SHA256:    be7ffbd057cadebe2aa144542fd90c6838c6a083b5e8a9048b8ee3b66b29d5fb
 Patches:          giflib-5.2.2-upstream_fixes-1.patch, giflib-5.2.2-security_fixes-1.patch
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 # Both patches are applied by the builder from patches/, in the order the
