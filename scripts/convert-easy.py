@@ -576,4 +576,9 @@ def main():
     print("ALLBATCHESDONE", flush=True)
     return 0
 
-sys.exit(main())
+# Guarded so the module can be imported for its convert() alone. Without this,
+# `import convert-easy` ran the whole batch driver at import time and died on
+# sys.argv[2]; E7 needs the same header conversion the 148 EASY packages got,
+# and reimplementing it would have been a second thing to keep in step.
+if __name__ == "__main__":
+    sys.exit(main())
