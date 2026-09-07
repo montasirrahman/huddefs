@@ -21,7 +21,7 @@ Also removed, because v2 does not support them and they were silently ignored:
   [prerm] pip3 uninstall   — files are tracked in FILES; hud remove handles them
   [postrm]                 — hud-build emits postinst and prerm only
 """
-import hashlib, json, os, re, sys
+import hashlib, json, os, re, sys, tarfile, tomllib, zipfile
 
 REPO  = "/root/github-repo/huddefs"
 H     = f"{REPO}/huddefs"
@@ -90,6 +90,35 @@ def network_pip(body):
     return None
 
 
+def pep517_backend(tarball):
+    """The build backend this package declares, read from its own pyproject.toml.
+
+    Returns (backend, requires). A source tree with no pyproject.toml falls back
+    to setuptools by PEP 517's legacy rule, which is why the default matters.
+    """
+    try:
+        if tarball.endswith(".zip"):
+            z = zipfile.ZipFile(tarball)
+            names, read = z.namelist(), z.read
+        else:
+            t = tarfile.open(tarball)
+            names = [m.name for m in t.getmembers() if m.isfile()]
+            read = lambda n: t.extractfile(n).read()
+    except Exception:
+        return "setuptools.build_meta:__legacy__", []
+    cands = [(n.count("/"), n) for n in names
+             if os.path.basename(n) == "pyproject.toml"]
+    if not cands:
+        return "setuptools.build_meta:__legacy__", []
+    try:
+        data = tomllib.loads(read(min(cands)[1]).decode("utf-8", "replace"))
+    except Exception:
+        return "setuptools.build_meta:__legacy__", []
+    bs = data.get("build-system", {})
+    return (bs.get("build-backend") or "setuptools.build_meta:__legacy__",
+            bs.get("requires", []))
+
+
 def convert(pkg):
     f = os.path.join(H, pkg, f"{pkg}.huddef")
     text = open(f, errors="replace").read()
@@ -132,6 +161,18 @@ def convert(pkg):
     dep_m = re.search(r"^Depends:[ \t]*(.*)$", head, re.M)
     base = (bd_m.group(1) if bd_m is not None else (dep_m.group(1) if dep_m else ""))
     bd = [d.strip() for d in base.split(",") if d.strip() and d.strip().lower() != "auto"]
+
+    # The build root's /opt/hud setuptools is a gutted directory: a dist-info
+    # claiming 80.9.0 next to a package with no build_meta and no __version__.
+    # Every setuptools-backed build therefore dies with
+    #     BackendUnavailable: Cannot import 'setuptools.build_meta'
+    # unless the real python-setuptools package is installed over it. It is
+    # 2.8 MB and intact in the pool, so declaring it is the fix — and it is
+    # honest besides: a package built by setuptools does depend on setuptools.
+    backend, breqs = pep517_backend(tarball)
+    if "setuptools" in (backend or "") and "python-setuptools" not in bd:
+        bd.append("python-setuptools")
+    notes.append(f"backend {backend}")
 
     lines, seen = [], set()
     for line in head.rstrip("\n").splitlines():

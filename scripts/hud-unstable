@@ -28,4 +28,20 @@ case "$real" in
 esac
 
 export HUD_REPO_DIR="$real"
+
+# `add` on a name+version that already exists prompts "Replace existing version?
+# [y/N]" and reads from stdin. In a driver there is no tty, the read fails, the
+# answer is empty, and the manager prints "Skipped" and exits 0 — so E5 would
+# republish 35 fixed packages and change nothing, successfully.
+#
+# Every E5/E6 fix keeps its upstream version by definition (the defect was a
+# missing --root, not a version), so replacing is the normal case here, not an
+# exceptional one. `--replace` answers the prompt instead of leaving it to a
+# stdin that is not there. It is opt-in so an accidental add still stops.
+if [ "${1:-}" = "add" ] && [ "${2:-}" = "--replace" ]; then
+    shift 2
+    printf 'y\n' | "$MANAGER" add "$@"
+    exit $?
+fi
+
 exec "$MANAGER" "$@"
