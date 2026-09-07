@@ -4,9 +4,14 @@ Package: xorgproto
 Version: 2024.1
 Architecture: x86_64
 Section: xorg
-Depends: util-macros
 Description: Header files required to build the X Window system
 Source: https://xorg.freedesktop.org/archive/individual/proto/xorgproto-2024.1.tar.xz
+Source-SHA256:    372225fd40815b8423547f5d890c5debc72e88b91088fbfb13158c20495ccb59
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 mkdir -p build
 cd build

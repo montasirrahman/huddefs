@@ -8,9 +8,14 @@ Package: sanlock
 Version: 3.9.5
 Architecture: x86_64
 Section: virtualization
-Depends: libaio, python3
 Description: Shared storage lock manager for virtual machines
 Source: https://releases.pagure.org/sanlock/sanlock-3.9.5.tar.gz
+Source-SHA256:    cc29691f733071a0b484de7b27ca6102245d09765ef5a710059ee0a6c14cef83
+
+
+Build-Depends:    libaio
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

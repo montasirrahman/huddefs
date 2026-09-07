@@ -5,9 +5,13 @@ Package: valgrind
 Version: 3.25.1
 Architecture: x86_64
 Section: development
-Depends: 
 Description: Valgrind-3.25.1
 Source: https://sourceware.org/pub/valgrind/valgrind-3.25.1.tar.bz2
+Source-SHA256:    61deb8d0727b45c268efdc1b3b6c9e679cd97cbf5ee4b28d1dead7c8b7a271af
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud

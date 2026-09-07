@@ -211,3 +211,131 @@ that set.
 | `popt` | FAIL — checking for strerror... yes | — | 10 | — | — | — |
 | `postgresql` | FAIL — checking whether gcc supports -Werror=vla, for CFLAGS... yes | — | 19 | — | — | — |
 | `pygobject` | FAIL — [✗] build failed — see /var/hud-build/logs/pygobject-N.N.N-NTNZ.log | — | 2 | — | — | — |
+
+## Batch 1
+
+4/11 built, average build 125s, cumulative elapsed 51.4h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `curl` | FAIL — checking whether to enable compiler warnings as errors... no | — | 12 | — | — | — |
+| `dav1d` | OK | OK | 196 | `libdav1d.so.7`, `pkgconfig(dav1d)` | `libc.so.6` | **`nasm`** |
+| `dbus-python` | OK — [✗] dbus-python failed | FAIL | 49 | `pkgconfig(dbus-python)` | `libc.so.6`, `libdbus-1.so.3`, `libglib-2.0.so.0`, `pkgconfig(dbus-1)` | **`glib`** |
+| `freetype` | FAIL — configure: error: libpng support requested but library not found | — | 6 | — | — | — |
+| `gdb` | FAIL — checking for sys/sysmp.h... checking for strerror... no | — | 912 | — | — | — |
+| `git` | OK | OK | 245 | — | `exec(perl)`, `exec(python)`, `exec(sh)`, `libc.so.6`, `libcrypto.so.3`, `libcurl.so.4`, `libexpat.so.1`, `libssl.so.3`, `libz.so.1` | — |
+| `glib` | FAIL — Compiler for C supports arguments -Werror=format=N: YES  | — | 196 | — | — | **`valgrind`** |
+| `gnutls` | FAIL — checking for error.h... yes | — | 7 | — | — | — |
+| `gobject-introspection` | FAIL — [✗] build failed — see /var/hud-build/logs/gobject-introspection-N.N.N-NTNZ.log | — | 2 | — | — | — |
+| `graphene` | OK | OK | 10 | `libgraphene-1.0.so.0`, `pkgconfig(graphene-1.0)` | `libc.so.6`, `libm.so.6` | — |
+| `gstreamer` | FAIL — [✗] build failed — see /var/hud-build/logs/gstreamer-N.N.N-NTNZ.log | — | 7 | — | — | — |
+
+## Batch 1
+
+0/7 built, average build 0s, cumulative elapsed 55.4h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `harfbuzz` | FAIL — [✗] build failed — see /var/hud-build/logs/harfbuzz-N.N.N-NTNZ.log | — | 3 | — | — | — |
+| `json-c` | FAIL — [✗] build dependency install failed | — | 14172 | — | — | **`cmake`** |
+| `json-glib` | FAIL — FileNotFoundError: [Errno N] No such file or directory: '/build/json-glib-N.N.N/ | — | 2 | — | — | — |
+| `lcms2` | FAIL — [✗] build failed — see /var/hud-build/logs/lcmsN-N.N-NTNZ.log | — | 0 | — | — | — |
+| `liburcu` | FAIL — [✗] build failed — see /var/hud-build/logs/liburcu-N.N.N-NTNZ.log | — | 1 | — | — | — |
+| `libusb` | FAIL — tar: Error is not recoverable: exiting now | — | 0 | — | — | — |
+| `libvorbis` | FAIL — confdefs.h: No such file or directory | — | 2 | — | — | — |
+
+## Batch 1
+
+2/9 built, average build 42s, cumulative elapsed 55.4h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `json-c` | FAIL — [✗] build dependency install failed | — | 1 | — | — | **`cmake`** |
+| `json-glib` | FAIL — [✗] build failed — see /var/hud-build/logs/json-glib-N.N.N-NTNZ.log | — | 2 | — | — | — |
+| `lcms2` | FAIL — [✗] build failed — see /var/hud-build/logs/lcmsN-N.N-NTNZ.log | — | 2 | — | — | — |
+| `liburcu` | FAIL — [✗] build failed — see /var/hud-build/logs/liburcu-N.N.N-NTNZ.log | — | 1 | — | — | — |
+| `libusb` | OK | OK | 16 | `libusb-1.0.so.0`, `pkgconfig(libusb-1.0)` | `ld-linux-x86-64.so.2`, `libc.so.6`, `libudev.so.1` | — |
+| `libvorbis` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 101 | — | — | **`libogg`** |
+| `libvpx` | FAIL — don't see any useful error messages above, the next step is to look | — | 3 | — | — | — |
+| `libwebp` | OK | OK | 67 | `libsharpyuv.so.0`, `libwebp.so.7`, `libwebpdemux.so.2`, `libwebpmux.so.3`, `pkgconfig(libsharpyuv)`, `pkgconfig(libwebp)`, `pkgconfig(libwebpdemux)`, `pkgconfig(libwebpmux)` | `libc.so.6`, `libm.so.6` | — |
+| `libxcb` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 25 | — | — | **`xcb-proto`** |
+
+## Batch 1
+
+15/20 built, average build 24s, cumulative elapsed 60.8h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `libxml2` | OK | OK | 25 | `libxml2.so.16`, `libxml2mod.so`, `pkgconfig(libxml-2.0)` | `exec(sh)`, `libc.so.6`, `libhistory.so.8`, `libicuuc.so.77`, `libm.so.6`, `libreadline.so.8`, `pkgconfig(icu-uc)` | — |
+| `libxslt` | FAIL — Could not find libxmlN anywhere | — | 5 | — | — | — |
+| `libyaml` | OK | OK | 13 | `libyaml-0.so.2`, `pkgconfig(yaml-0.1)` | `libc.so.6` | — |
+| `libzip` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 4 | — | — | **`cmake`** |
+| `lmdb` | OK | OK | 5 | `pkgconfig(lmdb)` | `libc.so.6` | — |
+| `make-ca` | OK | OK | 0 | — | `exec(bash)` | — |
+| `mpc` | OK | OK | 22 | `libmpc.so.3` | `libc.so.6`, `libgmp.so.10`, `libm.so.6`, `libmpfr.so.6` | — |
+| `mpfr` | OK | OK | 35 | `libmpfr.so.6`, `pkgconfig(mpfr)` | `ld-linux-x86-64.so.2`, `libc.so.6`, `libgmp.so.10` | — |
+| `mtdev` | OK | OK | 7 | `libmtdev.so.1`, `pkgconfig(mtdev)` | `libc.so.6` | — |
+| `nasm` | OK | OK | 29 | — | `libc.so.6` | — |
+| `ncurses` | FAIL — /dest/opt/hud/include/curses.h: No such file or directory | — | 73 | — | — | — |
+| `nettle` | OK | OK | 29 | `libhogweed.so.6`, `libnettle.so.8`, `pkgconfig(hogweed)`, `pkgconfig(nettle)` | `libc.so.6`, `libgmp.so.10`, `pkgconfig(#)` | — |
+| `newt` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 7 | — | — | **`slang`** |
+| `nghttp2` | OK | OK | 33 | `libnghttp2.so.14`, `pkgconfig(libnghttp2)` | `libc.so.6` | — |
+| `ninja` | OK | OK | 102 | — | `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `nspr` | OK | OK | 16 | `libnspr4.so`, `libplc4.so`, `libplds4.so`, `pkgconfig(nspr)` | `exec(sh)`, `libc.so.6` | — |
+| `numactl` | OK | OK | 11 | `libnuma.so.1`, `pkgconfig(numa)` | `ld-linux-x86-64.so.2`, `libatomic.so.1`, `libc.so.6`, `libm.so.6` | — |
+| `oniguruma` | OK | OK | 9 | `libonig.so.5`, `pkgconfig(oniguruma)` | `exec(sh)`, `libc.so.6` | — |
+| `openjdk` | FAIL — configure: error: Could not find required tool for ZIPEXE | — | 16 | — | — | — |
+| `opus` | OK | OK | 29 | `libopus.so.0`, `pkgconfig(opus)` | `libc.so.6`, `libm.so.6` | — |
+
+## Batch 2
+
+1/8 built, average build 22s, cumulative elapsed 60.8h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `pcre2` | OK | OK | 22 | `libpcre2-16.so.0`, `libpcre2-32.so.0`, `libpcre2-8.so.0`, `libpcre2-posix.so.3`, `pkgconfig(libpcre2-16)`, `pkgconfig(libpcre2-32)`, `pkgconfig(libpcre2-8)`, `pkgconfig(libpcre2-posix)` | `exec(sh)`, `libbz2.so.1.0`, `libc.so.6`, `libz.so.1` | — |
+| `perl` | FAIL — dlerror() found. | — | 57 | — | — | — |
+| `pixman` | FAIL — [✗] build failed — see /var/hud-build/logs/pixman-N.N.N-NTNZ.log | — | 1 | — | — | — |
+| `polkit` | FAIL — [✗] build failed — see /var/hud-build/logs/polkit-N-NTNZ.log | — | 1 | — | — | — |
+| `popt` | FAIL — [✗] build failed — see /var/hud-build/logs/popt-N.N-NTNZ.log | — | 1 | — | — | — |
+| `postgresql` | FAIL — [✗] build failed — see /var/hud-build/logs/postgresql-N.N-NTNZ.log | — | 14 | — | — | — |
+| `pygobject` | FAIL — FileNotFoundError: [Errno N] No such file or directory: '/build/pygobject-N.N.N/ | — | 2 | — | — | — |
+| `python3` | FAIL — [✗] build failed — see /var/hud-build/logs/python-N.N.N-NTNZ.log | — | 4 | — | — | — |
+
+## Batch 1
+
+1/8 built, average build 20s, cumulative elapsed 60.8h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `polkit` | FAIL — [✗] build failed — see /var/hud-build/logs/polkit-N-NTNZ.log | — | 0 | — | — | — |
+| `popt` | FAIL — [✗] build failed — see /var/hud-build/logs/popt-N.N-NTNZ.log | — | 0 | — | — | — |
+| `postgresql` | FAIL — confdefs.h: No such file or directory | — | 15 | — | — | — |
+| `pygobject` | FAIL — [✗] build failed — see /var/hud-build/logs/pygobject-N.N.N-NTNZ.log | — | 0 | — | — | — |
+| `python3` | FAIL — confdefs.h: No such file or directory | — | 9 | — | — | — |
+| `rdma-core` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 5 | — | — | **`cmake`** |
+| `readline` | OK | OK | 20 | `libhistory.so.8`, `libreadline.so.8`, `pkgconfig(history)`, `pkgconfig(readline)` | `libc.so.6`, `libncursesw.so.6`, `pkgconfig(ncurses)` | — |
+| `sanlock` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 8 | — | — | **`libaio`** |
+
+## Batch 1
+
+13/16 built, average build 9s, cumulative elapsed 141.3h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `vim` | FAIL — [✗] build failed — see /var/hud-build/logs/vim-N.N.N-NTNZ.log | — | 704 | — | — | — |
+| `wayland` | OK — [✗] wayland failed | FAIL | 26 | `libwayland-client.so.0`, `libwayland-cursor.so.0`, `libwayland-egl.so.1`, `libwayland-server.so.0`, `pkgconfig(wayland-client)`, `pkgconfig(wayland-cursor)`, `pkgconfig(wayland-egl)`, `pkgconfig(wayland-egl-backend)`, `pkgconfig(wayland-scanner)`, `pkgconfig(wayland-server)` | `libc.so.6`, `libexpat.so.1`, `libffi.so.8`, `libxml2.so.16`, `pkgconfig(libffi)` | **`libxml2`** |
+| `which` | OK | OK | 3 | — | `libc.so.6` | — |
+| `x264` | FAIL — [✗] build failed — see /var/hud-build/logs/xN-N.N-NTNZ.log | — | 1 | — | — | — |
+| `xbitmaps` | OK | OK | 1 | `pkgconfig(xbitmaps)` | — | — |
+| `xcb-proto` | OK | OK | 2 | `pkgconfig(xcb-proto)` | — | — |
+| `xkeyboard-config` | OK | OK | 3 | `pkgconfig(xkeyboard-config)` | — | — |
+| `xmlto` | FAIL — make[N]: *** [Makefile:N: man/manN/xmlto.N] Error N | — | 3 | — | — | — |
+| `xorgproto` | OK | OK | 2 | `pkgconfig(applewmproto)`, `pkgconfig(bigreqsproto)`, `pkgconfig(compositeproto)`, `pkgconfig(damageproto)`, `pkgconfig(dmxproto)`, `pkgconfig(dpmsproto)`, `pkgconfig(dri2proto)`, `pkgconfig(dri3proto)`, `pkgconfig(fixesproto)`, `pkgconfig(fontsproto)`, `pkgconfig(glproto)`, `pkgconfig(inputproto)`, `pkgconfig(kbproto)`, `pkgconfig(presentproto)`, `pkgconfig(randrproto)`, `pkgconfig(recordproto)`, `pkgconfig(renderproto)`, `pkgconfig(resourceproto)`, `pkgconfig(scrnsaverproto)`, `pkgconfig(videoproto)`, `pkgconfig(xcmiscproto)`, `pkgconfig(xextproto)`, `pkgconfig(xf86bigfontproto)`, `pkgconfig(xf86dgaproto)`, `pkgconfig(xf86driproto)`, `pkgconfig(xf86vidmodeproto)`, `pkgconfig(xineramaproto)`, `pkgconfig(xproto)`, `pkgconfig(xwaylandproto)` | — | — |
+| `xtrans` | OK | OK | 5 | `pkgconfig(xtrans)` | — | — |
+| `xz` | OK | OK | 19 | `liblzma.so.5`, `pkgconfig(liblzma)` | `exec(sh)`, `libc.so.6` | — |
+| `yajl` | OK | OK | 17 | `libyajl.so.2`, `pkgconfig(yajl)` | `libc.so.6`, `libm.so.6` | **`cmake`** |
+| `yasm` | OK | OK | 12 | — | `libc.so.6` | — |
+| `zip` | OK | OK | 12 | — | `libbz2.so.1.0`, `libc.so.6` | — |
+| `zlib` | OK | OK | 1 | `libz.so.1`, `pkgconfig(zlib)` | `libc.so.6` | — |
+| `zstd` | OK | OK | 12 | `libzstd.so.1`, `pkgconfig(libzstd)` | `exec(sh)`, `libc.so.6`, `liblz4.so.1`, `liblzma.so.5`, `libz.so.1` | — |

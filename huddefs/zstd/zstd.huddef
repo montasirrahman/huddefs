@@ -6,9 +6,13 @@ Package: zstd
 Version: 1.5.7
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: Zstandard - Fast real-time compression algorithm
 Source: https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz
+Source-SHA256:    eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 # No configure needed - zstd uses plain Makefile

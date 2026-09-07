@@ -4,9 +4,14 @@ Package: xkeyboard-config
 Version: 2.44
 Architecture: x86_64
 Section: xorg
-Depends: xorgproto,libX11,meson,ninja
 Description: X Keyboard Configuration Database
 Source: https://www.x.org/pub/individual/data/xkeyboard-config/xkeyboard-config-2.44.tar.xz
+Source-SHA256:    54d2c33eeebb031d48fa590c543e54c9bcbd0f00386ebc6489b2f47a0da4342a
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 mkdir -p build
 cd build
