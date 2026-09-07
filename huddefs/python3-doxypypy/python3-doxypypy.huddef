@@ -8,7 +8,7 @@ Description: Doxypypy-0.8.8.7 - doxygen filter for python
 Source: https://files.pythonhosted.org/packages/source/d/doxypypy/doxypypy-0.8.8.7.tar.gz
 Source-SHA256:    671ac8bb06927b78a924726187f6e3dde272ae960856ffc053e6e5bea42cd09e
 
-Build-Depends:    python3, python3-chardet, doxygen, python-setuptools
+Build-Depends:    python3, python3-chardet, python-setuptools
 Depends:          auto
 Provides:         auto
 

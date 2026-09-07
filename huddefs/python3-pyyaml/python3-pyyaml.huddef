@@ -8,7 +8,7 @@ Description: PyYAML-6.0.2 - YAML parser and emitter for Python
 Source: https://files.pythonhosted.org/packages/source/P/PyYAML/pyyaml-6.0.2.tar.gz
 Source-SHA256:    d584d9ec91ad65861cc08d42e834324ef890a082e591037abe114850ff7bbc3e
 
-Build-Depends:    python3, python3-cython, libyaml
+Build-Depends:    python3, python3-cython, libyaml, python-setuptools
 Depends:          auto
 Provides:         auto
 

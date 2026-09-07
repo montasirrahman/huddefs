@@ -8,7 +8,7 @@ Description: Doxyqml-0.5.3 - allows using Doxygen to document QML classes
 Source: https://files.pythonhosted.org/packages/source/d/doxyqml/doxyqml-0.5.3.tar.gz
 Source-SHA256:    debfb621a3151c225f6fb4e9a8c6b86b2516e237e6f0fe60dcffee5b62d1796a
 
-Build-Depends:    python3, doxygen, python-setuptools
+Build-Depends:    python3, python-setuptools
 Depends:          auto
 Provides:         auto
 
