@@ -7,14 +7,18 @@ Section: python
 Description: Requests-2.32.5 - elegant and simple HTTP library for Python
 Source: https://files.pythonhosted.org/packages/source/r/requests/requests-2.32.5.tar.gz
 Source-SHA256:    dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf
-Patch: https://www.linuxfromscratch.org/patches/blfs/12.4/requests-use_system_certs-1.patch
 
 Build-Depends:    python3, python3-charset-normalizer, python3-idna, python3-urllib3, python-setuptools
 Depends:          auto
 Provides:         auto
+Patches:          requests-use_system_certs-1.patch
 
+# The patch is applied by the builder from patches/, before [configure].
+# v1 named it as a URL in a `Patch:` header and then ran `patch -Np1 -i
+# ../requests-...`, against a file nothing had downloaded — so it never
+# applied and the shipped package bundles certifi rather than using the
+# system certificate store.
 [build]
-patch -Np1 -i ../requests-use_system_certs-1.patch
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
 
 [install]
