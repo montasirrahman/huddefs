@@ -23,6 +23,15 @@ ok()   { echo -e "\033[32m[ OK ]\033[0m $*"; }
 [ -f "$KERNEL" ] || fail "no kernel at $KERNEL"
 [ -c /dev/kvm ]  || fail "no /dev/kvm — this gate must run on bf-repo"
 
+# A qemu left over from an interrupted run holds a write lock on the image, and
+# the next run then fails at stage 1 with no kernel output at all — which reads
+# exactly like a broken image. Clear it and say so.
+if pgrep -f "qemu-system-x86_64.*$(basename "$IMG")" >/dev/null 2>&1; then
+    echo "a previous qemu still holds $IMG; terminating it"
+    pkill -f "qemu-system-x86_64.*$(basename "$IMG")" || true
+    sleep 2
+fi
+
 echo "image   : $IMG"
 echo "kernel  : $KERNEL"
 echo "timeout : ${TIMEOUT}s"
@@ -32,7 +41,7 @@ echo
 # -no-reboot so a panic stops instead of looping; the marker unit powers off on
 # success, so a clean run ends well before the timeout.
 timeout "$TIMEOUT" qemu-system-x86_64 \
-    -enable-kvm -m "$MEM" -smp 2 -nographic -no-reboot \
+    -enable-kvm -m "$MEM" -smp "${SMP:-1}" -nographic -no-reboot \
     -kernel "$KERNEL" \
     -drive file="$IMG",format=raw,if=virtio \
     -netdev user,id=n0 -device virtio-net-pci,netdev=n0 \
@@ -66,7 +75,23 @@ else
 fi
 
 pk=$(grep -m1 -o 'G4-PACKAGES=[0-9]*' "$LOG" | cut -d= -f2 | tr -d '\r')
-ok "stage 4: ${pk:-0} packages registered in the image"
+ok "image has ${pk:-0} packages registered (see docs/rootfs-audit.md — it should be 9)"
+
+# Stage 4 only runs if g4-install-gate.sh prepared the image for it.
+if grep -q "G4-UPDATE-DONE" "$LOG"; then
+    grep -qE "packages available" "$LOG" \
+        && ok "stage 4a: the VM reached the repository — $(grep -m1 -o '[0-9]* packages available.*' "$LOG" | tr -d '\r')" \
+        || fail "stage 4a: hud update produced no package list. It exits 0 when it fails, so check the log, not the code"
+    if grep -q "G4-INSTALL-OK" "$LOG"; then
+        ok "stage 4b: installed from unstable — $(grep -m1 -o 'G4-INSTALL-OK.*' "$LOG" | tr -d '\r')"
+    else
+        echo
+        sed -e 's/\r$//' "$LOG" | grep -A20 'G4-UPDATE-DONE' | tail -25 | sed 's/^/    /'
+        fail "stage 4b: the package did not land. hud install exits 0 on failure; this checked the filesystem"
+    fi
+else
+    echo "      (stage 4 not prepared — run g4-install-gate.sh to enable it)"
+fi
 
 if grep -qiE "Kernel panic|BUG: unable to handle|Call Trace" "$LOG"; then
     fail "a panic or oops appears in the log despite reaching the target"

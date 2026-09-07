@@ -34,41 +34,33 @@ Just never run `hud-build` or `hud-test` on it.
 Read these in order before doing anything:
   /root/github-repo/huddefs/PROJECT-STATE.md     <- full status, incidents, precedents
   /root/github-repo/huddefs/CLAUDE.md            <- rules for editing definitions
-  /root/github-repo/huddefs/docs/needs-human.md  <- open decisions
-  /root/github-repo/huddefs/docs/migration-to-bf-build.md
+  /root/github-repo/huddefs/docs/needs-human.md  <- open decisions, three of them blocking
+  /root/github-repo/huddefs/docs/rootfs-audit.md <- read before trusting any build result
 
 You are on bf-repo. BUILDING RUNS ON bf-build over ssh — never on bf-repo, whose
 USB-attached disk has failed three times under build load and lost a write.
 bf-repo keeps the repo, nginx, publishing, and G4/G5 (it has the only /dev/kvm).
 
-STATE: E4 is 144/148 EASY packages converted and is still running on bf-build.
-Check it with:
-  ssh bf-build 'PATH=/opt/hud/bin:/usr/local/bin:$PATH e4-status'
+DONE: E4 (all 148 EASY converted), G3 (staging repo at /var/www/hud-unstable/),
+E5/E6 (33 of 66), E7 (10 of 24), E8 (all four patches now in the repo), E9
+(docbook fixed), G2 (capability graph), G4 (boot gate passes).
 
-QUEUE, in order. Move between phases yourself; reorder if a dependency makes the
-given order impossible, record why in PROJECT-STATE.md, and continue.
-  1. Finish E4 (4 left)
-  2. G3  — staging repo at /var/www/hud-unstable/ (skeleton exists, packages.db
-           initialised, D8 update-index staged at
-           /var/hud-build/bin/hud-repo-manager-unstable)
-  3. E5/E6 — the 66 empty python3-* packages, in DEPENDENCY ORDER. They must come
-           after G3: every Python build backend is itself one of the 66, and
-           hud-build resolves Build-Depends from a repo, so the fixed ones have
-           to be published somewhere first. Converter written:
-           scripts/convert-python.py
-  4. E7  — ABSOLUTE-PATH (24)
-  5. E8  — PATCH (4). qemu's patch is guarded by || true and the shipped qemu is
-           probably unpatched; verify the patch actually applies.
-  6. E9  — MULTI-SOURCE. alsa done; docbook reads /var/hud-build/staging and
-           cannot build clean — log to needs-human.md and skip.
-  7. G1  — full rebuild of all 245 from scratch, dependency-ordered. THE milestone.
-  8. G2  — capability graph in SQLite at /var/hud-build/graph.db, plus hud-graph
-           with rdeps/deps/why/orphans/missing. Exact matches, never LIKE.
-  9. G4  — boot gate: a VM from the minimal rootfs booting systemd as PID 1.
-           MUST run on bf-repo (KVM). Test by log content with a hard timeout,
-           never by exit code — a panic and a clean boot both leave qemu running.
- 10. G5  — integration gate: the VM starts libvirtd and boots a guest through it.
- 11. docs/roadmap-to-appliance.md, then stop.
+QUEUE, in order:
+  1. THE ROOTFS. docs/rootfs-audit.md — the "minimal" root has 2,226 dangling
+     symlinks and 242 registered packages where it should have nine. Several E4
+     failures are explained by it. Nothing downstream is trustworthy until this
+     is regenerated, G1 least of all.
+  2. The three blocking decisions in docs/needs-human.md:
+     - flit_core, packaging, calver are not packaged; they block 33 of the 66
+     - who owns files outside /opt/hud; blocks the other 10 of E7
+     - the cmake -> curl -> brotli cycle; blocks a genuine G1
+  3. Rebuild E8's four patched packages and E9's docbook, then E7's remaining 10
+  4. G1  — full rebuild of all 245, dependency-ordered. scripts/build-order.py
+           gives the order and names the cycle. THE milestone.
+  5. Rebuild the capability graph after G1 and watch `hud-graph stats` reach
+     zero empty packages and zero name-kind edges.
+  6. G5  — integration gate: the VM starts libvirtd and boots a guest.
+  7. docs/roadmap-to-appliance.md, then stop.
 
 SOLVE AND CONTINUE — do not stop for these:
   - bugs in your own scripts: fix, verify idempotent, continue, note it
@@ -82,12 +74,37 @@ HALT AND ASK — only these:
   1. I/O errors in the last 15 minutes, or a filesystem remounting read-only
   2. /var above 120 G used on either machine
   3. anything that would write to /var/www/hud-repo/, run hud-repo-manager
-     add/remove against the live repo, deploy the hud client or
-     hud-repo-manager to /usr/local/bin, merge the D8 branches, or touch
-     signing keys
+     add/remove against the live repo, deploy the hud client or hud-repo-manager
+     to /usr/local/bin, merge the D8 branches, or touch signing keys
 
 Publishing to /var/www/hud-unstable/ is fine. Push after every batch.
 ```
+
+---
+
+## The two mistakes that cost the most, and they are the same mistake
+
+Both were found this session, both by checking the artifact instead of the
+process, and both had produced green builds for days.
+
+**A resume point that records intent.** `convert-state.json` said E4 was 148/148
+while 18 definitions were still v1: it was written from the build result, not
+from the commit, and that batch's commit was lost. The check that found it does
+not consult the state file at all:
+
+```bash
+grep -L 'Source-SHA256:' huddefs/*/*.huddef
+```
+
+**A lookup that returns empty on failure.** `repo_names()` read a bf-repo-only
+path and swallowed `OSError`, so on bf-build every declared dependency looked
+absent and was dropped — 55 definitions, `curl` losing nghttp2, gnutls, brotli,
+libssh2 and libpsl among them. It now raises. An empty index is not a value that
+function may return.
+
+The general form: **when a lookup can fail, decide whether empty is an answer or
+an error, and if it is an error, throw.** Everything downstream of both defects
+was green.
 
 ---
 
