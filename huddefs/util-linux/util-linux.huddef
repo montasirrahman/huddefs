@@ -10,7 +10,14 @@ Description: Miscellaneous system utility programs including mount, fdisk, hwclo
 Source: https://www.kernel.org/pub/linux/utils/util-linux/v2.41/util-linux-2.41.1.tar.xz
 Source-SHA256:    be9ad9a276f4305ab7dd2f5225c8be1ff54352f565ff4dede9628c1aaa7dec57
 
-Build-Depends:    
+# ncurses, because configure looks for ncursesw/ncurses.h and the base system
+# ships only the narrow headers. Without it the wide-character probe fails,
+# cfdisk.c compiles against narrow curses, and get_wch is an implicit
+# declaration — which GCC 15 makes an error. v1 declared no dependencies at all,
+# so the conversion had nothing to carry over. Verified against both build
+# roots: it fails identically with and without the rootfs debris, so this is a
+# missing dependency and not the shrink.
+Build-Depends:    ncurses
 Depends:          auto
 Provides:         auto
 
