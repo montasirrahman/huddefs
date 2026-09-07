@@ -4,9 +4,14 @@ Package: xcb-proto
 Version: 1.17.0
 Architecture: x86_64
 Section: xorg
-Depends: python3
 Description: XML-XCB protocol descriptions that libxcb uses to generate code and API
 Source: https://xorg.freedesktop.org/archive/individual/proto/xcb-proto-1.17.0.tar.xz
+Source-SHA256:    2c1bacd2110f4799f74de6ebb714b94cf6f80fb112316b1219480fd22562148c
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 PYTHON=python3 ./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
 [build]

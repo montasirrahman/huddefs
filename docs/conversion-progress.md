@@ -316,3 +316,26 @@ that set.
 | `rdma-core` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 5 | — | — | **`cmake`** |
 | `readline` | OK | OK | 20 | `libhistory.so.8`, `libreadline.so.8`, `pkgconfig(history)`, `pkgconfig(readline)` | `libc.so.6`, `libncursesw.so.6`, `pkgconfig(ncurses)` | — |
 | `sanlock` | FAIL — [✗] Failed to download package list from http://N.N.N.N/hud-repo | — | 8 | — | — | **`libaio`** |
+
+## Batch 1
+
+13/16 built, average build 9s, cumulative elapsed 141.3h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `vim` | FAIL — [✗] build failed — see /var/hud-build/logs/vim-N.N.N-NTNZ.log | — | 704 | — | — | — |
+| `wayland` | OK — [✗] wayland failed | FAIL | 26 | `libwayland-client.so.0`, `libwayland-cursor.so.0`, `libwayland-egl.so.1`, `libwayland-server.so.0`, `pkgconfig(wayland-client)`, `pkgconfig(wayland-cursor)`, `pkgconfig(wayland-egl)`, `pkgconfig(wayland-egl-backend)`, `pkgconfig(wayland-scanner)`, `pkgconfig(wayland-server)` | `libc.so.6`, `libexpat.so.1`, `libffi.so.8`, `libxml2.so.16`, `pkgconfig(libffi)` | **`libxml2`** |
+| `which` | OK | OK | 3 | — | `libc.so.6` | — |
+| `x264` | FAIL — [✗] build failed — see /var/hud-build/logs/xN-N.N-NTNZ.log | — | 1 | — | — | — |
+| `xbitmaps` | OK | OK | 1 | `pkgconfig(xbitmaps)` | — | — |
+| `xcb-proto` | OK | OK | 2 | `pkgconfig(xcb-proto)` | — | — |
+| `xkeyboard-config` | OK | OK | 3 | `pkgconfig(xkeyboard-config)` | — | — |
+| `xmlto` | FAIL — make[N]: *** [Makefile:N: man/manN/xmlto.N] Error N | — | 3 | — | — | — |
+| `xorgproto` | OK | OK | 2 | `pkgconfig(applewmproto)`, `pkgconfig(bigreqsproto)`, `pkgconfig(compositeproto)`, `pkgconfig(damageproto)`, `pkgconfig(dmxproto)`, `pkgconfig(dpmsproto)`, `pkgconfig(dri2proto)`, `pkgconfig(dri3proto)`, `pkgconfig(fixesproto)`, `pkgconfig(fontsproto)`, `pkgconfig(glproto)`, `pkgconfig(inputproto)`, `pkgconfig(kbproto)`, `pkgconfig(presentproto)`, `pkgconfig(randrproto)`, `pkgconfig(recordproto)`, `pkgconfig(renderproto)`, `pkgconfig(resourceproto)`, `pkgconfig(scrnsaverproto)`, `pkgconfig(videoproto)`, `pkgconfig(xcmiscproto)`, `pkgconfig(xextproto)`, `pkgconfig(xf86bigfontproto)`, `pkgconfig(xf86dgaproto)`, `pkgconfig(xf86driproto)`, `pkgconfig(xf86vidmodeproto)`, `pkgconfig(xineramaproto)`, `pkgconfig(xproto)`, `pkgconfig(xwaylandproto)` | — | — |
+| `xtrans` | OK | OK | 5 | `pkgconfig(xtrans)` | — | — |
+| `xz` | OK | OK | 19 | `liblzma.so.5`, `pkgconfig(liblzma)` | `exec(sh)`, `libc.so.6` | — |
+| `yajl` | OK | OK | 17 | `libyajl.so.2`, `pkgconfig(yajl)` | `libc.so.6`, `libm.so.6` | **`cmake`** |
+| `yasm` | OK | OK | 12 | — | `libc.so.6` | — |
+| `zip` | OK | OK | 12 | — | `libbz2.so.1.0`, `libc.so.6` | — |
+| `zlib` | OK | OK | 1 | `libz.so.1`, `pkgconfig(zlib)` | `libc.so.6` | — |
+| `zstd` | OK | OK | 12 | `libzstd.so.1`, `pkgconfig(libzstd)` | `exec(sh)`, `libc.so.6`, `liblz4.so.1`, `liblzma.so.5`, `libz.so.1` | — |

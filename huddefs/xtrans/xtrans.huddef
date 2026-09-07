@@ -4,9 +4,14 @@ Package: xtrans
 Version: 1.6.0
 Architecture: x86_64
 Section: xorg
-Depends: util-macros
 Description: X Network Transport layer shared code
 Source: https://www.x.org/pub/individual/lib/xtrans-1.6.0.tar.xz
+Source-SHA256:    faafea166bf2451a173d9d593352940ec6404145c5d1da5c213423ce4d359e92
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 ./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var --disable-static
 [build]

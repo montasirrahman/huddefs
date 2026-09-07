@@ -6,9 +6,13 @@ Package: zip
 Version: 3.0
 Architecture: x86_64
 Section: utilities
-Depends:
 Description: Utilities for compressing files into ZIP archives
 Source: https://downloads.sourceforge.net/infozip/zip30.tar.gz
+Source-SHA256:    f0e8bb1f9b7eb0b01285495a2699df3a4b766784c1765a8f1aeedf63c0806369
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 # No configure script - uses Makefile directly
