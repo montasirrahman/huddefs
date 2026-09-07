@@ -5,10 +5,22 @@ Package: openldap
 Version: 2.6.10
 Architecture: x86_64
 Section: security
-Depends: mariadb,gnutls,cyrus-sasl,bootscripts
 Description: OpenLDAP-2.6.10
-Source: https://anduin.linuxfromscratch.org/BLFS/bdb/db-5.3.28.tar.gz
+# The definition named db-5.3.28.tar.gz — Berkeley DB, a different project
+# entirely — while [configure] passed openldap's own flags (--enable-slapd,
+# --enable-modules). So the builder fetched Berkeley DB, extracted it, and
+# failed with "./configure: No such file or directory". This definition has
+# never produced the openldap that ships; that one was built by hand.
+#
+# Berkeley DB is not needed. openldap 2.6 dropped back-bdb and uses LMDB, which
+# is already a package here and already installs as a dependency.
+Source: https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.10.tgz
+Source-SHA256:    c065f04aad42737aebd60b2fe4939704ac844266bc0aeaa1609f0cad987be516
 Service: slapd
+
+Build-Depends:    gnutls, cyrus-sasl
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc --enable-dynamic --enable-slapd --enable-modules

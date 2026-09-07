@@ -7,9 +7,13 @@ Package: gperftools
 Version: 2.16
 Architecture: x86_64
 Section: libraries
-Depends: 
 Description: Google Performance Tools (tcmalloc, heap profiler, etc)
 Source: https://github.com/gperftools/gperftools/releases/download/gperftools-2.16/gperftools-2.16.tar.gz
+Source-SHA256:    f12624af5c5987f2cc830ee534f754c3c5961eec08004c26a8b80de015cf056f
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

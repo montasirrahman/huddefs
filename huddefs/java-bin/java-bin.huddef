@@ -6,9 +6,13 @@ Package: java-bin
 Version: 24.0.2
 Architecture: x86_64
 Section: development
-Depends: alsa-lib, cups, giflib, lcms2, xorg-libs
 Description: Pre-built OpenJDK binary for Java development and runtime
 Source: https://anduin.linuxfromscratch.org/BLFS/OpenJDK/OpenJDK-24.0.2/OpenJDK-24.0.2+12-x86_64-bin.tar.xz
+Source-SHA256:    8b5b5783c6c2f39ada72447418587f5f7807a7560df7291e74da0f8deb48de29
+
+Build-Depends:    alsa-lib, cups, giflib, lcms2
+Depends:          auto
+Provides:         auto
 
 [configure]
 # Binary package - no configuration needed

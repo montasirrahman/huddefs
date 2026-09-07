@@ -6,9 +6,13 @@ Package: dhcpcd
 Version: 10.2.4
 Architecture: x86_64
 Section: network
-Depends: systemd
 Description: RFC2131 compliant DHCP client for automatic network configuration
 Source: https://github.com/NetworkConfiguration/dhcpcd/releases/download/v10.2.4/dhcpcd-10.2.4.tar.xz
+Source-SHA256:    6721e606609226dbf4d864a78802a9e96beec0ee034a1bd84138b3e037bba7d9
+
+Build-Depends:    systemd
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
