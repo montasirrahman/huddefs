@@ -6,9 +6,13 @@ Package: gmp
 Version: 6.3.0
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: GNU Multiple Precision Arithmetic Library
 Source: https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz
+Source-SHA256:    a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 # GCC 15 enforces strict C23 rules by default which breaks GMP's configure tests

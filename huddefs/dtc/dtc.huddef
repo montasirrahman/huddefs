@@ -5,9 +5,14 @@ Package: dtc
 Version: 1.7.2
 Architecture: x86_64
 Section: development
-Depends: glib
 Description: Device Tree Compiler for producing device tree binary files
 Source: https://www.kernel.org/pub/software/utils/dtc/dtc-1.7.2.tar.xz
+Source-SHA256:    92d8ca769805ae1f176204230438fe52808f4e1c7944053c9eec0e649b237539
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
 export PKG_CONFIG_PATH="/opt/hud/lib/pkgconfig:/opt/hud/lib64/pkgconfig:${PKG_CONFIG_PATH}"

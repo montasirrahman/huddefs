@@ -339,3 +339,28 @@ that set.
 | `zip` | OK | OK | 12 | — | `libbz2.so.1.0`, `libc.so.6` | — |
 | `zlib` | OK | OK | 1 | `libz.so.1`, `pkgconfig(zlib)` | `libc.so.6` | — |
 | `zstd` | OK | OK | 12 | `libzstd.so.1`, `pkgconfig(libzstd)` | `exec(sh)`, `libc.so.6`, `liblz4.so.1`, `liblzma.so.5`, `libz.so.1` | — |
+
+## Batch 1
+
+18/18 built, average build 37s, cumulative elapsed 141.7h
+
+| Package | Build | Test | Build s | Provides | Requires | Undeclared Build-Depends |
+|---|---|---|---|---|---|---|
+| `dbus` | OK | OK | 13 | `libdbus-1.so.3`, `pkgconfig(dbus-1)` | `exec(python)`, `libc.so.6`, `libexpat.so.1`, `libsystemd.so.0`, `pkgconfig(libsystemd)` | — |
+| `dejavu-fonts` | OK | OK | 1 | — | — | — |
+| `dmidecode` | OK | OK | 1 | — | `libc.so.6` | — |
+| `dtc` | OK | OK | 8 | `libfdt.so.1`, `pkgconfig(libfdt)` | `exec(bash)`, `libc.so.6` | — |
+| `duktape` | OK | OK | 26 | `libduktape.so.207`, `libduktaped.so.207`, `pkgconfig(duktape)` | `libc.so.6` | — |
+| `expat` | OK | OK | 8 | `libexpat.so.1`, `pkgconfig(expat)` | `libc.so.6`, `libm.so.6` | — |
+| `flac` | OK | OK | 24 | `libFLAC++.so.11`, `libFLAC.so.14`, `pkgconfig(flac)`, `pkgconfig(flac++)` | `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `font-alias` | OK | OK | 1 | — | — | — |
+| `font-util` | OK | OK | 6 | `pkgconfig(fontutil)` | `libc.so.6` | — |
+| `fontconfig` | OK — [✗] fontconfig failed | FAIL | 45 | `libfontconfig.so.1`, `pkgconfig(fontconfig)` | `libbz2.so.1.0`, `libc.so.6`, `libexpat.so.1`, `libfreetype.so.6`, `libm.so.6`, `libpng16.so.16`, `libz.so.1`, `pkgconfig(expat)`, `pkgconfig(freetype2)` | **`freetype`** |
+| `fribidi` | OK | OK | 4 | `libfribidi.so.0`, `pkgconfig(fribidi)` | `libc.so.6` | — |
+| `gmp` | OK | OK | 51 | `libgmp.so.10`, `libgmpxx.so.4`, `pkgconfig(gmp)`, `pkgconfig(gmpxx)` | `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `gperf` | OK | OK | 5 | — | `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `icu` | OK | OK | 430 | `libicudata.so.77`, `libicui18n.so.77`, `libicuio.so.77`, `libicutest.so.77`, `libicutu.so.77`, `libicuuc.so.77`, `pkgconfig(icu-i18n)`, `pkgconfig(icu-io)`, `pkgconfig(icu-uc)` | `exec(sh)`, `ld-linux-x86-64.so.2`, `libc.so.6`, `libgcc_s.so.1`, `libm.so.6`, `libstdc++.so.6` | — |
+| `iptables` | OK | OK | 11 | `libip4tc.so.2`, `libip6tc.so.2`, `libipq.so.0`, `libxtables.so.12`, `pkgconfig(libip4tc)`, `pkgconfig(libip6tc)`, `pkgconfig(libipq)`, `pkgconfig(libiptc)`, `pkgconfig(xtables)` | `exec(bash)`, `libc.so.6`, `libm.so.6` | — |
+| `jansson` | OK | OK | 5 | `libjansson.so.4`, `pkgconfig(jansson)` | `libc.so.6` | — |
+| `kmod` | OK | OK | 5 | `libkmod.so.2`, `pkgconfig(kmod)`, `pkgconfig(libkmod)` | `libc.so.6`, `libcrypto.so.3`, `liblzma.so.5`, `libz.so.1`, `libzstd.so.1`, `pkgconfig(libcrypto)`, `pkgconfig(liblzma)`, `pkgconfig(libzstd)`, `pkgconfig(zlib)` | — |
+| `lame` | OK | OK | 20 | `libmp3lame.so.0` | `libc.so.6`, `libm.so.6`, `libncurses.so.6` | — |

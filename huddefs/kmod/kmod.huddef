@@ -7,6 +7,11 @@ Architecture: x86_64
 Section: core
 Description: Libraries and utilities for loading kernel modules
 Source: https://kernel.org/pub/linux/utils/kernel/kmod/kmod-34.tar.xz
+Source-SHA256:    12e7884484151fbd432b6a520170ea185c159f4393c7a2c2a886ab820313149a
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 mkdir -p build && cd build && meson setup --prefix=/opt/hud --buildtype=release -Dmanpages=false ..

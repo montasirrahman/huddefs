@@ -4,9 +4,14 @@ Package: font-alias
 Version: 1.0.5
 Architecture: x86_64
 Section: xorg-fonts
-Depends: font-util
 Description: Standard X font aliases
 Source: https://www.x.org/pub/individual/font/font-alias-1.0.5.tar.xz
+Source-SHA256:    9f89e217bb73e0e3636a0a493fbf8b7c995156e0c53d9a0476d201b67c2d6b6e
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 ./configure --prefix=/opt/hud --sysconfdir=/etc --localstatedir=/var
 [build]

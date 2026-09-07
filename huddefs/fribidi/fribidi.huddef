@@ -4,9 +4,14 @@ Package: fribidi
 Version: 1.0.16
 Architecture: x86_64
 Section: graphics
-Depends:
 Description: Implementation of the Unicode Bidirectional Algorithm
 Source: https://github.com/fribidi/fribidi/releases/download/v1.0.16/fribidi-1.0.16.tar.xz
+Source-SHA256:    1b1cde5b235d40479e91be2f0e88a309e3214c8ab470ec8a2744d82a5a9ea05c
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
+
 [configure]
 mkdir -p build
 cd build

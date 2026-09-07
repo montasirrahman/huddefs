@@ -5,9 +5,13 @@ Package: jansson
 Version: 2.14
 Architecture: x86_64
 Section: libraries
-Depends:
 Description: C library for encoding, decoding and manipulating JSON data
 Source: https://github.com/akheron/jansson/releases/download/v2.14/jansson-2.14.tar.gz
+Source-SHA256:    5798d010e41cf8d76b66236cfb2f2543c8d082181d16bc3085ab49538d4b9929
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 ./configure \
