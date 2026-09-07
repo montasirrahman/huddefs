@@ -8,7 +8,7 @@ pick up where the last one stopped. If you are resuming, read this first, then
 
 ## Where things stand
 
-**Current phase:** G3 complete; E4 finishing its last packages. Building runs on
+**Current phase:** E4, G3 and the buildable half of E5/E6 are done; E7 is next. Building runs on
 **bf-build** (2026-09-03 migration). bf-repo's VDI is on a USB disk whose link
 drops under sustained write load; three failures resulted. Do not build on
 bf-repo.
@@ -41,6 +41,84 @@ that started it. Never hardcode the unit name — it changes on every restart.
 Use `e4-status`.
 
 Results land in `docs/conversion-progress.md`, one section per batch.
+
+---
+
+## E5/E6 — 33 fixed and published, 33 blocked on three unpackaged backends
+
+Done 2026-09-07. The 66 SUSPECT-EMPTY `python3-*` packages split cleanly in two,
+and the split is not per-package judgement — it is one measurement.
+
+### The 33 that were fixed
+
+Each definition now installs into `$DESTDIR`, declares `python-setuptools`, and
+drops the `[prerm] pip3 uninstall` and `[postrm]` that v2 does not support. Each
+was built, install-tested, **asserted to contain a payload**, and published to
+unstable before the next one started.
+
+```
+33 packages          25,095 bytes  ->  32,361,012 bytes
+python3-babel               765 B  ->  10,025,443 B
+python3-sphinx-rtd-theme    775 B  ->   7,633,244 B
+python3-cython              753 B  ->   5,279,530 B
+python3-six                 746 B  ->      29,875 B
+```
+
+**A green build is not evidence of a fix here.** The broken packages build,
+install-test and publish perfectly — being empty is not an error condition. So
+the driver refuses to publish anything whose archive holds only `share/hud/info`
+and an empty `.dist-info`, and it records a package as done only after the
+artifact is *published*, never after the build reports success. That second rule
+is the direct lesson of the 18 lost E4 conversions below.
+
+### The 33 that are blocked, and why it is one cause
+
+Every one of the 66 declares `python3`, so `hud-build` installs the hud `python3`
+package into the build root. That interpreter's `sys.path` does **not** include
+`/usr/lib/python3.13/site-packages` — so nothing the base LFS system carries is
+reachable. With `python3` and `python-setuptools` installed, **`setuptools` is
+the only importable build backend.** `flit_core` blocks 18, `packaging` blocks
+14, `calver` blocks 1.
+
+They are the roots of the tree, not leaves of it. `hatchling` declares
+`requires = []` and builds itself through `backend-path`, so while running as a
+backend it imports `pathspec` (flit_core), `pluggy` (setuptools_scm → packaging)
+and `trove_classifiers` (calver). Package the three and the other 30 unblock in
+order; leave them and no ordering helps. Recommendation and evidence in
+`docs/needs-human.md`.
+
+### Two defects found on the way
+
+**`/opt/hud`'s setuptools in the build root is gutted** — a
+`setuptools-80.9.0.dist-info` beside a package with no `build_meta` and no
+`__version__`. Every setuptools-backed build died with `BackendUnavailable`
+until `python-setuptools` was declared; the shipped package is intact at 938
+files and installing it repairs the tree. Probably a casualty of the F6 shrink,
+and **likely to affect non-Python packages that run `setup.py` during
+configure** — worth checking before G1.
+
+**`python3-requests` never had its patch.** v1 declared it as a URL in a `Patch:`
+header and then ran `patch -Np1 -i ../requests-use_system_certs-1.patch` against
+a file nothing had downloaded. The shipped package therefore bundles `certifi`
+instead of using the system certificate store. The patch now lives in
+`patches/`, hud-build applies it fatally, and the rebuilt package has the fix
+verified in its shipped `certs.py`. **This is the same defect class as qemu's
+`|| true` patch, found in a package nobody was looking at** — E8 should not
+assume it is confined to the four packages the triage labelled PATCH.
+
+### The rootfs carries the payloads that never shipped
+
+`/usr/lib/python3.13/site-packages` in the golden rootfs holds **exactly 66
+pip-installed dist-info directories dated 2026-01-28, matching the 66 empty
+packages one-for-one.** That is where the missing payloads went: `[install]` ran
+pip without `--root=$DESTDIR`, so each installed into the build server's own
+Python, and that server's filesystem later became the base rootfs.
+
+It does not currently make builds pass spuriously, because installing the hud
+`python3` package takes that directory off `sys.path` entirely. It is recorded
+because it is the reason "just drop `python3` from `Build-Depends`" must be
+refused rather than used as a shortcut — that would build the fixed packages
+against the broken ones' escaped payloads.
 
 ---
 
@@ -93,6 +171,8 @@ Verify by format, not by the state file, before declaring E4 finished.
 | F3 | `alsa-ucm-conf` split into its own package |
 | F6 | Minimal rootfs shrunk: 4.9 G → 3.3 G, extract 217 s → 103 s |
 | G3 | Staging repo at `/var/www/hud-unstable/`, 251 packages, build roots point at it |
+| E4 | **All 148 EASY definitions converted to v2**, verified by format not by state file |
+| E5/E6 | 33 of the 66 empty `python3-*` fixed, built, tested and published: 25 KB → 32 MB |
 
 ---
 
