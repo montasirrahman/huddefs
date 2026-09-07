@@ -7,9 +7,10 @@ Package: qemu
 Version: 10.0.3
 Architecture: x86_64
 Section: virtualization
-Depends: glib, pixman, alsa-lib, dtc, libslirp, sdl2
+Depends: glib, pixman, alsa-lib, dtc, libslirp, sdl2, python3-distlib
 Description: Full virtualization solution for Linux with KVM support
 Source: https://download.qemu.org/qemu-10.0.3.tar.xz
+Patches:          qemu-10.0.3-python_fixes-1.patch
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
@@ -18,12 +19,21 @@ export LD_LIBRARY_PATH="/opt/hud/lib:/opt/hud/lib64:${LD_LIBRARY_PATH}"
 export CFLAGS="-I/opt/hud/include"
 export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64"
 
-# Install required Python modules for QEMU build
-pip3 install distlib --break-system-packages 2>/dev/null || pip3 install distlib
-
-# Download and apply required patch for pip-25.2+ compatibility
-wget -nc https://www.linuxfromscratch.org/patches/blfs/12.4/qemu-10.0.3-python_fixes-1.patch -O ../qemu-10.0.3-python_fixes-1.patch 2>/dev/null || true
-patch -Np1 -i ../qemu-10.0.3-python_fixes-1.patch || true
+# distlib comes from Build-Depends now. v1 ran `pip3 install distlib` here,
+# which needs the network during a build and installs into the build root rather
+# than declaring a dependency; python3-distlib is already a package.
+#
+# The python_fixes patch is applied by the builder from patches/ before this
+# section runs. What was here instead:
+#
+#     wget -nc https://.../qemu-10.0.3-python_fixes-1.patch ... || true
+#     patch -Np1 -i ../qemu-10.0.3-python_fixes-1.patch      || true
+#
+# wget is not installed on any of these machines, so the download always failed;
+# `|| true` swallowed it, the patch file never existed, `patch` then failed too,
+# and its `|| true` swallowed that as well. The build reported success and the
+# published qemu 10.0.3 is unpatched. This is the case CLAUDE.md's rule against
+# `|| true` after a patch or a download was written for.
 
 # Determine architecture
 if [ $(uname -m) = i686 ]; then

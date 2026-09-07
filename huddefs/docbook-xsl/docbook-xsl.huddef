@@ -8,13 +8,14 @@ Section: xml
 Depends: libxml2,docbook
 Description: DocBook XSL Stylesheets 1.79.2 - XSL stylesheets for DocBook XML transformations
 Source: https://github.com/docbook/xslt10-stylesheets/releases/download/release/1.79.2/docbook-xsl-nons-1.79.2.tar.bz2
-Patch: https://www.linuxfromscratch.org/patches/blfs/12.4/docbook-xsl-nons-1.79.2-stack_fix-1.patch
+Patches:          docbook-xsl-nons-1.79.2-stack_fix-1.patch
 
 [configure]
-# Apply stack overflow fix patch
-if [ -f ../docbook-xsl-nons-1.79.2-stack_fix-1.patch ]; then
-    patch -Np1 -i ../docbook-xsl-nons-1.79.2-stack_fix-1.patch
-fi
+# The stack_fix patch is applied by the builder from patches/ before this
+# section runs. v1 declared it as a URL in a `Patch:` header and then guarded the
+# apply on `[ -f ../<patch> ]` — a file nothing downloaded, so the test was never
+# true and the patch was never applied. A guard like that is the same defect as
+# `|| true`: it turns a missing patch into a silent no-op.
 
 [build]
 # No build needed - these are stylesheets

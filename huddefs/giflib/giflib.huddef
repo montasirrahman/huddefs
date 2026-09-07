@@ -9,15 +9,14 @@ Section: libraries
 Depends:
 Description: Library for reading and writing GIF images
 Source: https://sourceforge.net/projects/giflib/files/giflib-5.2.2.tar.gz
+Patches:          giflib-5.2.2-upstream_fixes-1.patch, giflib-5.2.2-security_fixes-1.patch
 
 [configure]
-# Download and apply required patches
-wget -q https://www.linuxfromscratch.org/patches/blfs/12.4/giflib-5.2.2-upstream_fixes-1.patch -O ../upstream_fixes.patch
-wget -q https://www.linuxfromscratch.org/patches/blfs/12.4/giflib-5.2.2-security_fixes-1.patch -O ../security_fixes.patch
-
-# Apply patches
-patch -Np1 -i ../upstream_fixes.patch
-patch -Np1 -i ../security_fixes.patch
+# Both patches are applied by the builder from patches/, in the order the
+# Patches: header lists them, before this section runs. v1 fetched them here
+# with wget — which is not installed on any of these machines, so the download
+# failed, and unlike qemu's these were not guarded with `|| true`. One of the
+# two is the security fix.
 
 # Move file to expected location (removes ImageMagick dependency)
 cp pic/gifgrid.gif doc/giflib-logo.gif
