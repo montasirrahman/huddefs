@@ -1,0 +1,31 @@
+#!/bin/bash
+# Publish to the STAGING repository at /var/www/hud-unstable — never the live one.
+#
+# hud-repo-manager takes its repository from $HUD_REPO_DIR and defaults to
+# /var/www/hud-repo. One forgotten export therefore writes to the live repo,
+# whose 251 packages are not reliably rebuildable. This wrapper makes the
+# staging directory the only reachable target: it sets the variable itself and
+# refuses to run if anything has redirected it at the live tree.
+#
+# It intentionally does NOT deploy hud-repo-manager to /usr/local/bin; it runs
+# the D8-fixed copy from /var/hud-build/bin, leaving the system's v1.1.0
+# untouched.
+set -euo pipefail
+
+UNSTABLE=/var/www/hud-unstable
+MANAGER=/var/hud-build/bin/hud-repo-manager-unstable
+
+[ -x "$MANAGER" ] || { echo "hud-unstable: manager missing at $MANAGER" >&2; exit 2; }
+[ -d "$UNSTABLE" ] || { echo "hud-unstable: $UNSTABLE does not exist" >&2; exit 2; }
+
+# Resolve symlinks before comparing: a symlinked hud-unstable pointing at the
+# live tree would pass a string comparison and fail this one.
+real=$(readlink -f "$UNSTABLE")
+case "$real" in
+    /var/www/hud-repo|/var/www/hud-repo/*)
+        echo "hud-unstable: $UNSTABLE resolves to the LIVE repo ($real). Refusing." >&2
+        exit 3 ;;
+esac
+
+export HUD_REPO_DIR="$real"
+exec "$MANAGER" "$@"

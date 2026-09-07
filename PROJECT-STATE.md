@@ -8,32 +8,71 @@ pick up where the last one stopped. If you are resuming, read this first, then
 
 ## Where things stand
 
-**Current phase:** E4 — 87/148 EASY converted. **Building has MOVED to bf-build**
-(2026-09-03). bf-repo's VDI is on a USB disk whose link drops under sustained
-write load; three failures resulted. Do not build on bf-repo.
+**Current phase:** G3 complete; E4 finishing its last packages. Building runs on
+**bf-build** (2026-09-03 migration). bf-repo's VDI is on a USB disk whose link
+drops under sustained write load; three failures resulted. Do not build on
+bf-repo.
 
-bf-build: 4 cores, 5.8 GB, internal NVMe, overlayfs available. First build there
-took **27 s against bf-repo's 118–150 s** for the same package. See
-`docs/migration-to-bf-build.md`.
+bf-build: 4 cores, 5.8 GB, internal NVMe, overlayfs available. With the overlay
+build root a small package now costs **1–50 s** against bf-repo's 118–300 s.
+See `docs/migration-to-bf-build.md`.
 
-**bf-build cannot push to GitHub yet** — its key is not on the account. **Batch 1 of 6 complete.**
+**bf-build cannot push to GitHub** — its key is not on the account. Its commits
+are collected by fetching from bf-repo instead:
 
-**Resume point:** `/var/hud-build/convert-state.json` on bf-repo lists every
+```bash
+# on bf-repo — bf-build's git is only at /opt/hud/bin, off the default PATH,
+# so the remote needs an explicit upload-pack.
+git remote add bfbuild ssh://root@bf-build/root/github-repo/huddefs
+git config remote.bfbuild.uploadpack /opt/hud/bin/git-upload-pack
+git fetch bfbuild main && git merge bfbuild/main && git push origin main
+# and back the other way, on bf-build:
+git remote add bfrepo ssh://root@172.19.1.7/root/github-repo/huddefs
+git config remote.bfrepo.uploadpack /opt/hud/bin/git-upload-pack
+git fetch bfrepo main && git merge --ff-only FETCH_HEAD
+```
+
+**Resume point:** `/var/hud-build/convert-state.json` **on bf-build** lists every
 package already processed. `scripts/convert-easy.py` skips those, so re-running
 the driver continues rather than restarting.
 
 The conversion runs as a **transient systemd unit** so it survives the session
-that started it. Earlier runs were killed twice by session teardown mid-batch.
-
-```bash
-# on bf-repo
-systemctl status e4-conversion
-journalctl -u e4-conversion -f
-systemd-run --unit=e4-conversion --property=KillMode=process \
-    /bin/bash /var/hud-build/e4/e4.sh      # resumes from convert-state.json
-```
+that started it. Never hardcode the unit name — it changes on every restart.
+Use `e4-status`.
 
 Results land in `docs/conversion-progress.md`, one section per batch.
+
+---
+
+## E4: "done" in convert-state.json did not mean "converted"
+
+Found 2026-09-07, and it is the reason E4 looked finished when it was not.
+
+`convert-state.json` reported 148/148. Checking the definitions themselves
+instead of the state file showed **18 EASY packages still in v1 format** —
+`dbus`, `dejavu-fonts`, `dmidecode`, `dtc`, `duktape`, `expat`, `flac`,
+`font-alias`, `font-util`, `fontconfig`, `fribidi`, `gmp`, `gperf`, `icu`,
+`iptables`, `jansson`, `kmod`, `lame`. An alphabetically contiguous block: one
+batch.
+
+That is the git-not-on-PATH incident showing up months later. The batch built
+and tested successfully, the driver marked all 20 done, and the commit that
+should have carried the converted files failed because `git` lives only at
+`/opt/hud/bin/git`, which is not on systemd's default service PATH. The state
+file was written from the build result, not from the commit.
+
+**The lesson is about the state file, not about git.** A resume point that
+records intent rather than the artifact will happily skip work that never
+landed. The check that found this is one line and does not consult the state
+file at all:
+
+```bash
+# a converted definition has both of these; a v1 one has neither
+grep -L 'Source-SHA256:' huddefs/*/*.huddef
+```
+
+The 18 were re-queued by removing them from `done` and re-running the driver.
+Verify by format, not by the state file, before declaring E4 finished.
 
 ---
 
@@ -53,6 +92,7 @@ Results land in `docs/conversion-progress.md`, one section per batch.
 | F1–F2 | Shared rootfs config; MULTI-SOURCE category |
 | F3 | `alsa-ucm-conf` split into its own package |
 | F6 | Minimal rootfs shrunk: 4.9 G → 3.3 G, extract 217 s → 103 s |
+| G3 | Staging repo at `/var/www/hud-unstable/`, 251 packages, build roots point at it |
 
 ---
 
@@ -137,6 +177,40 @@ dependents — with each fixed package immediately available to the next build.
 
 This is a sequencing consequence, not a change of scope: every phase still
 happens, and nothing else in the queue moves.
+
+
+### G3 is done — 2026-09-07
+
+`/var/www/hud-unstable/` is populated, indexed and served, and the build roots
+point at it. Full write-up in `docs/staging-repo.md`; the two things worth
+carrying in your head:
+
+**Unstable is a complete superset of stable, not an overlay.** The obvious
+arrangement — stable plus unstable in `sources.list`, unstable wins — is not
+expressible with this client. `hud update` loads every repo into one `available`
+table keyed `UNIQUE(name, version, repo_url)`, so the same package at the same
+version from two repos is **two rows**, and installation selects with
+`... AND version='X' LIMIT 1` and **no `ORDER BY`**. The winner is rowid order,
+i.e. whichever repo is listed first. A fixed `python3-hatchling` at the same
+upstream version would silently lose to the broken one. Seeding unstable with
+all 251 archives removes the ambiguity instead of relying on insertion order.
+
+**The pool is a real copy, not symlinks.** `hud-repo-manager add` copies over the
+destination path, and a fixed package has the same filename as the broken one.
+`cp` follows symlinks, so a symlinked pool would have written *through* into
+`/var/www/hud-repo/pool/`. Same shape as the `cp -al` hardlink farm that
+corrupted the golden rootfs in F5. All 502 files verified byte-identical by
+sha256 after the copy.
+
+Publish with `scripts/hud-unstable`, which sets `HUD_REPO_DIR` itself, ignores
+any value already in the environment, and exits 3 if the staging path resolves —
+through symlinks — to the live tree. Nothing was deployed to `/usr/local/bin`
+and the D8 branches remain unmerged; the wrapper runs the fixed manager from
+`/var/hud-build/bin/`.
+
+No nginx change was needed: `hud-repo.conf` already sets `root /var/www` with a
+`try_files` catch-all, so nginx was never reloaded and no in-flight build
+download could be interrupted.
 
 ---
 
