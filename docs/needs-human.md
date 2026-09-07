@@ -188,3 +188,121 @@ make the probe succeed. This needs someone to run configure by hand and read
 precedent.
 
 `vim` is deferred. Everything else in the batch continued normally.
+
+---
+
+## E5/E6 — 33 of the 66 empty `python3-*` packages need three backends that are not packaged
+
+**This is the one decision that gates the rest of E5/E6, and it is a scope
+question rather than a technical one: it means creating new packages.**
+
+33 of the 66 were fixed, built, install-tested and published to unstable. The
+other 33 cannot be built at all, because the Python build backend each one
+declares does not exist in this distribution.
+
+### What the build root actually provides
+
+Measured, not assumed. Every one of the 66 declares `python3` in its
+dependencies, so `hud-build` installs the hud `python3` package into the build
+root. That interpreter is `/opt/hud/bin/python3`, and its `sys.path` does **not**
+include `/usr/lib/python3.13/site-packages` — so nothing the base LFS system
+carries is visible to the build:
+
+```
+/opt/hud/lib/python313.zip
+/opt/hud/lib/python3.13
+/opt/hud/lib/python3.13/lib-dynload
+/root/.local/lib/python3.13/site-packages
+/opt/hud/lib/python3.13/site-packages
+```
+
+With `python3` and `python-setuptools` installed, exactly one build backend is
+importable — `setuptools`. `wheel`, `flit_core`, `packaging` and `calver` are
+all `ModuleNotFoundError`.
+
+### The three missing backends, and what each blocks
+
+| Missing | Blocks | Packages |
+|---|---|---|
+| `flit_core` | 18 | `alabaster`, `build`, `cachecontrol`, `docutils`, `editables`, `idna`, `pathspec`, `pyparsing`, `pyproject-hooks`, `pyproject-metadata`, `roman-numerals-py`, `sphinx`, and the six `sphinxcontrib-*` |
+| `packaging` | 14 | `attrs`, `charset-normalizer`, `hatch-fancy-pypi-readme`, `hatch-vcs`, `hatchling`, `iniconfig`, `meson-python`, `numpy`, `pluggy`, `pygments`, `pytest`, `setuptools-scm`, `typogrify`, `urllib3` |
+| `calver` | 1 | `trove-classifiers` |
+
+The three are the roots of the whole tree. `hatchling` — the backend for eight
+of the 66 — declares `requires = []` and builds itself through `backend-path`,
+so it imports its *own* runtime dependencies while building: `pathspec` (needs
+flit_core), `pluggy` (needs `setuptools_scm`, which needs `packaging`),
+`trove_classifiers` (needs `calver`), and `packaging` directly. Package the
+three roots and the other 30 unblock in dependency order; leave them and none of
+the 33 can be built, no matter what order they are attempted in.
+
+The dependency data is derived from each package's own `pyproject.toml` in the
+cached tarball — `[build-system] requires` for what pip needs to load the
+backend, `[project] dependencies` for what a self-hosting backend imports while
+running — with environment markers evaluated by `packaging.markers` against
+Python 3.13 rather than pattern-matched. `tomli` and `typing-extensions` appear
+in the raw requirement strings and are **not** blockers: both are marked
+`python_version < "3.11"`. Full data in `/var/hud-build/e5/plan2.json` on
+bf-build.
+
+### Recommendation — package the three
+
+`flit_core`, `packaging` and `calver` are small, pure-Python, and all three
+build with nothing but `setuptools`, which is available. `flit_core` is
+explicitly designed to bootstrap itself. So the work is three ordinary
+definitions, and it unblocks 33 packages including the whole Sphinx
+documentation chain and numpy.
+
+The alternative is worse in every direction:
+
+- **Drop `python3` from `Build-Depends`** so the base system's interpreter is
+  used. That would work today and must not be done — see the contamination note
+  below. It builds against modules this repository does not ship and cannot
+  reproduce.
+- **Vendor the backends into the build rootfs.** Same objection, plus it makes
+  the rootfs, rather than the definitions, the thing that has to be reproduced.
+- **Rewrite 33 definitions to install by hand** instead of through PEP 517.
+  Diverges from what upstream builds, for 33 packages, permanently.
+
+**Precedent this would follow:** F3 already split `alsa-ucm-conf` into its own
+package rather than change the format or ship less. This is the same shape of
+answer — create the package the build genuinely needs — at three packages
+instead of one. It is not applied automatically because creating distribution
+packages expands what G1 must rebuild, what G2 must graph, and what eventually
+must be signed.
+
+### Related finding: the build rootfs carries the payloads that never shipped
+
+Worth recording next to this, because it is the same defect seen from the other
+side and it looks like an easy way out of the above.
+
+`/usr/lib/python3.13/site-packages` in the golden rootfs contains **exactly 66
+dist-info directories dated 2026-01-28, matching the 66 empty packages
+one-for-one** — no more, no fewer. They were installed by pip. That is where the
+payloads went: the `[install]` sections ran pip without `--root=$DESTDIR`, so
+every one of them installed into the build server's own Python, and that
+server's filesystem later became the base rootfs.
+
+It does **not** currently make builds pass spuriously, because installing the
+hud `python3` package takes `/usr/lib/python3.13/site-packages` off `sys.path`
+entirely. It would start to matter the moment a package builds Python code
+*without* declaring `python3`, and it is the reason the "just drop `python3`
+from Build-Depends" shortcut above must be refused: it would build the fixed
+packages against the broken ones' escaped payloads.
+
+The genuine base-system Python packages are the eleven dated 2025 —
+`cffi`, `cryptography`, `flit_core`, `jinja2`, `markupsafe`, `meson`,
+`packaging`, `pip`, `pycparser`, `setuptools`, `wheel`. Note that `flit_core`
+and `packaging` are among them: the base LFS system has both, and only
+`/opt/hud` lacks them.
+
+### Also fixed on the way, and worth knowing
+
+`/opt/hud/lib/python3.13/site-packages/setuptools` in the build root is
+**gutted** — a `setuptools-80.9.0.dist-info` sitting next to a `setuptools`
+package that has no `build_meta` and no `__version__`. Every setuptools-backed
+build died with `BackendUnavailable: Cannot import 'setuptools.build_meta'`
+until `python-setuptools` was added to `Build-Depends`; the shipped package is
+intact at 938 files and installing it repairs the tree. This is very likely a
+casualty of the F6 rootfs shrink and may well affect non-Python packages that
+run `setup.py` during configure.

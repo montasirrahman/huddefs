@@ -170,7 +170,14 @@ def convert(pkg):
     # 2.8 MB and intact in the pool, so declaring it is the fix — and it is
     # honest besides: a package built by setuptools does depend on setuptools.
     backend, breqs = pep517_backend(tarball)
-    if "setuptools" in (backend or "") and "python-setuptools" not in bd:
+    # Both spellings matter. Most packages name the backend
+    # "setuptools.build_meta"; PyYAML names its own "_pyyaml_pep517" and lists
+    # setuptools in requires, and that module imports setuptools when pip loads
+    # it. Keying only on the backend name missed it and the build died with
+    # BackendUnavailable.
+    uses_setuptools = ("setuptools" in (backend or "")
+                       or any(re.match(r"\s*setuptools\b", r) for r in breqs))
+    if uses_setuptools and "python-setuptools" not in bd:
         bd.append("python-setuptools")
     notes.append(f"backend {backend}")
 
