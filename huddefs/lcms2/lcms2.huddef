@@ -12,7 +12,7 @@ Source-SHA256:    d11af569e42a1baa1650d20ad61d12e41af4fead4aa7964a01f93b08b53ab0
 
 
 
-Build-Depends:    
+Build-Depends:    libjpeg-turbo, libtiff
 Depends:          auto
 Provides:         auto
 

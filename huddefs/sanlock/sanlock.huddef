@@ -13,7 +13,7 @@ Source: https://releases.pagure.org/sanlock/sanlock-3.9.5.tar.gz
 Source-SHA256:    cc29691f733071a0b484de7b27ca6102245d09765ef5a710059ee0a6c14cef83
 
 
-Build-Depends:    libaio
+Build-Depends:    libaio, python3
 Depends:          auto
 Provides:         auto
 

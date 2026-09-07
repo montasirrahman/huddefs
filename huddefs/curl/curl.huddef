@@ -12,7 +12,7 @@ Source-SHA256:    6cd0a8a5b126ddfda61c94dc2c3fc53481ba7a35461cf7c5ab66aa9d6775b6
 
 
 
-Build-Depends:    
+Build-Depends:    nghttp2, valgrind, gnutls, make-ca, brotli, libssh2, libpsl
 Depends:          auto
 Provides:         auto
 

@@ -8,7 +8,7 @@ Description: X Keyboard Configuration Database
 Source: https://www.x.org/pub/individual/data/xkeyboard-config/xkeyboard-config-2.44.tar.xz
 Source-SHA256:    54d2c33eeebb031d48fa590c543e54c9bcbd0f00386ebc6489b2f47a0da4342a
 
-Build-Depends:    
+Build-Depends:    xorgproto, libX11, meson, ninja
 Depends:          auto
 Provides:         auto
 

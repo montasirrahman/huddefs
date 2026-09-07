@@ -9,7 +9,7 @@ Description: OpenJDK-24.0.2
 Source: https://github.com/openjdk/jdk24u/archive/jdk-24.0.2-ga.tar.gz
 Source-SHA256:    d5a1b364de4335d86590d2e91eb8fce0560ade28759734c531915b8293e502e8
 
-Build-Depends:    
+Build-Depends:    alsa-lib, git, cups, make-ca, harfbuzz, libarchive, zip, libjpeg, libpng, which
 Depends:          auto
 Provides:         auto
 

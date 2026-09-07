@@ -12,7 +12,7 @@ Source-SHA256:    2814a7281989f6baa9e57bd33bbc5e148827e2721ccef22aaf28ab2b376068
 
 
 
-Build-Depends:    
+Build-Depends:    glib, expat, linux-pam, duktape
 Depends:          auto
 Provides:         auto
 

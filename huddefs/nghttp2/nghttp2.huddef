@@ -10,7 +10,7 @@ Source: https://github.com/nghttp2/nghttp2/releases/download/v1.66.0/nghttp2-1.6
 Source-SHA256:    00ba1bdf0ba2c74b2a4fe6c8b1069dc9d82f82608af24442d430df97c6f9e631
 
 
-Build-Depends:    
+Build-Depends:    libxml2, jansson
 Depends:          auto
 Provides:         auto
 

@@ -10,7 +10,7 @@ Source: https://github.com/harfbuzz/harfbuzz/releases/download/11.4.1/harfbuzz-1
 Source-SHA256:    7aafab93115eb56cdc9a931ab7d19ff60d7f2937b599d140f17236f374e32698
 
 
-Build-Depends:    
+Build-Depends:    git, glib, icu
 Depends:          auto
 Provides:         auto
 

@@ -11,7 +11,7 @@ Source-SHA256:    f8dfa8f15ef0576738dfb55b2e6e6b172fd5d09b6f03785a1df03239549f64
 
 
 
-Build-Depends:    
+Build-Depends:    zlib, bzip2, libpng
 Depends:          auto
 Provides:         auto
 

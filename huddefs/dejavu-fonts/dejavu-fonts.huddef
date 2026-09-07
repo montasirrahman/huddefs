@@ -8,7 +8,7 @@ Description: DejaVu fonts based on Bitstream Vera fonts
 Source: https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2
 Source-SHA256:    fa9ca4d13871dd122f61258a80d01751d603b4d3ee14095d65453b4e846e17d7
 
-Build-Depends:    
+Build-Depends:    fontconfig
 Depends:          auto
 Provides:         auto
 

@@ -10,7 +10,7 @@ Source-SHA256:    73cf6cc1ea2b2b1c110a18c14bbbc73a362073003893ffcedc26d22ebdbdd0
 
 
 
-Build-Depends:    
+Build-Depends:    zlib
 Depends:          auto
 Provides:         auto
 

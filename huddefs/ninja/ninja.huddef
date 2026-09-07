@@ -8,7 +8,7 @@ Description: Small build system with a focus on speed
 Source: https://github.com/ninja-build/ninja/archive/refs/tags/v1.13.1.tar.gz
 Source-SHA256:    f0055ad0369bf2e372955ba55128d000cfcc21777057806015b45e4accbebf23
 
-Build-Depends:    
+Build-Depends:    python3
 Depends:          auto
 Provides:         auto
 

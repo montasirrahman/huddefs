@@ -11,7 +11,7 @@ Source-SHA256:    8a9ea10943c36fc117e253f80c91e477b673525ae45762942858aef57631bb
 
 
 
-Build-Depends:    valgrind
+Build-Depends:    pcre2, libffi, python3, meson, ninja, valgrind
 Depends:          auto
 Provides:         auto
 

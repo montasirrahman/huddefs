@@ -11,7 +11,7 @@ Source-SHA256:    db7fab7cce791e7727ebbef2334301c821d79a550ec55c9ef096b610b03eb6
 
 
 
-Build-Depends:    
+Build-Depends:    nettle, libtasn1, libunistring, p11-kit
 Depends:          auto
 Provides:         auto
 

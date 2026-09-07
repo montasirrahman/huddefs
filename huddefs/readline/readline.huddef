@@ -8,7 +8,7 @@ Description: GNU Readline library for command line editing
 Source: https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz
 Source-SHA256:    fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc
 
-Build-Depends:    
+Build-Depends:    ncurses
 Depends:          auto
 Provides:         auto
 

@@ -12,7 +12,7 @@ MD5sum: d4bf13ddd1e6d607d039d39286f9e3d0
 
 
 
-Build-Depends:    
+Build-Depends:    glib
 Depends:          auto
 Provides:         auto
 

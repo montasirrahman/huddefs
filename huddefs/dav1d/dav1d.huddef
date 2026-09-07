@@ -13,7 +13,7 @@ Source-SHA256:    4eddffd108f098e307b93c9da57b6125224dc5877b1b3d157b31be6ae8f1f0
 
 
 
-Build-Depends:    nasm
+Build-Depends:    meson, ninja, nasm
 Depends:          auto
 Provides:         auto
 

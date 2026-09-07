@@ -10,7 +10,7 @@ Description: Front-end to XSL toolchain for converting XML to other formats
 Source: https://pagure.io/xmlto/archive/0.0.29/xmlto-0.0.29.tar.gz
 Source-SHA256:    40504db68718385a4eaa9154a28f59e51e59d006d1aa14f5bc9d6fded1d6017a
 
-Build-Depends:    
+Build-Depends:    docbook-xsl, libxslt
 Depends:          auto
 Provides:         auto
 

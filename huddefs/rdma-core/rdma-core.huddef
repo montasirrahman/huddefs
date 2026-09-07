@@ -10,7 +10,7 @@ Source: https://github.com/linux-rdma/rdma-core/releases/download/v53.0/rdma-cor
 Source-SHA256:    388d6bb148f2ccda5bc716df2c2ee925fb7903589a01da4db3149f307ebf1933
 
 
-Build-Depends:    cmake
+Build-Depends:    cmake, libnl, python3, systemd
 Depends:          auto
 Provides:         auto
 

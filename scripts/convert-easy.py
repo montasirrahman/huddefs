@@ -124,18 +124,71 @@ def verify_drops(pkg, dropped, new_requires):
 _REPO_NAMES = None
 DROPPED_LOG = "/var/hud-build/dropped-deps.json"
 
+# Where to look for the repository index, in order. The first entry is the only
+# one that existed originally, and it exists ONLY on bf-repo.
+REPO_INDEX_PATHS = (
+    "/var/www/hud-unstable/packages.list",
+    "/var/www/hud-repo/packages.list",
+    "/var/hud-build/roots/minimal/var/lib/hud/packages.list",
+)
+REPO_INDEX_URLS = (
+    "http://172.19.1.7/hud-unstable/packages.list",
+    "http://172.19.1.7/hud-repo/packages.list",
+)
+
+
 def repo_names():
+    """Every package name the repository publishes, lowercased for matching.
+
+    This must never come back empty by accident. It originally read one path,
+    /var/www/hud-repo/packages.list, which exists only on bf-repo — and swallowed
+    OSError. Once building moved to bf-build the index was simply absent, the
+    dictionary stayed empty, and normalise_deps() concluded that every declared
+    dependency was "not in the repository" and dropped it. curl lost nghttp2,
+    gnutls, make-ca, brotli, libssh2 and libpsl; cups lost gnutls, libpng,
+    libjpeg, libtiff, dbus and libusb. Silently, and with a green build, because
+    the base rootfs supplies enough for many packages to configure anyway.
+
+    So: try the local paths, then HTTP, and if nothing answers, raise. An empty
+    index is not a state this function is allowed to return.
+    """
     global _REPO_NAMES
-    if _REPO_NAMES is None:
-        _REPO_NAMES = {}
+    if _REPO_NAMES is not None:
+        return _REPO_NAMES
+
+    def parse(text):
+        out = {}
+        for line in text.splitlines():
+            if not line.startswith("#") and "|" in line:
+                n = line.split("|")[0]
+                out[n.lower()] = n
+        return out
+
+    for path in REPO_INDEX_PATHS:
         try:
-            for line in open("/var/www/hud-repo/packages.list"):
-                if not line.startswith("#") and "|" in line:
-                    n = line.split("|")[0]
-                    _REPO_NAMES[n.lower()] = n
+            got = parse(open(path).read())
         except OSError:
-            pass
-    return _REPO_NAMES
+            continue
+        if got:
+            _REPO_NAMES = got
+            return _REPO_NAMES
+
+    for url in REPO_INDEX_URLS:
+        try:
+            import urllib.request
+            with urllib.request.urlopen(url, timeout=20) as fh:
+                got = parse(fh.read().decode("utf-8", "replace"))
+        except Exception:
+            continue
+        if got:
+            _REPO_NAMES = got
+            return _REPO_NAMES
+
+    raise RuntimeError(
+        "no repository index found — tried "
+        + ", ".join(REPO_INDEX_PATHS + REPO_INDEX_URLS)
+        + ". Refusing to continue: with an empty index every declared "
+          "dependency looks absent and normalise_deps() would drop all of them.")
 
 def normalise_deps(deps):
     """Map book names onto real package names; drop what was never packaged."""

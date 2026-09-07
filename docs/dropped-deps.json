@@ -1,0 +1,86 @@
+{
+ "cmake": [
+  "libuv"
+ ],
+ "curl": [
+  "apache",
+  "openssh",
+  "samba"
+ ],
+ "dbus": [
+  "xorg-libraries"
+ ],
+ "fontconfig": [
+  "bubblewrap",
+  "texlive",
+  "tl-installer"
+ ],
+ "gdb": [
+  "doxygen",
+  "guile",
+  "rust",
+  "six"
+ ],
+ "git": [
+  "apache",
+  "asciidoc",
+  "fcron",
+  "openssh",
+  "perl-io-socket-ssl",
+  "tk"
+ ],
+ "harfbuzz": [
+  "cairo",
+  "graphite2",
+  "gtk-doc",
+  "libreoffice",
+  "texlive"
+ ],
+ "libtiff": [
+  "freeglut",
+  "sphinx"
+ ],
+ "libwebp": [
+  "freeglut"
+ ],
+ "newt": [
+  "gpm",
+  "python"
+ ],
+ "nghttp2": [
+  "c-ares",
+  "sphinx"
+ ],
+ "openjdk": [
+  "graphviz",
+  "java",
+  "mercurial",
+  "ojdk-conf",
+  "xorg7-lib"
+ ],
+ "polkit": [
+  "elogind"
+ ],
+ "python3": [
+  "bluez",
+  "libnsl",
+  "tk"
+ ],
+ "python3-doxypypy": [
+  "doxygen"
+ ],
+ "python3-doxyqml": [
+  "doxygen"
+ ],
+ "sdl2": [
+  "libpulse",
+  "libxcursor",
+  "libxkbcommon"
+ ],
+ "slang": [
+  "glibc"
+ ],
+ "xmlto": [
+  "docbook-xml"
+ ]
+}

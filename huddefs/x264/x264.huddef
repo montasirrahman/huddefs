@@ -9,7 +9,7 @@ Description: H.264/AVC video encoder library
 Source: https://code.videolan.org/videolan/x264/-/archive/stable/x264-stable.tar.bz2
 Source-SHA256:    740126cb48549ca4e2f09b4ae13beed592d5b54744044e38f28662fd96d0ba56
 
-Build-Depends:    
+Build-Depends:    nasm
 Depends:          auto
 Provides:         auto
 
