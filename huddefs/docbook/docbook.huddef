@@ -38,18 +38,25 @@ elif [ -f ../docbook.cat ]; then
     SRCROOT=".."
 elif [ -f ../../docbook.cat ]; then
     SRCROOT="../.."
-else
-    # Search for it
-    echo "Searching for docbook.cat..."
-    FOUND=$(find /var/hud-build/staging -name "docbook.cat" -type f 2>/dev/null | head -1)
-    if [ -n "$FOUND" ]; then
-        SRCROOT=$(dirname "$FOUND")
-        echo "Found at: $SRCROOT"
-    fi
 fi
 
+# The fourth branch is gone. It was:
+#
+#     FOUND=$(find /var/hud-build/staging -name "docbook.cat" -type f | head -1)
+#
+# — a search of the BUILD HOST's leftover staging directories for a file no
+# definition produces. When it hit, the package was built from whatever an
+# earlier, unrelated build happened to leave behind: not reproducible, not
+# covered by Source-SHA256, and different on every machine. When the staging
+# directory was empty it found nothing and the build failed anyway, so it never
+# bought reliability either.
+#
+# If the three checks above do not find docbook.cat, the extraction is wrong and
+# the build must say so.
+
 if [ -z "$SRCROOT" ] || [ ! -f "$SRCROOT/docbook.cat" ]; then
-    echo "ERROR: Could not locate docbook.cat"
+    echo "ERROR: docbook.cat is not in the extracted source tree."
+    echo "The archive extracts flat; check ExtractDir and hud-build's cd."
     echo "Contents of current directory:"
     ls -la
     echo "Contents of parent directory:"
