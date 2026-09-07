@@ -44,6 +44,79 @@ Results land in `docs/conversion-progress.md`, one section per batch.
 
 ---
 
+## E7 — ten done, ten waiting on one decision, four were never in the category
+
+Started 2026-09-07. `docs/e7-inventory.json` lists every action in the 24
+ABSOLUTE-PATH packages that touches a path the package will not track;
+`scripts/e7-scan.py` regenerates it.
+
+**Four are triage false positives.** `postgresql-ha`, `postgresql-ldap` and
+`postgresql-ldap-ha` were matched on `ExecStartPre=/bin/mkdir -p /run/postgresql`
+— a line *inside* a systemd unit being written into `$DESTDIR`, not a command.
+`python3-py3c` was matched on `make prefix=/opt/hud install` with no `DESTDIR`,
+which stages correctly because hud-build exports `DESTDIR=/dest` and autotools
+honours it from the environment. The real category is 20.
+
+**Ten were mechanical** and are converted, fixed and building. Rule 5 already
+says where a directory, symlink or package-owned drop-in belongs, so there was
+nothing to judge. Three of them were not cosmetic:
+
+- `docbook-xsl` shipped **nothing** — every `[install]` path was an absolute
+  `/opt/hud` path with no `$DESTDIR`. 5 KB → 24.8 MB.
+- `openldap`'s `.la`→`.so` sed ran against `/etc/openldap` on the build host
+  while `make install` had just written those files into `$DESTDIR`, so the
+  shipped `slapd.conf` still names `.la` files that are not installed.
+- `gperftools` and `libtirpc` each staged a partial symlink set in `[install]`
+  and then created a different, fully versioned set in `[postinst]` —
+  `libtcmalloc.so.4.6.16`, `libtirpc.so.3.0.0`. The postinst copies won, were
+  untracked, and named files whose version changes with every release.
+
+**Ten need one decision**, not ten: may a hud package own a file outside
+`/opt/hud`, and if so which directories. Thirty-five writes, three groups —
+systemd units into `/etc/systemd/system` (13), admin-editable config (14),
+executables and polkit rules into `/usr/bin` and `/usr/share/polkit-1` (6).
+`docs/needs-human.md` has the recommendation. It is the same question as the
+FHS-versus-`/opt/hud` item in the hard gate, at smaller scale.
+
+---
+
+## The Build-Depends that a missing index silently deleted
+
+Found while converting E7, and it reaches back across E4.
+
+`convert-easy.py`'s `repo_names()` read `/var/www/hud-repo/packages.list` and
+swallowed `OSError`. **That path exists only on bf-repo.** Once building moved to
+bf-build the index was absent, the name dictionary stayed empty, and
+`normalise_deps()` therefore concluded that *every* declared dependency was
+missing from the repository and dropped it.
+
+```
+curl    lost  nghttp2, gnutls, make-ca, brotli, libssh2, libpsl
+cups    lost  gnutls, libpng, libjpeg, libtiff, dbus, libusb
+gnutls  lost  nettle, libtasn1, libunistring, p11-kit
+```
+
+**55 definitions**, every one that was converted or re-queued after 2026-09-03.
+Silently, and with green builds, because the minimal rootfs supplies enough for
+many packages to configure without their real dependencies.
+
+Two fixes. `repo_names()` now tries the unstable index, the live index and the
+build root's copy, then HTTP, and **raises** if none answers — an empty index is
+not a value it may return, because a fallback that returns `{}` turns a missing
+file into 245 wrong definitions. And `scripts/repair-build-depends.py` rebuilds
+the field from the earliest committed form of each definition, merging with
+whatever the file currently has so nothing the retry logic added is lost. It is
+idempotent: the second run reports 0 repaired, 182 already correct.
+
+**The general lesson, and it is the second time this session:** a lookup that
+returns empty on failure is worse than one that throws. The E4 state file
+recorded intent rather than artifacts and lost 18 conversions; this returned an
+empty set rather than an error and lost 55 dependency lists. Both were silent,
+both produced green builds, and both were found by checking the artifact instead
+of the process.
+
+---
+
 ## E5/E6 — 33 fixed and published, 33 blocked on three unpackaged backends
 
 Done 2026-09-07. The 66 SUSPECT-EMPTY `python3-*` packages split cleanly in two,
@@ -173,6 +246,7 @@ Verify by format, not by the state file, before declaring E4 finished.
 | G3 | Staging repo at `/var/www/hud-unstable/`, 251 packages, build roots point at it |
 | E4 | **All 148 EASY definitions converted to v2**, verified by format not by state file |
 | E5/E6 | 33 of the 66 empty `python3-*` fixed, built, tested and published: 25 KB → 32 MB |
+| E7 | 10 of 24 fixed mechanically; 4 were false positives; 10 need one `/etc` ownership decision |
 
 ---
 
