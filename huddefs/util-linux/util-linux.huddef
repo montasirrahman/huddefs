@@ -6,9 +6,13 @@ Package: util-linux
 Version: 2.41.1
 Architecture: x86_64
 Section: system
-Depends:
 Description: Miscellaneous system utility programs including mount, fdisk, hwclock, etc.
 Source: https://www.kernel.org/pub/linux/utils/util-linux/v2.41/util-linux-2.41.1.tar.xz
+Source-SHA256:    be9ad9a276f4305ab7dd2f5225c8be1ff54352f565ff4dede9628c1aaa7dec57
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 # The directory itself is staged in [install]; creating it here only wrote it

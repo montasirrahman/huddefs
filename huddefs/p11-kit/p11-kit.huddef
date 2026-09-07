@@ -5,9 +5,13 @@ Package: p11-kit
 Version: 0.25.5
 Architecture: x86_64
 Section: security
-Depends: libtasn1
 Description: Library to load and enumerate PKCS#11 modules for cryptographic token interface
 Source: https://github.com/p11-glue/p11-kit/releases/download/0.25.5/p11-kit-0.25.5.tar.xz
+Source-SHA256:    04d0a86450cdb1be018f26af6699857171a188ac6d5b8c90786a60854e1198e5
+
+Build-Depends:    libtasn1
+Depends:          auto
+Provides:         auto
 
 [configure]
 # Prepare the distribution specific anchor hook

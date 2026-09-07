@@ -5,10 +5,14 @@ Package: docbook-xsl
 Version: 1.79.2
 Architecture: noarch
 Section: xml
-Depends: libxml2,docbook
 Description: DocBook XSL Stylesheets 1.79.2 - XSL stylesheets for DocBook XML transformations
 Source: https://github.com/docbook/xslt10-stylesheets/releases/download/release/1.79.2/docbook-xsl-nons-1.79.2.tar.bz2
+Source-SHA256:    ee8b9eca0b7a8f89075832a2da7534bce8c5478fc8fc2676f512d5d87d832102
 Patch: https://www.linuxfromscratch.org/patches/blfs/12.4/docbook-xsl-nons-1.79.2-stack_fix-1.patch
+
+Build-Depends:    libxml2, docbook
+Depends:          auto
+Provides:         auto
 
 [configure]
 # Apply stack overflow fix patch

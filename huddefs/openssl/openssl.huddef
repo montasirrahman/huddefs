@@ -4,9 +4,14 @@ Package: openssl
 Version: 3.5.2
 Architecture: x86_64
 Section: security
-Depends: zlib,perl
 Description: Cryptography and SSL/TLS toolkit
 Source: https://github.com/openssl/openssl/releases/download/openssl-3.5.2/openssl-3.5.2.tar.gz
+Source-SHA256:    c53a47e5e441c930c3928cf7bf6fb00e5d129b630e0aa873b08258656e7345ec
+
+Build-Depends:    zlib, perl
+Depends:          auto
+Provides:         auto
+
 [configure]
 ./config --prefix=/opt/hud \
          --openssldir=/opt/hud/etc/ssl \
