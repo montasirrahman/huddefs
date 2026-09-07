@@ -651,7 +651,13 @@ import it; setuptools ships the compatibility shim. The retry logic now maps tha
 error to `python-setuptools`. Four packages, one cause — the stop condition would
 have caught it had the smoke-test noise not tripped first.
 
-**3. Toolchain strictness (deferred to a human).**
+**3. Toolchain strictness (deferred to a human) — PARTLY WRONG, see
+`docs/rootfs-audit.md`.** This class was never separated from the build root's
+2,226 dangling symlinks, and only `git` and `cmake` have errors that were read
+and are genuinely in the source. `gdb` and `lcms2` name libraries that exist in
+the rootfs as dangling links and should be retried against a regenerated root
+before anyone diagnoses them further.
+
 `git`, `gdb`, `lcms2`, `cmake`. These built in 2026-02 and do not build today
 under GCC 15.2. `git` fails on an implicit function declaration, which is an
 error under C23. Logged with recommendations; **this class will grow**, since
