@@ -19,17 +19,23 @@ make
 sed -i '/INSTALL_LIBS/s/libcrypto.a libssl.a//' Makefile
 make MANSUFFIX=ssl DESTDIR=$DESTDIR install
 mv -v $DESTDIR/opt/hud/share/doc/openssl $DESTDIR/opt/hud/share/doc/openssl-3.5.2 2>/dev/null || true
+
+# The CA directory structure and the bundle link. v1 built these in [postinst],
+# so they were inside the prefix but still outside FILES: `hud remove openssl`
+# left /opt/hud/etc/ssl behind.
+#
+# The link target is fixed at /etc/pki/tls/certs/ca-bundle.crt rather than
+# chosen at install time. v1 fell back to /etc/ssl/certs/ca-certificates.crt,
+# which means the same package behaves differently on two machines and neither
+# choice is recorded anywhere. BlackFlag uses the make-ca layout — the same path
+# python3-requests' patch compiles in — so that is the one that ships. A
+# dangling symlink on a machine without make-ca is visible and fixable; a
+# silently different trust root is not.
+install -v -dm755 $DESTDIR/opt/hud/etc/ssl/certs
+install -v -dm700 $DESTDIR/opt/hud/etc/ssl/private
+ln -sfn /etc/pki/tls/certs/ca-bundle.crt $DESTDIR/opt/hud/etc/ssl/cert.pem
+
 [postinst]
 ldconfig 2>/dev/null || true
-# Create CA certificates directory structure
-mkdir -p /opt/hud/etc/ssl/certs 2>/dev/null || true
-mkdir -p /opt/hud/etc/ssl/private 2>/dev/null || true
-chmod 700 /opt/hud/etc/ssl/private 2>/dev/null || true
-# Link system CA bundle if available
-if [ -f /etc/pki/tls/certs/ca-bundle.crt ]; then
-    ln -sf /etc/pki/tls/certs/ca-bundle.crt /opt/hud/etc/ssl/cert.pem 2>/dev/null || true
-elif [ -f /etc/ssl/certs/ca-certificates.crt ]; then
-    ln -sf /etc/ssl/certs/ca-certificates.crt /opt/hud/etc/ssl/cert.pem 2>/dev/null || true
-fi
 echo "✓ openssl 3.5.2 installed to /opt/hud"
 /opt/hud/bin/openssl version 2>/dev/null || true

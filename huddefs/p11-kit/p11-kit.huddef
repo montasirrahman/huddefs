@@ -38,12 +38,17 @@ DESTDIR=$DESTDIR ninja install &&
 ln -sfv /opt/hud/libexec/p11-kit/trust-extract-compat \
         $DESTDIR/opt/hud/bin/update-ca-certificates
 
+# The NSS compatibility symlink. v1 created it in [postinst], guarded on
+# /usr/lib/pkcs11 existing and pointing at ./pkcs11/p11-kit-trust.so relative to
+# /usr/lib — a BLFS path that assumes p11-kit installs under /usr. This package
+# installs under /opt/hud, so the guard was never true and the link was never
+# made; had it been, it would have pointed at nothing. It now ships, tracked,
+# aimed at the module this package actually installs.
+install -v -dm755 $DESTDIR/usr/lib
+ln -sfn /opt/hud/lib/pkcs11/p11-kit-trust.so $DESTDIR/usr/lib/libnssckbi.so
+
 [postinst]
 ldconfig 2>/dev/null || true
-# Create symlink for NSS compatibility if NSS is installed
-if [ -d /usr/lib/pkcs11 ]; then
-    ln -sfv ./pkcs11/p11-kit-trust.so /usr/lib/libnssckbi.so 2>/dev/null || true
-fi
 echo "p11-kit 0.25.5 installed to /opt/hud"
 
 [prerm]

@@ -11,8 +11,8 @@ Description: Miscellaneous system utility programs including mount, fdisk, hwclo
 Source: https://www.kernel.org/pub/linux/utils/util-linux/v2.41/util-linux-2.41.1.tar.xz
 
 [configure]
-# Create hwclock directory per FHS
-mkdir -pv /var/lib/hwclock 2>/dev/null || true
+# The directory itself is staged in [install]; creating it here only wrote it
+# into the build container, where configure did not need it either.
 
 ./configure --prefix=/opt/hud          \
             --libdir=/opt/hud/lib      \
@@ -37,9 +37,10 @@ make -j$(nproc)
 [install]
 make DESTDIR=$DESTDIR install
 
-[postinst]
-# Create hwclock directory
-mkdir -pv /var/lib/hwclock 2>/dev/null || true
+# hwclock's state directory. It was created by [postinst], which left it
+# untracked and outside FILES, so `hud remove` never cleaned it up.
+install -v -dm755 $DESTDIR/var/lib/hwclock
 
+[postinst]
 ldconfig 2>/dev/null || true
 echo "✓ util-linux 2.41.1 installed to /opt/hud"

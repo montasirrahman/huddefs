@@ -35,24 +35,17 @@ make -j$(nproc)
 [install]
 make DESTDIR=$DESTDIR install
 
-# Create compatibility symlinks
-mkdir -p $DESTDIR/usr/lib64
-mkdir -p $DESTDIR/usr/include
-ln -sf /opt/hud/lib64/libtirpc.so.3 $DESTDIR/usr/lib64/libtirpc.so.3 2>/dev/null || true
-ln -sf /opt/hud/include/tirpc $DESTDIR/usr/include/tirpc 2>/dev/null || true
+# Compatibility symlinks and the loader drop-in. Same split as gperftools: v1
+# staged a partial set here and created a different, fully versioned set in
+# [postinst], where nothing tracked it.
+install -v -dm755 $DESTDIR/usr/lib64 $DESTDIR/usr/include $DESTDIR/etc/ld.so.conf.d
+ln -sfn /opt/hud/lib64/libtirpc.so.3 $DESTDIR/usr/lib64/libtirpc.so.3
+ln -sfn libtirpc.so.3                $DESTDIR/usr/lib64/libtirpc.so
+ln -sfn /opt/hud/include/tirpc       $DESTDIR/usr/include/tirpc
+echo "/opt/hud/lib64" > $DESTDIR/etc/ld.so.conf.d/libtirpc.conf
 
 [postinst]
-# Add library paths
-echo "/opt/hud/lib64" > /etc/ld.so.conf.d/libtirpc.conf
-ldconfig
-
-# Create system-wide symlinks for compatibility
-ln -sf /opt/hud/lib64/libtirpc.so.3.0.0 /usr/lib64/libtirpc.so.3
-ln -sf /usr/lib64/libtirpc.so.3 /usr/lib64/libtirpc.so
-
-# Create header symlinks
-ln -sf /opt/hud/include/tirpc /usr/include/tirpc
-
+# Everything this used to create is shipped by [install] now.
 ldconfig
 
 echo ""

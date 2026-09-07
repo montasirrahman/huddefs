@@ -34,26 +34,26 @@ make -j$(nproc)
 [install]
 make DESTDIR=$DESTDIR install
 
-# Create symlinks for common library names
-mkdir -p $DESTDIR/usr/lib64
-ln -sf /opt/hud/lib64/libtcmalloc.so.4 $DESTDIR/usr/lib64/libtcmalloc.so.4 2>/dev/null || true
-ln -sf /opt/hud/lib64/libtcmalloc_minimal.so.4 $DESTDIR/usr/lib64/libtcmalloc_minimal.so.4 2>/dev/null || true
+# Compatibility symlinks and the loader drop-in.
+#
+# v1 created a partial set here and then a fuller, different set in [postinst] —
+# untracked, and pointing at /opt/hud/lib64/libtcmalloc.so.4.6.16, a fully
+# versioned name that changes with every release. The [postinst] copies won and
+# `hud remove` left all six behind. One set, staged, aimed at the sonames.
+install -v -dm755 $DESTDIR/usr/lib64
+for l in libtcmalloc libtcmalloc_minimal libtcmalloc_and_profiler; do
+    ln -sfn /opt/hud/lib64/$l.so.4 $DESTDIR/usr/lib64/$l.so.4
+    ln -sfn $l.so.4               $DESTDIR/usr/lib64/$l.so
+done
+
+# The loader configuration. v1 wrote it from [postinst] with a redirect, so it
+# was untracked and outlived the package.
+install -v -dm755 $DESTDIR/etc/ld.so.conf.d
+echo "/opt/hud/lib64" > $DESTDIR/etc/ld.so.conf.d/gperftools.conf
 
 [postinst]
-# Add library paths
-echo "/opt/hud/lib64" > /etc/ld.so.conf.d/gperftools.conf
-ldconfig
-
-# Create system-wide symlinks
-ln -sf /opt/hud/lib64/libtcmalloc.so.4.6.16 /usr/lib64/libtcmalloc.so.4
-ln -sf /usr/lib64/libtcmalloc.so.4 /usr/lib64/libtcmalloc.so
-
-ln -sf /opt/hud/lib64/libtcmalloc_minimal.so.4.6.16 /usr/lib64/libtcmalloc_minimal.so.4
-ln -sf /usr/lib64/libtcmalloc_minimal.so.4 /usr/lib64/libtcmalloc_minimal.so
-
-ln -sf /opt/hud/lib64/libtcmalloc_and_profiler.so.4.6.16 /usr/lib64/libtcmalloc_and_profiler.so.4
-ln -sf /usr/lib64/libtcmalloc_and_profiler.so.4 /usr/lib64/libtcmalloc_and_profiler.so
-
+# Everything this used to create is shipped by [install] now. ldconfig stays: it
+# rebuilds a cache rather than creating a file the package should own.
 ldconfig
 
 echo ""

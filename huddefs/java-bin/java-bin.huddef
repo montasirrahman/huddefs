@@ -23,11 +23,13 @@ mv -v * $DESTDIR/opt/OpenJDK-24.0.2-bin/ 2>/dev/null || true
 # Create symlink
 ln -sfn OpenJDK-24.0.2-bin $DESTDIR/opt/jdk
 
-[postinst]
-chown -R root:root /opt/OpenJDK-24.0.2-bin
 
-# Create environment script
-cat > /etc/profile.d/openjdk.sh << "EOF"
+# The profile drop-in. v1 wrote it from [postinst], which left it untracked, so
+# `hud remove java-bin` would leave JAVA_HOME pointing at a prefix that no
+# longer exists. /etc/profile.d holds one file per package and nothing else
+# edits this one, so there is nothing to clobber and it simply ships.
+install -v -dm755 $DESTDIR/etc/profile.d
+cat > $DESTDIR/etc/profile.d/openjdk.sh << "EOF"
 # Begin /etc/profile.d/openjdk.sh
 
 # Set JAVA_HOME directory
@@ -50,7 +52,14 @@ export _JAVA_OPTIONS
 # End /etc/profile.d/openjdk.sh
 EOF
 
-# Link cacerts if make-ca is installed
+[postinst]
+chown -R root:root /opt/OpenJDK-24.0.2-bin
+
+# This one stays in [postinst] deliberately. /opt/jdk/lib/security/cacerts is a
+# file this package already ships, so replacing it does not create anything
+# untracked — and the guard matters: without make-ca the symlink would dangle
+# and Java would lose every trust anchor. Shipping it unconditionally would
+# trade a tracked file for a broken one.
 if [ -f /etc/pki/tls/java/cacerts ]; then
     ln -sfv /etc/pki/tls/java/cacerts /opt/jdk/lib/security/cacerts
 fi

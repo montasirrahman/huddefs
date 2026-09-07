@@ -32,16 +32,16 @@ make
 [install]
 DESTDIR=$DESTDIR make install
 
-[postinst]
-ldconfig
 
-# Create database directory
-install -v -m755 -d /var/lib/dhcpcd
+# The lease database directory and the unit template. Both were built by
+# [postinst], so neither appeared in FILES: the unit stayed on disk after
+# `hud remove dhcpcd` and systemd went on offering dhcpcd@.service for a binary
+# that was gone. The unit is a file this package owns, under the package prefix,
+# so it belongs in [install] like any other shipped file.
+install -v -dm755 $DESTDIR/var/lib/dhcpcd
+install -v -dm755 $DESTDIR/opt/hud/lib/systemd/system
 
-# Create systemd service template
-mkdir -p /opt/hud/lib/systemd/system
-
-cat > /opt/hud/lib/systemd/system/dhcpcd@.service << "EOF"
+cat > $DESTDIR/opt/hud/lib/systemd/system/dhcpcd@.service << "EOF"
 [Unit]
 Description=DHCP Client Daemon on %I
 Wants=network.target
@@ -59,7 +59,11 @@ ExecStop=/opt/hud/sbin/dhcpcd -x %I
 WantedBy=multi-user.target
 EOF
 
-# Reload systemd if running
+[postinst]
+ldconfig
+
+# Reload systemd if running. This stays: it refreshes systemd's view of units
+# rather than creating anything.
 if [ -d /run/systemd/system ]; then
     systemctl daemon-reload
 fi

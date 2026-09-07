@@ -16,8 +16,13 @@ Source: https://nodejs.org/dist/v22.18.0/node-v22.18.0.tar.xz
 make -j$(nproc)
 
 [install]
+# DESTDIR is exported by the builder, so `make install` stages correctly.
 make install &&
-ln -sf node /usr/share/doc/node-22.18.0
+
+# The versioned documentation alias. v1 wrote it to /usr/share/doc on the build
+# host — outside $DESTDIR, so it never shipped, and outside the prefix, so it
+# would not have belonged to the package if it had.
+ln -sfn node $DESTDIR/opt/hud/share/doc/node-22.18.0
 
 [postinst]
 ldconfig 2>/dev/null || true

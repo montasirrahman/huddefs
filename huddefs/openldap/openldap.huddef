@@ -17,16 +17,31 @@ Service: slapd
 make -j$(nproc)
 
 [install]
+# DESTDIR is exported by the builder, so `make install` stages correctly.
 make install &&
 
-sed -e "s/\.la/.so/" -i /etc/openldap/slapd.{conf,ldif}{,.default} &&
+# v1 ran this sed against /etc/openldap on the BUILD HOST. make install had just
+# written those files into $DESTDIR, so the edit was applied to the wrong copy —
+# and the shipped one still names .la files that are not installed.
+sed -e "s/\.la/.so/" -i $DESTDIR/etc/openldap/slapd.{conf,ldif}{,.default} &&
 
-install -v -dm700 -o ldap -g ldap /var/lib/openldap     &&
+# The two state directories, staged rather than created on the build host.
+# Ownership is set in [postinst] instead of here: `install -o ldap -g ldap`
+# needs the ldap user to exist in the build container, and a tar records numeric
+# ids, so the name has to be resolved on the installing machine.
+install -v -dm700 $DESTDIR/var/lib/openldap &&
 
-install -v -dm700 -o ldap -g ldap /etc/openldap/slap
+install -v -dm700 $DESTDIR/etc/openldap/slap
 
 [postinst]
 ldconfig 2>/dev/null || true
+
+# Ownership of directories this package ships. Changing the mode or owner of a
+# file the package already tracks is allowed in [postinst]; creating one is not.
+if getent passwd ldap >/dev/null 2>&1; then
+    chown ldap:ldap /var/lib/openldap /etc/openldap/slap
+fi
+
 echo "openldap 2.6.10 installed to /opt/hud"
 
 [prerm]
