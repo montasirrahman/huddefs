@@ -1,0 +1,906 @@
+{
+ "cyrus-sasl": {
+  "actions": [
+   {
+    "section": "install",
+    "verb": "mkdir",
+    "path": "/usr/share/doc/cyrus-sasl-2.1.28/html",
+    "kind": "ship",
+    "line": "install -v -dm755                          /usr/share/doc/cyrus-sasl-2.1.28/html &&"
+   },
+   {
+    "section": "install",
+    "verb": "install",
+    "path": "/usr/share/doc/cyrus-sasl-2.1.28",
+    "kind": "review",
+    "line": "install -v -m644  saslauthd/LDAP_SASLAUTHD /usr/share/doc/cyrus-sasl-2.1.28      &&"
+   }
+  ]
+ },
+ "dhcpcd": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/lib/dhcpcd",
+    "kind": "ship",
+    "line": "install -v -m755 -d /var/lib/dhcpcd"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/opt/hud/lib/systemd/system",
+    "kind": "unit-in-prefix",
+    "line": "mkdir -p /opt/hud/lib/systemd/system"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/opt/hud/lib/systemd/system/dhcpcd@.service",
+    "kind": "unit-in-prefix",
+    "line": "cat > /opt/hud/lib/systemd/system/dhcpcd@.service << \"EOF\""
+   }
+  ]
+ },
+ "dnsmasq": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/sbin/dnsmasq",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/sbin/dnsmasq /usr/sbin/dnsmasq 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/sbin/dnsmasq",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/sbin/dnsmasq /sbin/dnsmasq 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/dnsmasq.d",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/dnsmasq.d"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/dnsmasq.conf",
+    "kind": "config",
+    "line": "cat > /etc/dnsmasq.conf << 'EOF'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/systemd/system/dnsmasq.service",
+    "kind": "config",
+    "line": "cat > /etc/systemd/system/dnsmasq.service << 'EOFSVC'"
+   }
+  ]
+ },
+ "docbook-xsl": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/opt/hud/etc/xml",
+    "kind": "unit-in-prefix",
+    "line": "install -v -m755 -d /opt/hud/etc/xml"
+   }
+  ]
+ },
+ "firewalld": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/firewalld",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/firewalld"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/firewalld/zones",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/firewalld/zones"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/firewalld/services",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/firewalld/services"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/lib/firewalld",
+    "kind": "ship",
+    "line": "install -vdm755 /var/lib/firewalld"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/lib/firewalld",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/lib/firewalld /usr/lib/firewalld 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/sbin/firewalld",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/sbin/firewalld /usr/sbin/firewalld 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/usr/bin/firewall-cmd",
+    "kind": "review",
+    "line": "cat > /usr/bin/firewall-cmd << 'EOFWRAP'"
+   },
+   {
+    "section": "postinst",
+    "verb": "chmod",
+    "path": "/usr/bin/firewall-cmd",
+    "kind": "review",
+    "line": "chmod +x /usr/bin/firewall-cmd"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/firewalld/firewalld.conf",
+    "kind": "config",
+    "line": "cat > /etc/firewalld/firewalld.conf << 'EOFCONF'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/firewalld/zones/libvirt.xml",
+    "kind": "config",
+    "line": "cat > /etc/firewalld/zones/libvirt.xml << 'EOFXML'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/systemd/system/firewalld.service",
+    "kind": "config",
+    "line": "cat > /etc/systemd/system/firewalld.service << 'EOFSVC'"
+   }
+  ]
+ },
+ "glusterfs": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/ld.so.conf.d/glusterfs.conf",
+    "kind": "ship",
+    "line": "echo \"/opt/hud/lib64\" > /etc/ld.so.conf.d/glusterfs.conf"
+   },
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/ld.so.conf.d/glusterfs.conf",
+    "kind": "ship",
+    "line": "echo \"/opt/hud/lib64/glusterfs\" >> /etc/ld.so.conf.d/glusterfs.conf"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/sbin/mount.glusterfs",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/sbin/mount.glusterfs /sbin/mount.glusterfs"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/lib/glusterd",
+    "kind": "ship",
+    "line": "mkdir -p /var/lib/glusterd"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/log/glusterfs",
+    "kind": "ship",
+    "line": "mkdir -p /var/log/glusterfs"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/run/gluster",
+    "kind": "ship",
+    "line": "mkdir -p /var/run/gluster"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/glusterfs",
+    "kind": "ship",
+    "line": "mkdir -p /etc/glusterfs"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/systemd/system/glusterd.service",
+    "kind": "config",
+    "line": "cat > /etc/systemd/system/glusterd.service << 'EOFSVC'"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/firewalld/services",
+    "kind": "ship",
+    "line": "mkdir -p /etc/firewalld/services"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/firewalld/services/glusterfs.xml",
+    "kind": "config",
+    "line": "cat > /etc/firewalld/services/glusterfs.xml << 'EOFXML'"
+   }
+  ]
+ },
+ "gperftools": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/ld.so.conf.d/gperftools.conf",
+    "kind": "ship",
+    "line": "echo \"/opt/hud/lib64\" > /etc/ld.so.conf.d/gperftools.conf"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/lib64/libtcmalloc.so.4",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/lib64/libtcmalloc.so.4.6.16 /usr/lib64/libtcmalloc.so.4"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/lib64/libtcmalloc.so",
+    "kind": "ship",
+    "line": "ln -sf /usr/lib64/libtcmalloc.so.4 /usr/lib64/libtcmalloc.so"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/lib64/libtcmalloc_minimal.so.4",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/lib64/libtcmalloc_minimal.so.4.6.16 /usr/lib64/libtcmalloc_minimal.so.4"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/lib64/libtcmalloc_minimal.so",
+    "kind": "ship",
+    "line": "ln -sf /usr/lib64/libtcmalloc_minimal.so.4 /usr/lib64/libtcmalloc_minimal.so"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/lib64/libtcmalloc_and_profiler.so.4",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/lib64/libtcmalloc_and_profiler.so.4.6.16 /usr/lib64/libtcmalloc_and_profiler.so.4"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/lib64/libtcmalloc_and_profiler.so",
+    "kind": "ship",
+    "line": "ln -sf /usr/lib64/libtcmalloc_and_profiler.so.4 /usr/lib64/libtcmalloc_and_profiler.so"
+   }
+  ]
+ },
+ "java-bin": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/profile.d/openjdk.sh",
+    "kind": "ship",
+    "line": "cat > /etc/profile.d/openjdk.sh << \"EOF\""
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/opt/jdk/lib/security/cacerts",
+    "kind": "ship",
+    "line": "ln -sfv /etc/pki/tls/java/cacerts /opt/jdk/lib/security/cacerts"
+   }
+  ]
+ },
+ "libtirpc": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/ld.so.conf.d/libtirpc.conf",
+    "kind": "ship",
+    "line": "echo \"/opt/hud/lib64\" > /etc/ld.so.conf.d/libtirpc.conf"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/lib64/libtirpc.so.3",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/lib64/libtirpc.so.3.0.0 /usr/lib64/libtirpc.so.3"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/lib64/libtirpc.so",
+    "kind": "ship",
+    "line": "ln -sf /usr/lib64/libtirpc.so.3 /usr/lib64/libtirpc.so"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/include/tirpc",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/include/tirpc /usr/include/tirpc"
+   }
+  ]
+ },
+ "libvirt": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/libvirt",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/libvirt"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/libvirt/qemu",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/libvirt/qemu"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/libvirt/qemu/networks",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/libvirt/qemu/networks"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/lib/libvirt",
+    "kind": "ship",
+    "line": "install -vdm755 /var/lib/libvirt"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/lib/libvirt/images",
+    "kind": "ship",
+    "line": "install -vdm755 /var/lib/libvirt/images"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/lib/libvirt/qemu",
+    "kind": "ship",
+    "line": "install -vdm755 /var/lib/libvirt/qemu"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/log/libvirt",
+    "kind": "ship",
+    "line": "install -vdm755 /var/log/libvirt"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/run/libvirt",
+    "kind": "ship",
+    "line": "install -vdm755 /var/run/libvirt"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/run/libvirt/qemu",
+    "kind": "ship",
+    "line": "install -vdm755 /var/run/libvirt/qemu"
+   },
+   {
+    "section": "postinst",
+    "verb": "chmod",
+    "path": "/usr/bin/virsh",
+    "kind": "review",
+    "line": "chmod +x /usr/bin/virsh /usr/bin/virt-host-validate /usr/sbin/virtqemud /usr/sbin/virtnetworkd 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/libvirt/virtqemud.conf",
+    "kind": "config",
+    "line": "cat > /etc/libvirt/virtqemud.conf << 'EOFCONF'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/libvirt/virtnetworkd.conf",
+    "kind": "config",
+    "line": "cat > /etc/libvirt/virtnetworkd.conf << 'EOFCONF'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/libvirt/network.conf",
+    "kind": "config",
+    "line": "cat > /etc/libvirt/network.conf << 'EOFCONF'"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/firewalld/zones",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/firewalld/zones"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/firewalld/zones/libvirt.xml",
+    "kind": "config",
+    "line": "cat > /etc/firewalld/zones/libvirt.xml << 'EOFXML'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/systemd/system/virtqemud.service",
+    "kind": "config",
+    "line": "cat > /etc/systemd/system/virtqemud.service << 'EOFSVC'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/systemd/system/virtnetworkd.service",
+    "kind": "config",
+    "line": "cat > /etc/systemd/system/virtnetworkd.service << 'EOFSVC'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/systemd/system/virtlockd.service",
+    "kind": "config",
+    "line": "cat > /etc/systemd/system/virtlockd.service << 'EOFSVC'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/systemd/system/virtlockd.socket",
+    "kind": "config",
+    "line": "cat > /etc/systemd/system/virtlockd.socket << 'EOFSVC'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/systemd/system/virtlogd.service",
+    "kind": "config",
+    "line": "cat > /etc/systemd/system/virtlogd.service << 'EOFSVC'"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/systemd/system/virtlogd.socket",
+    "kind": "config",
+    "line": "cat > /etc/systemd/system/virtlogd.socket << 'EOFSVC'"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/usr/share/polkit-1/rules.d",
+    "kind": "ship",
+    "line": "install -vdm755 /usr/share/polkit-1/rules.d"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/usr/share/polkit-1/rules.d/org.libvirt.unix.manager.rules",
+    "kind": "review",
+    "line": "cat > /usr/share/polkit-1/rules.d/org.libvirt.unix.manager.rules << 'EOFRULE'"
+   }
+  ]
+ },
+ "linux-pam": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/pam.d",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/pam.d"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/pam.d/system-account",
+    "kind": "config",
+    "line": "cat > /etc/pam.d/system-account << \"EOF\""
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/pam.d/system-auth",
+    "kind": "config",
+    "line": "cat > /etc/pam.d/system-auth << \"EOF\""
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/pam.d/system-session",
+    "kind": "config",
+    "line": "cat > /etc/pam.d/system-session << \"EOF\""
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/pam.d/system-password",
+    "kind": "config",
+    "line": "cat > /etc/pam.d/system-password << \"EOF\""
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/pam.d/other",
+    "kind": "config",
+    "line": "cat > /etc/pam.d/other << \"EOF\""
+   }
+  ]
+ },
+ "networkmanager": {
+  "actions": [
+   {
+    "section": "configure",
+    "verb": "mkdir",
+    "path": "/opt/hud/share/gir-1.0",
+    "kind": "unit-in-prefix",
+    "line": "mkdir -p /opt/hud/share/gir-1.0"
+   },
+   {
+    "section": "configure",
+    "verb": "cp",
+    "path": "/opt/hud/share/gir-1.0/",
+    "kind": "unit-in-prefix",
+    "line": "cp -v \"/usr/share/gir-1.0/$gir\" /opt/hud/share/gir-1.0/"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/NetworkManager/conf.d",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/NetworkManager/conf.d"
+   },
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/NetworkManager/NetworkManager.conf",
+    "kind": "config",
+    "line": "test -f /etc/NetworkManager/NetworkManager.conf || printf '[main]\\nplugins=keyfile\\n' > /etc/NetworkManager/NetworkManag"
+   },
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/NetworkManager/conf.d/polkit.conf",
+    "kind": "config",
+    "line": "printf '[main]\\nauth-polkit=true\\n' > /etc/NetworkManager/conf.d/polkit.conf"
+   },
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/NetworkManager/conf.d/dhcp.conf",
+    "kind": "config",
+    "line": "printf '[main]\\ndhcp=dhcpcd\\n' > /etc/NetworkManager/conf.d/dhcp.conf"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/usr/share/polkit-1/rules.d",
+    "kind": "ship",
+    "line": "install -vdm755 /usr/share/polkit-1/rules.d"
+   },
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/usr/share/polkit-1/rules.d/org.freedesktop.NetworkManager.rules",
+    "kind": "review",
+    "line": "printf 'polkit.addRule(function(action, subject) { if (action.id.indexOf(\"org.freedesktop.NetworkManager.\") == 0 && subj"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/bin/nmcli",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/bin/nmcli /usr/bin/nmcli 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/bin/nmtui",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/bin/nmtui /usr/bin/nmtui 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/sbin/NetworkManager",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/sbin/NetworkManager /usr/sbin/NetworkManager 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/systemd/system/NetworkManager.service",
+    "kind": "config",
+    "line": "printf '[Unit]\\nDescription=Network Manager\\nDocumentation=man:NetworkManager(8)\\nWants=network.target\\nAfter=network-pr"
+   },
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/systemd/system/NetworkManager-wait-online.service",
+    "kind": "config",
+    "line": "printf '[Unit]\\nDescription=Network Manager Wait Online\\nRequires=NetworkManager.service\\nAfter=NetworkManager.service\\n"
+   },
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/systemd/system/NetworkManager-dispatcher.service",
+    "kind": "config",
+    "line": "printf '[Unit]\\nDescription=Network Manager Script Dispatcher Service\\nWants=NetworkManager.service\\nAfter=NetworkManage"
+   }
+  ]
+ },
+ "nftables": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/ld.so.conf.d/hud.conf",
+    "kind": "ship",
+    "line": "echo \"/opt/hud/lib\" > /etc/ld.so.conf.d/hud.conf"
+   },
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/ld.so.conf.d/hud.conf",
+    "kind": "ship",
+    "line": "echo \"/opt/hud/lib64\" >> /etc/ld.so.conf.d/hud.conf"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/sbin/nft",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/sbin/nft /usr/sbin/nft 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/sbin/nft",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/sbin/nft /sbin/nft 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/nftables",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/nftables"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/nftables/nftables.conf",
+    "kind": "config",
+    "line": "cat > /etc/nftables/nftables.conf << 'EOF'"
+   }
+  ]
+ },
+ "nodejs": {
+  "actions": [
+   {
+    "section": "install",
+    "verb": "ln",
+    "path": "/usr/share/doc/node-22.18.0",
+    "kind": "ship",
+    "line": "ln -sf node /usr/share/doc/node-22.18.0"
+   }
+  ]
+ },
+ "openldap": {
+  "actions": [
+   {
+    "section": "install",
+    "verb": "mkdir",
+    "path": "/var/lib/openldap",
+    "kind": "ship",
+    "line": "install -v -dm700 -o ldap -g ldap /var/lib/openldap     &&"
+   },
+   {
+    "section": "install",
+    "verb": "mkdir",
+    "path": "/etc/openldap/slap",
+    "kind": "ship",
+    "line": "install -v -dm700 -o ldap -g ldap /etc/openldap/slap"
+   }
+  ]
+ },
+ "openssl": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/opt/hud/etc/ssl/certs",
+    "kind": "unit-in-prefix",
+    "line": "mkdir -p /opt/hud/etc/ssl/certs 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/opt/hud/etc/ssl/private",
+    "kind": "unit-in-prefix",
+    "line": "mkdir -p /opt/hud/etc/ssl/private 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "chmod",
+    "path": "/opt/hud/etc/ssl/private",
+    "kind": "unit-in-prefix",
+    "line": "chmod 700 /opt/hud/etc/ssl/private 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/opt/hud/etc/ssl/cert.pem",
+    "kind": "unit-in-prefix",
+    "line": "ln -sf /etc/pki/tls/certs/ca-bundle.crt /opt/hud/etc/ssl/cert.pem 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/opt/hud/etc/ssl/cert.pem",
+    "kind": "unit-in-prefix",
+    "line": "ln -sf /etc/ssl/certs/ca-certificates.crt /opt/hud/etc/ssl/cert.pem 2>/dev/null || true"
+   }
+  ]
+ },
+ "p11-kit": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/lib/libnssckbi.so",
+    "kind": "ship",
+    "line": "ln -sfv ./pkcs11/p11-kit-trust.so /usr/lib/libnssckbi.so 2>/dev/null || true"
+   }
+  ]
+ },
+ "postgresql-ha": {
+  "actions": []
+ },
+ "postgresql-ldap": {
+  "actions": []
+ },
+ "postgresql-ldap-ha": {
+  "actions": []
+ },
+ "python3-py3c": {
+  "actions": []
+ },
+ "qemu": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "chmod",
+    "path": "/opt/hud/libexec/qemu-bridge-helper",
+    "kind": "unit-in-prefix",
+    "line": "chmod 4750 /opt/hud/libexec/qemu-bridge-helper 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/bin/qemu-system-x86_64",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/bin/qemu-system-x86_64 /usr/bin/qemu-system-x86_64 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/bin/qemu-img",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/bin/qemu-img /usr/bin/qemu-img 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/bin/qemu-nbd",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/bin/qemu-nbd /usr/bin/qemu-nbd 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/qemu",
+    "kind": "ship",
+    "line": "install -vdm755 /etc/qemu"
+   },
+   {
+    "section": "postinst",
+    "verb": "heredoc",
+    "path": "/etc/qemu/bridge.conf",
+    "kind": "config",
+    "line": "cat > /etc/qemu/bridge.conf << 'EOF'"
+   }
+  ]
+ },
+ "util-linux": {
+  "actions": [
+   {
+    "section": "configure",
+    "verb": "mkdir",
+    "path": "/var/lib/hwclock",
+    "kind": "ship",
+    "line": "mkdir -pv /var/lib/hwclock 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/var/lib/hwclock",
+    "kind": "ship",
+    "line": "mkdir -pv /var/lib/hwclock 2>/dev/null || true"
+   }
+  ]
+ },
+ "wpa_supplicant": {
+  "actions": [
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/sbin/wpa_supplicant",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/sbin/wpa_supplicant /usr/sbin/wpa_supplicant 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/sbin/wpa_cli",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/sbin/wpa_cli /usr/sbin/wpa_cli 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "ln",
+    "path": "/usr/sbin/wpa_passphrase",
+    "kind": "ship",
+    "line": "ln -sf /opt/hud/sbin/wpa_passphrase /usr/sbin/wpa_passphrase 2>/dev/null || true"
+   },
+   {
+    "section": "postinst",
+    "verb": "mkdir",
+    "path": "/etc/wpa_supplicant",
+    "kind": "ship",
+    "line": "install -v -dm755 /etc/wpa_supplicant"
+   },
+   {
+    "section": "postinst",
+    "verb": "redirect",
+    "path": "/etc/wpa_supplicant/wpa_supplicant-<iface>.conf\"",
+    "kind": "config",
+    "line": "echo \"  Configure wireless with: wpa_passphrase SSID > /etc/wpa_supplicant/wpa_supplicant-<iface>.conf\""
+   }
+  ]
+ }
+}
