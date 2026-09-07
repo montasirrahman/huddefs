@@ -44,6 +44,47 @@ Results land in `docs/conversion-progress.md`, one section per batch.
 
 ---
 
+## G4 — the boot gate passes, and it is what found the rootfs problem
+
+```
+[ OK ] stage 1: kernel booted
+[ OK ] stage 2: the image mounted as root
+[ OK ] stage 3a: systemd is PID 1
+[ OK ] stage 3b: reached multi-user.target — G4-BOOT-OK pid1=systemd
+[ OK ] stage 4a: the VM reached the repository — 245 packages available
+[ OK ] stage 4b: installed from unstable — G4-INSTALL-OK files=12
+```
+
+Stage 4 is the end-to-end proof: image boots, systemd reaches multi-user.target,
+the guest configures its network, `hud update` fetches from
+`http://172.19.1.7/hud-unstable`, and `hud install yajl` puts 12 files on disk.
+**Verified on the filesystem, not by exit code** — `hud update` and
+`hud install` both exit 0 when they fail.
+
+Nothing in the gate trusts an exit code, and that is not caution for its own
+sake: a kernel panic and a clean boot both leave qemu running until the timeout,
+so both pass `$?`. The gate reads console output for markers a unit can only
+print if it actually ran, with a hard timeout.
+
+Three things worth carrying:
+
+- **The stray-qemu failure looks like a broken image.** A qemu left from an
+  interrupted run holds a write lock on the raw image; the next run then fails
+  at stage 1 with four lines of output and no kernel banner. The gate now clears
+  it and says so.
+- **`network-online.target` never arrives in this image.** There is no networkd
+  configuration and no DHCP client, so a unit ordered after it waits out the
+  timeout and looks like a hung install. The stage-4 unit configures qemu's
+  fixed SLIRP address itself.
+- **Six units fail to start** — `systemd-logind`, `nginx`, `virtnetworkd` — all
+  of them packages the rootfs shrink half-deleted.
+
+And the gate found the biggest problem of the session by printing something
+nobody asked it to: **241 packages registered** in an image built from the
+rootfs documented as holding nine. See `docs/rootfs-audit.md`.
+
+---
+
 ## E7 — ten done, ten waiting on one decision, four were never in the category
 
 Started 2026-09-07. `docs/e7-inventory.json` lists every action in the 24
@@ -247,6 +288,10 @@ Verify by format, not by the state file, before declaring E4 finished.
 | E4 | **All 148 EASY definitions converted to v2**, verified by format not by state file |
 | E5/E6 | 33 of the 66 empty `python3-*` fixed, built, tested and published: 25 KB → 32 MB |
 | E7 | 10 of 24 fixed mechanically; 4 were false positives; 10 need one `/etc` ownership decision |
+| E8 | All four patches carried in `patches/`; qemu's `|| true` confirmed — the shipped qemu is unpatched |
+| E9 | `docbook` no longer searches the build host for its own source |
+| G2 | Capability graph + `hud-graph deps/rdeps/why/orphans/missing`, exact joins |
+| G4 | **Boot gate passes all four stages**, including installing from unstable inside the VM |
 
 ---
 
