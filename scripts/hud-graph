@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+"""
+hud-graph — query the capability graph.
+
+    hud-graph deps    <pkg>     what this package needs, and who provides it
+    hud-graph rdeps   <pkg>     what breaks if this package changes
+    hud-graph why     <a> <b>   the chain by which a depends on b
+    hud-graph orphans           packages nothing requires anything from
+    hud-graph missing           required capabilities nothing provides
+    hud-graph provides <cap>    who provides a capability
+    hud-graph stats
+
+Every lookup is an equality join on a capability string. The shipped client
+answers rdeps with `WHERE depends LIKE '%pkg%'`, which matches libX11 inside
+libX11-xcb, matches a package that merely mentions the name in its description,
+and misses any dependency recorded as a soname. There is no LIKE in this file
+and there should never be one.
+"""
+import os, sqlite3, sys
+
+DB = os.environ.get("HUD_GRAPH_DB", "/var/hud-build/graph.db")
+
+
+def con():
+    if not os.path.exists(DB):
+        sys.exit(f"no graph at {DB} — run hud-graph-build first")
+    c = sqlite3.connect(DB)
+    c.row_factory = sqlite3.Row
+    return c
+
+
+def known(c, pkg):
+    if not c.execute("SELECT 1 FROM packages WHERE name = ? LIMIT 1", (pkg,)).fetchone():
+        sys.exit(f"no such package: {pkg}")
+
+
+# Both edge kinds resolve to a provider, by different joins:
+#   capability rows join provides.capability
+#   name rows       join packages.name
+# Keeping them in one UNION means every query sees the whole graph while the
+# distinction stays visible in the output.
+RESOLVE = """
+    SELECT r.name AS consumer, r.capability AS cap, r.kind AS kind,
+           p.name AS provider
+    FROM requires r JOIN provides p ON p.capability = r.capability
+    WHERE r.kind = 'capability'
+  UNION
+    SELECT r.name, r.capability, r.kind, k.name
+    FROM requires r JOIN packages k ON k.name = r.capability
+    WHERE r.kind = 'name'
+"""
+
+
+def cmd_deps(c, pkg):
+    known(c, pkg)
+    rows = c.execute(f"""
+        SELECT r.capability AS cap, r.kind AS kind,
+               (SELECT group_concat(DISTINCT provider) FROM ({RESOLVE}) x
+                 WHERE x.consumer = r.name AND x.cap = r.capability) AS provider
+        FROM requires r WHERE r.name = ?
+        ORDER BY r.kind, r.capability""", (pkg,)).fetchall()
+    if not rows:
+        print(f"{pkg} requires nothing")
+        return
+    print(f"{pkg} requires {len(rows)} entries "
+          f"({sum(1 for r in rows if r['kind'] == 'capability')} capabilities, "
+          f"{sum(1 for r in rows if r['kind'] == 'name')} by package name):\n")
+    for r in rows:
+        who = r["provider"] or "\033[33m(nothing provides this)\033[0m"
+        tag = " " if r["kind"] == "capability" else "*"
+        print(f" {tag}{r['cap']:<44} {who}")
+    if any(r["kind"] == "name" for r in rows):
+        print("\n  * recorded as a package name rather than a capability — a v1 "
+              "Depends field\n    that has not been rebuilt under huddef v2 yet.")
+
+
+def cmd_rdeps(c, pkg):
+    known(c, pkg)
+    rows = c.execute(f"""
+        SELECT DISTINCT consumer, cap FROM ({RESOLVE})
+        WHERE provider = ? AND consumer <> ?
+        ORDER BY consumer, cap""", (pkg, pkg)).fetchall()
+    if not rows:
+        print(f"nothing requires anything {pkg} provides")
+        return
+    by = {}
+    for r in rows:
+        by.setdefault(r["consumer"], []).append(r["cap"])
+    print(f"{len(by)} packages depend on {pkg}:\n")
+    for k in sorted(by):
+        print(f"  {k:<28} via {', '.join(sorted(by[k]))}")
+
+
+def cmd_why(c, a, b):
+    """Shortest chain from a to b, breadth-first over capability edges."""
+    known(c, a); known(c, b)
+    seen, queue = {a: None}, [a]
+    while queue:
+        cur = queue.pop(0)
+        if cur == b:
+            break
+        for r in c.execute(f"""
+                SELECT DISTINCT provider AS nxt FROM ({RESOLVE})
+                WHERE consumer = ? AND provider <> ?""", (cur, cur)):
+            if r["nxt"] not in seen:
+                seen[r["nxt"]] = cur
+                queue.append(r["nxt"])
+    if b not in seen:
+        print(f"{a} does not depend on {b}, directly or transitively")
+        return
+    chain, cur = [], b
+    while cur is not None:
+        chain.append(cur)
+        cur = seen[cur]
+    chain.reverse()
+    print(" -> ".join(chain))
+    for x, y in zip(chain, chain[1:]):
+        via = [r["cap"] for r in c.execute(f"""
+            SELECT DISTINCT cap FROM ({RESOLVE})
+            WHERE consumer = ? AND provider = ? ORDER BY cap""", (x, y))]
+        print(f"   {x} -> {y}: {', '.join(via)}")
+
+
+def cmd_orphans(c):
+    rows = c.execute(f"""
+        SELECT DISTINCT name FROM packages
+        WHERE name NOT IN (SELECT provider FROM ({RESOLVE}) WHERE consumer <> provider)
+        ORDER BY name""").fetchall()
+    print(f"{len(rows)} packages nothing depends on:\n")
+    for r in rows:
+        print(f"  {r['name']}")
+
+
+# Capabilities the base BlackFlag system supplies. No hud package provides them
+# and none should: /opt/hud duplicates the LFS toolchain rather than replacing
+# it. Without this split `missing` reports libc.so.6 alongside a genuinely
+# absent library and the useful signal is lost in the noise.
+BASE_SYSTEM = {
+    "libc.so.6", "libm.so.6", "libdl.so.2", "libpthread.so.0", "librt.so.1",
+    "libutil.so.1", "libcrypt.so.2", "libresolv.so.2", "libanl.so.1",
+    "libgcc_s.so.1", "libstdc++.so.6", "libatomic.so.1", "libgomp.so.1",
+    "ld-linux-x86-64.so.2", "libnsl.so.3", "libmvec.so.1",
+    "exec(sh)", "exec(bash)", "exec(perl)", "exec(python)", "exec(python3)",
+    "exec(python3.13)", "exec(awk)", "exec(sed)",
+}
+
+
+def cmd_missing(c):
+    rows = c.execute("""
+        SELECT r.capability AS cap, r.kind AS kind,
+               group_concat(DISTINCT r.name) AS who
+        FROM requires r
+        WHERE (r.kind = 'capability'
+               AND NOT EXISTS (SELECT 1 FROM provides p
+                               WHERE p.capability = r.capability))
+           OR (r.kind = 'name'
+               AND NOT EXISTS (SELECT 1 FROM packages k WHERE k.name = r.capability))
+        GROUP BY r.capability ORDER BY r.kind, r.capability""").fetchall()
+    base = [r for r in rows if r["cap"] in BASE_SYSTEM]
+    real = [r for r in rows if r["cap"] not in BASE_SYSTEM]
+    print(f"{len(real)} required capabilities nothing provides "
+          f"({len(base)} more come from the base system and are excluded):\n")
+    for r in real:
+        users = r["who"].split(",")
+        tail = f" (+{len(users) - 4} more)" if len(users) > 4 else ""
+        tag = " " if r["kind"] == "capability" else "*"
+        print(f" {tag}{r['cap']:<44} {', '.join(sorted(users)[:4])}{tail}")
+    if any(r["kind"] == "name" for r in real):
+        print("\n  * recorded as a package name rather than a capability.")
+    print("\nBase-system capabilities excluded: "
+          + ", ".join(sorted(r["cap"] for r in base)) if base else "")
+
+
+def cmd_provides(c, cap):
+    rows = c.execute("SELECT name, version FROM provides WHERE capability = ? "
+                     "ORDER BY name", (cap,)).fetchall()
+    if not rows:
+        print(f"nothing provides {cap}")
+        return
+    for r in rows:
+        print(f"  {r['name']} {r['version']}")
+
+
+UNPROVIDED = """
+    SELECT count(DISTINCT capability) FROM requires r
+    WHERE r.kind = 'capability'
+      AND NOT EXISTS (SELECT 1 FROM provides p WHERE p.capability = r.capability)
+"""
+UNKNOWN_NAME = """
+    SELECT count(DISTINCT capability) FROM requires r
+    WHERE r.kind = 'name'
+      AND NOT EXISTS (SELECT 1 FROM packages k WHERE k.name = r.capability)
+"""
+
+
+def cmd_stats(c):
+    q = lambda s: c.execute(s).fetchone()[0]
+    print(f"packages                      {q('SELECT count(*) FROM packages')}")
+    print(f"  shipping no payload         {q('SELECT count(*) FROM packages WHERE payload=0')}")
+    print(f"provided capabilities         {q('SELECT count(DISTINCT capability) FROM provides')}")
+    print(f"required, as capabilities     "
+          f"{q(chr(39) * 0 + 'SELECT count(DISTINCT capability) FROM requires WHERE kind=' + chr(39) + 'capability' + chr(39))}")
+    print(f"  unprovided                  {q(UNPROVIDED)}")
+    print(f"required, as package names    "
+          f"{q('SELECT count(DISTINCT capability) FROM requires WHERE kind=' + chr(39) + 'name' + chr(39))}")
+    print(f"  naming no known package     {q(UNKNOWN_NAME)}")
+    print()
+    print("Package-name edges are v1 Depends fields that have not been rebuilt")
+    print("under huddef v2 yet; they shrink as packages are rebuilt.")
+
+
+def main():
+    if len(sys.argv) < 2:
+        sys.exit(__doc__.strip())
+    c, cmd, args = con(), sys.argv[1], sys.argv[2:]
+    table = {"deps": (cmd_deps, 1), "rdeps": (cmd_rdeps, 1), "why": (cmd_why, 2),
+             "orphans": (cmd_orphans, 0), "missing": (cmd_missing, 0),
+             "provides": (cmd_provides, 1), "stats": (cmd_stats, 0)}
+    if cmd not in table:
+        sys.exit(__doc__.strip())
+    fn, n = table[cmd]
+    if len(args) != n:
+        sys.exit(f"{cmd} takes {n} argument(s)")
+    fn(c, *args)
+
+
+if __name__ == "__main__":
+    main()

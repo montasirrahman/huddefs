@@ -43,7 +43,9 @@ NEEDED_RE = re.compile(r"\(NEEDED\).*\[(?P<v>[^\]]+)\]")
 PC_NAME_RE = re.compile(r"^Name:[ \t]*(?P<v>\S.*?)[ \t]*$", re.M)
 PC_REQ_RE = re.compile(r"^Requires(?:\.private)?:[ \t]*(?P<v>\S.*?)[ \t]*$", re.M)
 MD_NAME_RE = re.compile(r"^Name:[ \t]*(?P<v>\S.*?)[ \t]*$", re.M)
-MD_REQ_RE = re.compile(r"^Requires-Dist:[ \t]*(?P<v>[A-Za-z0-9._-]+)", re.M)
+# The whole Requires-Dist line, not just the name, because the environment
+# marker after the semicolon decides whether the requirement applies at all.
+MD_REQ_RE = re.compile(r"^Requires-Dist:[ \t]*(?P<v>[A-Za-z0-9._-]+)(?P<rest>[^\n]*)", re.M)
 
 
 def is_elf(path):
@@ -104,6 +106,19 @@ def scan_python_dist(meta_path, provides, requires):
         print(f"warning: {meta_path} has no Name field", file=sys.stderr)
 
     for m in MD_REQ_RE.finditer(text):
+        rest = m.group("rest") or ""
+        # Skip requirements that only apply to an optional extra. Nothing
+        # installs them unless the user asks for that extra by name, and
+        # treating them as hard dependencies made python3-sentry-sdk require
+        # anthropic, aiohttp and apache-beam — none of which exists here, and
+        # none of which sentry-sdk needs to work. 207 of the graph's unprovided
+        # capabilities came from this.
+        if re.search(r';.*\bextra\s*==', rest):
+            continue
+        # Likewise a marker that excludes this interpreter.
+        mm = re.search(r'python_version\s*<\s*[\'"]([\d.]+)[\'"]', rest)
+        if mm and tuple(int(x) for x in mm.group(1).split(".")) <= (3, 13):
+            continue
         name = m.group("v").lower().replace("_", "-")
         requires.add(f"python3dist({name})")
 

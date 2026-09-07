@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+"""
+G2 — build the capability graph.
+
+Reads the PACKAGE metadata out of every published .hud and records what each one
+provides and requires as CAPABILITIES, not package names: `libssl.so.3` rather
+than `openssl`. That distinction is the point of the exercise. The shipped
+client answers reverse-dependency questions with
+
+    SELECT ... WHERE depends LIKE '%pkg%'
+
+which matches `libX11` inside `libX11-xcb`, matches a package whose description
+merely mentions the name, and misses a dependency recorded under a soname. A
+capability table makes the same questions exact, and it survives package renames
+and catches soname bumps, which a name-to-name graph cannot.
+
+Usage:  hud-graph-build [POOL] [GRAPH.db]
+"""
+import os, re, sqlite3, sys, tarfile
+
+POOL = sys.argv[1] if len(sys.argv) > 1 else "/var/www/hud-unstable/pool/main"
+DB   = sys.argv[2] if len(sys.argv) > 2 else "/var/hud-build/graph.db"
+
+SCHEMA = """
+PRAGMA journal_mode=WAL;
+DROP TABLE IF EXISTS packages;
+DROP TABLE IF EXISTS provides;
+DROP TABLE IF EXISTS requires;
+CREATE TABLE packages (
+    name        TEXT NOT NULL,
+    version     TEXT NOT NULL,
+    arch        TEXT,
+    section     TEXT,
+    size        INTEGER,
+    payload     INTEGER,          -- files excluding hud metadata; 0 means empty
+    filename    TEXT,
+    PRIMARY KEY (name, version, arch)
+);
+-- One row per (package, capability). Queries join on capability with '=',
+-- never LIKE: exactness is the reason this table exists.
+CREATE TABLE provides (
+    name       TEXT NOT NULL,
+    version    TEXT NOT NULL,
+    capability TEXT NOT NULL,
+    PRIMARY KEY (name, version, capability)
+);
+-- `kind` records which era a row came from, because the two are not the same
+-- claim. huddef v2 emits capabilities — libssl.so.3 — while every package
+-- published before it recorded bare package names in Depends. Storing both in
+-- one column without saying which is which made 367 of 389 required strings
+-- look unprovided, when most were simply package names being compared against
+-- soname rows.
+CREATE TABLE requires (
+    name       TEXT NOT NULL,
+    version    TEXT NOT NULL,
+    capability TEXT NOT NULL,
+    kind       TEXT NOT NULL CHECK (kind IN ('capability','name')),
+    PRIMARY KEY (name, version, capability)
+);
+CREATE INDEX idx_provides_cap ON provides(capability);
+CREATE INDEX idx_requires_cap ON requires(capability);
+CREATE INDEX idx_provides_name ON provides(name);
+CREATE INDEX idx_requires_name ON requires(name);
+"""
+
+
+def field(text, key):
+    m = re.search(rf"^{key}:\s*(.*)$", text, re.M)
+    return m.group(1).strip() if m else ""
+
+
+def caps(value):
+    return [c.strip() for c in value.split(",") if c.strip()]
+
+
+def derived_provides(names):
+    """Capabilities visible in the archive's own file list.
+
+    The metadata cannot be trusted for this: `Provides:` was added with huddef
+    v2, so the 200-odd packages published before that carry none at all, and a
+    graph built only from the field describes a distribution where almost
+    nothing provides anything. Filenames are available for every package, old or
+    new, and give the same three capability kinds the spec defines.
+    """
+    out = set()
+    for n in names:
+        m = re.search(r"/lib(?:64)?/(lib[^/]+\.so\.[0-9]+)$", n)
+        if m and "site-packages" not in n:
+            out.add(m.group(1))
+            continue
+        m = re.search(r"/pkgconfig/([^/]+)\.pc$", n)
+        if m:
+            out.add(f"pkgconfig({m.group(1)})")
+            continue
+        m = re.search(r"/site-packages/([A-Za-z0-9_.\-]+?)-[0-9][^/]*\.(?:dist|egg)-info/", n)
+        if m:
+            out.add(f"python3dist({m.group(1).replace('_', '-').lower()})")
+    return sorted(out)
+
+
+def main():
+    os.makedirs(os.path.dirname(DB) or ".", exist_ok=True)
+    db = sqlite3.connect(DB)
+    db.executescript(SCHEMA)
+
+    archives = []
+    for root, _, files in os.walk(POOL):
+        for f in files:
+            if f.endswith(".hud"):
+                archives.append(os.path.join(root, f))
+    archives.sort()
+
+    n_pkg = n_prov = n_req = 0
+    for path in archives:
+        try:
+            with tarfile.open(path) as t:
+                members = t.getmembers()
+                meta = [m for m in members
+                        if m.name.endswith("/PACKAGE") and "/share/hud/info/" in m.name]
+                if not meta:
+                    print(f"skip {os.path.basename(path)}: no PACKAGE metadata",
+                          file=sys.stderr)
+                    continue
+                text = t.extractfile(meta[0]).read().decode("utf-8", "replace")
+                payload = sum(1 for m in members if m.isfile()
+                              and "/share/hud/info/" not in m.name
+                              and not m.name.endswith("/.owner"))
+        except Exception as e:
+            print(f"skip {os.path.basename(path)}: {e}", file=sys.stderr)
+            continue
+
+        name = field(text, "Package")
+        ver = field(text, "Version")
+        if not name or not ver:
+            print(f"skip {os.path.basename(path)}: no name/version", file=sys.stderr)
+            continue
+        arch = field(text, "Architecture") or "x86_64"
+
+        db.execute("INSERT OR REPLACE INTO packages VALUES (?,?,?,?,?,?,?)",
+                   (name, ver, arch, field(text, "Section"),
+                    os.path.getsize(path), payload,
+                    os.path.relpath(path, os.path.dirname(POOL.rstrip("/")))))
+        n_pkg += 1
+        declared = set(caps(field(text, "Provides")))
+        for c in sorted(declared | set(derived_provides([m.name for m in members]))):
+            db.execute("INSERT OR IGNORE INTO provides VALUES (?,?,?)", (name, ver, c))
+            n_prov += 1
+        declared_req = field(text, "Requires")
+        kind = "capability" if declared_req else "name"
+        for c in caps(declared_req or field(text, "Depends")):
+            # A v2 package can still name a package rather than a capability;
+            # decide per row rather than per package.
+            k = "capability" if re.search(r"\.so\.[0-9]|^pkgconfig\(|^python3dist\(|^exec\(", c) else "name"
+            db.execute("INSERT OR IGNORE INTO requires VALUES (?,?,?,?)",
+                       (name, ver, c, k if declared_req else kind))
+            n_req += 1
+
+    db.commit()
+    print(f"{n_pkg} packages, {n_prov} provides, {n_req} requires -> {DB}")
+
+    empty = db.execute("SELECT count(*) FROM packages WHERE payload=0").fetchone()[0]
+    unmet = db.execute("""
+        SELECT count(DISTINCT capability) FROM requires r
+        WHERE kind = 'capability'
+          AND NOT EXISTS (SELECT 1 FROM provides p WHERE p.capability = r.capability)
+        """).fetchone()[0]
+    unknown = db.execute("""
+        SELECT count(DISTINCT capability) FROM requires r
+        WHERE kind = 'name'
+          AND NOT EXISTS (SELECT 1 FROM packages k WHERE k.name = r.capability)
+        """).fetchone()[0]
+    byname = db.execute("SELECT count(*) FROM requires WHERE kind='name'").fetchone()[0]
+    print(f"{empty} packages ship no payload")
+    print(f"{unmet} required capabilities unprovided; "
+          f"{byname} edges still recorded as package names, {unknown} of them unknown")
+
+
+if __name__ == "__main__":
+    main()
