@@ -92,7 +92,11 @@ def check(pkg):
 
     for name in BUILD_SECTIONS:
         for line in code(secs.get(name, "")):
-            if re.search(r"\b(wget|curl)\b", line) and "--version" not in line:
+            # As a COMMAND, not as a substring. cmake's bootstrap takes
+            # --no-system-curl, and matching \bcurl\b reported the flag that
+            # breaks the bootstrap cycle as a network call.
+            if re.match(r"\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(wget|curl)\s", line) \
+                    and "--version" not in line:
                 errs.append(f"no-network: [{name}] runs a downloader: {line.strip()[:60]}")
             if re.search(r"\bpip3?\s+install\b", line) and not _pip_is_offline(line):
                 errs.append(f"no-network: [{name}] pip install that can reach the network: {line.strip()[:60]}")
