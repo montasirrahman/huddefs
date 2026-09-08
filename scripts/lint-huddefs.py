@@ -143,10 +143,22 @@ def check(pkg):
         if m and "$DESTDIR" not in line and "${DESTDIR}" not in line:
             errs.append(f"install-stages: writes to {m.group(1)} outside $DESTDIR")
 
+    # Collect every absolute path on the line and filter, rather than trying to
+    # write one regex that skips the prefix. `(/(?!opt/hud)\S+)` looked right and
+    # was not: the lookahead only stops a match starting AT /opt/hud, so the
+    # engine advanced one character and matched the inner "/hud/bin/vi", which
+    # no definition ever contained. Every one of the reported paths was invented
+    # by that slide, and the check simultaneously missed the real out-of-prefix
+    # action beside it — libX11's `ln -sfv /opt/hud/lib/X11 /usr/lib/X11` was
+    # reported as "/hud/lib/X11" while "/usr/lib/X11" went unmentioned.
+    KEEP_OUT = ("/opt/hud", "/dev", "/proc", "/sys", "/run", "/tmp")
     for line in code(secs.get("postinst", "")):
-        m = re.match(r"\s*(?:install\s+-\S*d\S*|mkdir|ln\s+-\S+|cp)\s+.*?(/(?!opt/hud)\S+)", line)
-        if m and not m.group(1).startswith(("/opt/hud", "/dev", "/proc", "/sys", "/run")):
-            warns.append(f"postinst-tracks: creates {m.group(1)} outside the prefix")
+        if not re.match(r"\s*(?:install|mkdir|ln|cp|touch)\b", line):
+            continue
+        for path in re.findall(r"(?<![\w/$])/[A-Za-z0-9._+/-]+", line):
+            if path.startswith(KEEP_OUT) or path == "/":
+                continue
+            warns.append(f"postinst-tracks: touches {path} outside the prefix")
     return errs, warns
 
 
@@ -156,13 +168,18 @@ def main():
     bad = warned = 0
     for p in only:
         e, w = check(p)
-        if e:
-            bad += 1
-            print(f"\n\033[31m{p}\033[0m")
+        # Warnings print whether or not there is an error beside them. They
+        # used to be counted and then discarded unless the same definition also
+        # failed, so the summary line advertised "10 with warnings only" and
+        # gave no way to find out what they were.
+        if e or w:
+            print(f"\n\033[31m{p}\033[0m" if e else f"\n{p}")
             for x in e:
                 print(f"    ERROR  {x}")
             for x in w:
                 print(f"    warn   {x}")
+        if e:
+            bad += 1
         elif w:
             warned += 1
     print(f"\n{len(only)} definitions: {bad} with errors, {warned} with warnings only")
