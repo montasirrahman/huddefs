@@ -22,6 +22,7 @@ Source-SHA256:    6a31b8450d02cd12f47f4571c031e9d6b8705279a0e8970ae9a05e1c87dffb
 
 # gperftools provides tcmalloc; configure stops with "tcmalloc library needs
 # to be present" without it.
+Patches:          glusterfs-11.1-py_compile_imp-1.patch
 Build-Depends:    python3, liburcu, libxml2, openssl, libaio, readline, ncurses, libtirpc, sqlite, python3-pyxattr, gperftools
 Depends:          auto
 Provides:         auto
