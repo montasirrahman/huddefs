@@ -8,7 +8,9 @@ pick up where the last one stopped. If you are resuming, read this first, then
 
 ## Where things stand
 
-**Current phase:** E4, G3 and the buildable half of E5/E6 are done; E7 is next. Building runs on
+**Current phase:** E4 is genuinely complete — all 253 definitions are v2 and
+carry a `Source-SHA256`. E5/E6 is draining on two parallel drivers; G1 is next
+and is the remaining milestone. Building runs on
 **bf-build** (2026-09-03 migration). bf-repo's VDI is on a USB disk whose link
 drops under sustained write load; three failures resulted. Do not build on
 bf-repo.
@@ -41,6 +43,86 @@ that started it. Never hardcode the unit name — it changes on every restart.
 Use `e4-status`.
 
 Results land in `docs/conversion-progress.md`, one section per batch.
+
+---
+
+## The 33 conversions a `git merge --ff-only` threw away — 2026-09-09
+
+This is E4's incident repeating in a new disguise, and I caused this one.
+
+`grep -L 'Source-SHA256:'` said 33 definitions were still v1. But their build
+logs said `Source hash verified`, and the packages they produced were sitting
+in unstable with real payloads. The record and the artifact disagreed again.
+
+### What happened
+
+`convert-python.py` rewrites `<pkg>.huddef` **in place**, and `run-queue.sh`
+commits only at the *end* of a run. So a run in progress holds its conversions
+as uncommitted worktree changes for hours.
+
+I ran `git fetch bfrepo main && git merge --ff-only FETCH_HEAD` against
+bf-build's worktree to push a fix down. The branches had diverged, so
+`--ff-only` refused — and git's cleanup logged `reset: moving to HEAD`, which
+discarded every uncommitted conversion the live run had made. The reflog puts
+the reset at 04:56:51, the same second as my command.
+
+The definitions reverted to v1 while the packages built from their v2 forms
+were already published.
+
+### Why the recovery was evidence rather than reconstruction
+
+`hud-build` copies the definition it actually used into the package at
+`opt/hud/share/hud/info/<pkg>/<pkg>.huddef`. That copy *is* the file that
+produced the shipped bits. Re-running the converter would have re-derived the
+PEP 517 backend from the tarball and could legitimately have produced something
+different — a plausible definition, not the true one. All 33 came back v2.
+`scripts/recover-from-artifact.py` does this and is reusable.
+
+### Two fixes, because there were two defects
+
+1. **`e5-driver.py` commits each conversion as it is made.** The worst case is
+   now one lost conversion, not a run's worth. Failure to commit warns and
+   continues: a package that builds is worth more than a tidy history.
+
+2. **`hud-unstable` archives the definition the package was built from.**
+   `hud-repo-manager` copies a `.huddef` into the pool only if it finds one
+   beside the `.hud`; the driver ships the `.hud` alone, so nothing was
+   archived and the pool kept whatever the original seeding left. The pool copy
+   for `python3-attrs` read v1 while its bits were built from a v2. `CLAUDE.md`
+   calls the archived huddef *the tiebreaker* for which definition is real — so
+   a stale one is worse than none. `hud-unstable` now extracts the embedded
+   copy and lays it beside the `.hud` before `add`.
+
+### The rule
+
+**Never `git merge` into a worktree with a build running in it.** Fetch and
+merge on bf-repo, and let bf-build pull only between runs — or commit before
+touching it. A failed merge is not a no-op.
+
+### Also fixed today
+
+- **`hud-unstable` takes a `flock`.** `hud-repo-manager` has no locking of its
+  own: `add` copies into the pool and INSERTs, `update-index` regenerates
+  `packages.list` from the database, and two concurrent publishes can interleave
+  a copy with an index rewrite to produce an index that does not describe the
+  pool. Nothing would report it. Needed because a second driver now runs beside
+  the main queue.
+- **`python3-distlib` never got `--no-build-isolation`.** It was written by hand
+  before the converter learned the flag, so pip built in a fresh venv and tried
+  to download `setuptools>=44` inside `--private-network`. Now 674 KB, matching
+  the known-good reference.
+- **`cyrus-sasl`** needed `-Wno-error=implicit-function-declaration` on top of
+  `-std=gnu17`: `saslutil.c` calls `clock()` without `<time.h>`, and GCC 14
+  makes that an error regardless of the standard. Published, 95 payload files.
+
+### Two parallel drivers
+
+`e5.py` loads state once and rewrites it whole after every package, so two
+drivers sharing one state file would silently lose results. `E5_STATE` and
+`E5_RESULTS` are now environment-overridable and `run-queue2.sh` uses its own.
+Publishing overlaps safely because of the flock. Only two: bf-build has 4 cores
+and 5.8 GB, and nodejs linking V8 beside a third build would risk the OOM killer
+taking an hour of work with it.
 
 ---
 

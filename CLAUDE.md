@@ -224,3 +224,18 @@ Context for anyone touching these areas:
 - Packages install to `/opt/hud`, not the FHS paths, so several definitions
   hand-write compatibility symlinks into `/usr/bin`. An FHS migration is
   planned; do not add new symlink workarounds without flagging it.
+
+## Never git-merge into a worktree with a build running in it
+
+`convert-python.py` rewrites definitions in place and the drivers commit as
+they go, so a running build always has uncommitted work in bf-build's tree.
+
+A `git merge --ff-only` that cannot fast-forward is **not** a no-op: git's
+cleanup resets the worktree to HEAD and discards those edits. That is how 33
+converted definitions were lost on 2026-09-09 while the packages built from
+them were already published.
+
+Fetch and merge on bf-repo. Let bf-build pull only between runs, or commit
+first. If it has already happened, `scripts/recover-from-artifact.py` restores
+definitions from `opt/hud/share/hud/info/<pkg>/<pkg>.huddef` inside the shipped
+`.hud` — that copy is the file that actually produced the bits.
