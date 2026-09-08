@@ -44,6 +44,49 @@ Results land in `docs/conversion-progress.md`, one section per batch.
 
 ---
 
+## Builds moved to the clean rootfs — 2026-09-09
+
+Everything now builds against `roots/minimal-clean`: the root made by installing
+the nine bootstrap packages, not the one made by deleting 236 out of a populated
+tree. This is what G1 requires, and it was forced sooner by a concrete failure.
+
+`python-setuptools` died with
+
+    TypeError: expected string or bytes-like object, got 'NoneType'
+
+inside pip's `create_package_set_from_installed`. The old root has **six
+malformed dist-info directories** — PyGObject, distlib, nftables, pip,
+sanlock_python and setuptools, every one with no `Version:` field — and pip
+walks them all before installing anything. `CLAUDE.md` already recorded that
+these "crash every pip3 install"; what was new is that they crash builds too.
+
+**The clean root has none of them.** That is not a coincidence: they are the
+same shrink debris as the 2,226 dangling symlinks, and building the root by
+installation rather than deletion leaves no debris to carry.
+
+### Two defects the switch surfaced immediately, both pre-existing
+
+**`cmake`'s bootstrap options were on the wrong side of `--`.** Everything after
+that separator goes to *cmake*, and the definition put `--no-system-jsoncpp`,
+`--no-system-cppdap`, `--no-system-librhash` and `--parallel` there, so bootstrap
+built a cmake and then invoked it with four arguments it does not take:
+`CMake Error: Unknown argument --parallel=4`. It had never surfaced because the
+build used to die earlier, compiling `ccmake`.
+
+**A running script must not be overwritten.** nodejs compiled for two hours,
+finished installing its headers, and died with
+`hud-build: line 313: syntax error near unexpected token 'network'`. hud-build
+was fine — it had been *replaced while running*. `scp` truncates and rewrites the
+same inode, and bash reads a script lazily, so the running copy continued from
+its old byte offset in the new content. `deploy-tooling.sh` now writes to a
+temporary name and renames into place, which is atomic and leaves the running
+process on its original inode.
+
+That one is worth remembering: the message named hud-build, and hud-build parsed
+cleanly on both machines by the time anyone looked.
+
+---
+
 ## 2026-09-09 — every structural blocker is closed
 
 Four things stood between this repository and a defensible G1. All four are
