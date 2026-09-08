@@ -36,11 +36,29 @@ fi
 # echoes one path per line becomes multiple LINES inside the remote command
 # string, so `chmod 755 <paths>` turned into chmod plus one bare invocation of
 # each tool — they ran with no arguments and printed their usage.
-srcs=""; dests=""
-for t in $TOOLS; do srcs="$srcs $SRC/$t"; dests="$dests $DEST/$t"; done
+srcs=""; dests=""; tmps=""
+for t in $TOOLS; do
+    srcs="$srcs $SRC/$t"
+    dests="$dests $DEST/$t"
+    tmps="$tmps $DEST/.deploy-$t"
+done
 
-scp -q $srcs "$HOST:$DEST/"
-ssh "$HOST" "chmod 755 $dests"
+# Copy to a temporary name, then rename over the target.
+#
+# scp overwrites IN PLACE — it truncates the destination and writes into the
+# same inode. bash reads a script LAZILY, so a hud-build that is mid-run keeps
+# reading from its old byte offset in the new content and lands in the middle of
+# a token. That is what killed a two-hour nodejs build the moment it finished
+# compiling:
+#     /usr/local/bin/hud-build: line 313: syntax error near unexpected token `network'
+# The build had succeeded; the script running it had been replaced underneath.
+#
+# mv within the same filesystem is atomic and gives the new file a new inode, so
+# anything already running keeps the file it started with.
+for t in $TOOLS; do
+    scp -q "$SRC/$t" "$HOST:$DEST/.deploy-$t"
+done
+ssh "$HOST" "for t in $TOOLS; do chmod 755 $DEST/.deploy-\$t && mv -f $DEST/.deploy-\$t $DEST/\$t; done"
 
 echo "verifying"
 fail=0
