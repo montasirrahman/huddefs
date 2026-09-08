@@ -145,6 +145,38 @@ If three attempts do not produce a green build, stop and leave the branch with a
 summary of what was tried and what the remaining error is. A half-fixed
 definition that builds but disables features is worse than a failing build.
 
+### A declared dependency can be present and still insufficient
+
+Three separate failures on 2026-09-08 were packages whose dependency **was**
+declared and **was** installed. A dependency graph catches none of these; only
+building it and reading the error does.
+
+- **A header's own includes.** `qemu` declared `sdl2` and failed on
+  `/opt/hud/include/SDL2/SDL_syswm.h:68: fatal error: X11/Xlib.h`. Installing a
+  package gives you its libraries, not the headers its headers include. The
+  package that includes the header declares it: `qemu` needs `libX11`.
+- **Installed is not on `PATH`.** `docbook-xsl` declared `libxml2` and its
+  `[postinst]` still died with `xmlcatalog: command not found`. postinst runs in
+  a non-login shell that never sources `/etc/profile.d/hud-env.sh`, so a
+  `[postinst]` that calls anything from `/opt/hud/bin` must set its own `PATH`.
+- **A package's own library.** `java-bin` was failed by `hud-test` over
+  `libjvm.so`, which `java-bin` ships. `ldd` could not see it because
+  `/opt/jdk/lib/server` is on no loader path. `hud-test` now separates
+  self-shipped from genuinely absent.
+
+### Check what `Source:` actually points at
+
+`openldap`'s `Source:` named `db-5.3.28.tar.gz` — Berkeley DB — while its
+`[configure]` passed openldap's own flags. `Source-SHA256` had been computed
+over that wrong tarball, so verification passed and the build failed much later
+with `./configure: No such file or directory`. **A hash proves the file is the
+one that was hashed, not that it is the right file.** The published `openldap`
+was therefore never built from its definition.
+
+`scripts/verify-sources.py` checks every hash against the cache;
+`scripts/lint-huddefs.py` enforces the rules above. Neither catches a correct
+hash over the wrong project — only reading the filename does.
+
 ## Commit messages
 
 ```
