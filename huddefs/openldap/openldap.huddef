@@ -35,15 +35,31 @@ make install &&
 # v1 ran this sed against /etc/openldap on the BUILD HOST. make install had just
 # written those files into $DESTDIR, so the edit was applied to the wrong copy —
 # and the shipped one still names .la files that are not installed.
-sed -e "s/\.la/.so/" -i $DESTDIR/etc/openldap/slapd.{conf,ldif}{,.default} &&
+# --sysconfdir=/opt/hud/etc, so the files land under $DESTDIR/opt/hud/etc, not
+# $DESTDIR/etc. And this openldap installs slapd.conf, slapd.conf.default and
+# slapd.ldif.default but no plain slapd.ldif, so the brace expansion the v1
+# definition used names a file that does not exist. Edit what is actually there
+# and fail if none of it is — a `|| true` here would hide the .la references
+# this sed exists to remove.
+CONFD="$DESTDIR/opt/hud/etc/openldap"
+edited=0
+for f in "$CONFD"/slapd.conf "$CONFD"/slapd.conf.default \
+         "$CONFD"/slapd.ldif "$CONFD"/slapd.ldif.default; do
+    [ -f "$f" ] || continue
+    sed -e "s/\.la/.so/" -i "$f"
+    edited=$((edited + 1))
+done
+[ "$edited" -gt 0 ] || { echo "no slapd config found under $CONFD" >&2; exit 1; }
+echo "rewrote .la -> .so in $edited slapd config file(s)"
 
 # The two state directories, staged rather than created on the build host.
 # Ownership is set in [postinst] instead of here: `install -o ldap -g ldap`
 # needs the ldap user to exist in the build container, and a tar records numeric
 # ids, so the name has to be resolved on the installing machine.
-install -v -dm700 $DESTDIR/var/lib/openldap &&
+install -v -dm700 $DESTDIR/var/lib/openldap
 
-install -v -dm700 $DESTDIR/etc/openldap/slap
+# Also under the prefix, for the same reason as the config files above.
+install -v -dm700 $DESTDIR/opt/hud/etc/openldap/slap
 
 [postinst]
 ldconfig 2>/dev/null || true
@@ -51,7 +67,7 @@ ldconfig 2>/dev/null || true
 # Ownership of directories this package ships. Changing the mode or owner of a
 # file the package already tracks is allowed in [postinst]; creating one is not.
 if getent passwd ldap >/dev/null 2>&1; then
-    chown ldap:ldap /var/lib/openldap /etc/openldap/slap
+    chown ldap:ldap /var/lib/openldap /opt/hud/etc/openldap/slap
 fi
 
 echo "openldap 2.6.10 installed to /opt/hud"
