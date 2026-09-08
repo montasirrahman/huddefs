@@ -7,9 +7,13 @@ Package: dnsmasq
 Version: 2.91
 Architecture: x86_64
 Section: network
-Depends:
 Description: Lightweight DHCP and DNS caching server (required by libvirt for VM networking)
 Source: https://thekelleys.org.uk/dnsmasq/dnsmasq-2.91.tar.xz
+Source-SHA256:    f622682848b33677adb2b6ad08264618a2ae0a01da486a93fd8cd91186b3d153
+
+Build-Depends:    
+Depends:          auto
+Provides:         auto
 
 [configure]
 # dnsmasq uses make, no configure step needed

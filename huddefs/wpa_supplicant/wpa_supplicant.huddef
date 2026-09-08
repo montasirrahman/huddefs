@@ -6,9 +6,13 @@ Package: wpa_supplicant
 Version: 2.11
 Architecture: x86_64
 Section: networking
-Depends: libnl, openssl, dbus, readline
 Description: WPA supplicant for wireless network authentication
 Source: https://w1.fi/releases/wpa_supplicant-2.11.tar.gz
+Source-SHA256:    912ea06f74e30a8e36fbb68064d6cdff218d8d591db0fc5d75dee6c81ac7fc0a
+
+Build-Depends:    libnl, openssl, dbus, readline
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

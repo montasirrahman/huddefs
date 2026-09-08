@@ -14,9 +14,13 @@ Package: firewalld
 Version: 2.3.2
 Architecture: x86_64
 Section: network
-Depends: python3, dbus, dbus-python, pygobject, glib, iptables, polkit, libxml2, nftables
 Description: Dynamic firewall daemon with D-Bus interface
 Source: https://github.com/firewalld/firewalld/releases/download/v2.3.2/firewalld-2.3.2.tar.bz2
+Source-SHA256:    32890e2cf4638bc4aeb5d63a2a53ac675f2fc9c2e2f704c77710d72bfaefe498
+
+Build-Depends:    python3, dbus, dbus-python, pygobject, glib, iptables, polkit, libxml2, nftables
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

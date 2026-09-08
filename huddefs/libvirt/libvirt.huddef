@@ -16,9 +16,13 @@ Package: libvirt
 Version: 10.10.0
 Architecture: x86_64
 Section: virtualization
-Depends: qemu, python3, glib, libxml2, yajl, libpciaccess, numactl, polkit, dbus, libnl, gnutls, libgcrypt, curl, libssh2, nftables, dnsmasq, dmidecode
 Description: Virtualization API library for managing hypervisors (QEMU/KVM)
 Source: https://download.libvirt.org/libvirt-10.10.0.tar.xz
+Source-SHA256:    e1bd7bd31b7c0d0ae073dec050bb5b0232b3e4adebdc58ea82fe8b366c765796
+
+Build-Depends:    qemu, python3, glib, libxml2, yajl, libpciaccess, numactl, polkit, dbus, libnl, gnutls, libgcrypt, curl, libssh2, nftables, dnsmasq, dmidecode
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
