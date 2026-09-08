@@ -123,11 +123,18 @@ else
     fail=1
 fi
 
-say "-- no dependency the client cannot resolve --"
-unres=$(cut -d'|' -f7 /var/www/hud-unstable/packages.list \
-        | grep -cE '\.so\.|^exec\(|python3dist\(' | head -1)
-say "   $unres index rows still hold capability strings"
-[ "${unres:-0}" -eq 0 ] || { say "GATE FAILED: the client cannot resolve those"; fail=1; }
+say "-- every dependency in the index names a package the index has --"
+# Not just "no capability strings": a name the index does not contain is
+# equally unresolvable, and the client warns and installs anyway. The published
+# networkmanager carries "ddbus" and "10gobject-introspection" from a botched
+# sed in the original packaging, which is exactly the kind of thing a rebuild is
+# supposed to remove.
+if python3 "$REPO/scripts/check-index.py" 2>&1 | tee -a "$LOG" | tail -1 >/dev/null; then
+    say "   every dependency resolves"
+else
+    say "GATE FAILED: the index has dependencies nothing provides (see above)"
+    fail=1
+fi
 
 say "-- everything built --"
 python3 - "$STATE" "/var/hud-build/g1/batch.json" <<'PY' | tee -a "$LOG"
