@@ -44,6 +44,99 @@ Results land in `docs/conversion-progress.md`, one section per batch.
 
 ---
 
+## 2026-09-09 — every structural blocker is closed
+
+Four things stood between this repository and a defensible G1. All four are
+resolved, and none of them by deferring it.
+
+### 1. `Depends: auto` emitted something the client could not use — FIXED
+
+`hud-build` now runs derived capabilities through
+`scripts/resolve-capabilities.py` before writing `Depends:`, so the field holds
+package names. `Requires:` keeps the capabilities, because that is what the
+capability graph reads and what makes a soname bump visible. Verified in a clean
+root: `hud install python3-lxml` resolves and installs libxml2, libxslt, zlib
+and their transitive dependencies, where before it warned about every one and
+installed none while exiting 0.
+
+hud-build **dies** rather than falling back if the resolver is missing. A silent
+fallback would reinstate exactly what was fixed.
+
+### 2. Three Python build backends did not exist — PACKAGED
+
+`flit_core`, `packaging` and `calver`, in that order, because flit_core builds
+itself, packaging needs flit_core and calver needs setuptools — each checked
+against its own `pyproject.toml`. They blocked 33 of the 66 empty `python3-*`
+packages and no ordering helped, because all three were absent rather than out
+of order. The plan recomputes to **66 buildable, 0 blocked**.
+`docs/python-bootstrap.md`.
+
+### 3. Who owns files outside `/opt/hud` — DECIDED
+
+`docs/file-ownership-policy.md`, settled by what systemd actually does rather
+than by preference. Units go to `/usr/local/lib/systemd/system`: in the search
+path, above the base system's units, below `/etc/systemd/system` where an admin
+override belongs. **Not** `/opt/hud/lib/systemd/system`, where E7 first put
+dhcpcd's unit — `systemctl show --property=UnitPath` does not list it, so that
+unit shipped, was tracked, and did nothing. Admin config ships as a tracked
+`.default` and `[postinst]` copies it only if the target is absent.
+
+E7's 35 out-of-prefix actions are down to 3, all deliberate.
+
+### 4. The bootstrap cycle — BROKEN
+
+```
+250 packages, 250 ordered, 0 in cycles
+```
+
+`cmake` bootstraps with `--no-system-curl`, cutting `cmake → curl → brotli →
+cmake`. Cutting at brotli was impossible: brotli 1.1.0 has no build system but
+cmake. The cost is that cmake's bundled curl does not get security updates with
+the system one, and **G1 does a second pass that rebuilds cmake against system
+curl once curl exists.** `patchelf` is packaged and `python-setuptools` no
+longer names `python`, so no `Build-Depends` in the tree names anything absent.
+
+### Definitions that could never have built what they published
+
+Five now, each found by building it and reading the error:
+
+| Package | What was wrong |
+|---|---|
+| `openldap` | `Source:` named Berkeley DB's tarball, with a SHA256 over that wrong file so verification passed |
+| `cyrus-sasl` | `[install]` ends in a bare `install -v -m644` with no arguments — fatal under `set -euo pipefail` |
+| `ncurses` | seds `include/curses.h`, which `--enable-widec` never creates; the headers are in `include/ncursesw/` |
+| `libvirt` | `[postinst]` copied `virsh` and three daemons from `/var/hud-build/staging` on the **build host**, while `[install]`'s own copies were every one `|| true` |
+| `util-linux` | declared no build dependencies at all; needs `ncurses` for the wide-character headers |
+
+### No build section reaches the network any more
+
+`systemd` ran `import jinja2 || pip3 install jinja2` and `glusterfs` ran
+`pip3 install pyxattr || true`. Neither ever fired, because the base system
+carries both — so both packages were being built against modules this
+repository does not ship. `python3-jinja2`, `python3-markupsafe` and
+`python3-pyxattr` are packaged and the pip lines are gone. Deleting them without
+packaging the modules would only have moved the failure to the first machine
+that lacked them.
+
+### G4 and G5
+
+G4 passes all four stages. G5's two independent halves are proven — nested KVM
+works inside the gate VM, and a 7.5 MB inner guest boots and prints its marker —
+so `scripts/g5-gate.sh` is staged and waits only on libvirt, which is in the
+build queue.
+
+### What is running
+
+One queue of 71 packages in dependency order, with a supervisor that writes a
+heartbeat to `/var/hud-build/e5/heartbeat.log` every ten minutes and restarts
+the run if the unit disappears with work left. It restarts on **absence**, never
+on failure, because a failing package must not become a restart loop — which is
+how the E4 supervisor burned five restarts on the same crash.
+
+`scripts/status.sh` is one screen of the whole picture.
+
+---
+
 ## 2026-09-08 — the hypothesis was wrong, and the real causes were all different
 
 The machines were shut down and the USB disk unplugged overnight. Nothing was
