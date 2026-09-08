@@ -215,6 +215,74 @@ in this root, and the fix is per-package — declare what you use — rather tha
 surgery on the rootfs.
 
 
+### The DocBook DTD was being fetched over the network — 2026-09-09
+
+`postgresql-ldap` failed with
+
+    failed to load "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+
+Its `[install]` runs `make install-docs`, which builds the SGML manual. **The
+shipped package contains 1143 HTML files**, so those docs were previously
+produced by fetching the DTD mid-build. That is qemu's `wget`ed patch again, in
+a package nobody was looking at, and it only became visible because `[build]`
+lost its network. Which is the point of taking the network away.
+
+Two causes, and declaring the first alone would not have been enough:
+
+1. The three postgres variants that call `install-docs` declared neither
+   `docbook` nor `docbook-xsl`.
+
+2. **libxml2 reads `/etc/xml/catalog`; the docbook packages build theirs at
+   `$PREFIX/etc/xml/catalog`,** because that is where a package installing under
+   the prefix has to put it. Nothing pointed libxml2 at it, so every DTD lookup
+   fell through to the URL in the DOCTYPE even with the right package installed.
+   `hud-build` now exports `XML_CATALOG_FILES`, prefix catalog first — the same
+   reasoning as `ACLOCAL_PATH` and `CPPFLAGS`: the builder supplies the
+   environment, definitions should not have to.
+
+`docbook`'s own catalog registration turned out to be correct and complete
+(`rewriteSystem`, `rewriteURI`, `delegatePublic` all present). It was never
+being consulted.
+
+### `Depends: auto, <extras>`
+
+`auto` derives runtime dependencies from the artifact, which is why build tools
+stopped leaking into `Depends`. It cannot find a dependency the artifact never
+mentions. `xmlto` is a shell script whose capabilities are `exec(bash)` and
+`exec(xsltproc)`; nothing in it names the DocBook DTD it cannot work without,
+and `git` builds its manual with `xmlto`. The stale index row said
+`docbook-xml`, which is not what the package is called — one of the 38 names
+`check-index` has been reporting.
+
+`hud-build` now appends anything after `auto` to the derived set, de-duplicated.
+Fonts, CA certificates and timezone data are the same shape. It is deliberately
+narrow: an entry there is a claim that the scanner is not wrong, and
+`CLAUDE.md` asks for the reason in a comment.
+
+### Undeclared build dependencies, bounded
+
+`scripts/check-build-depends.py` looks for packages linking something their
+declared Build-Depends closure cannot reach — libvirt's defect, generalised.
+Reporting every unreached name gives 51 packages and is unusable, because most
+are transitive or come from the bootstrap floor. Subtracting both takes it to
+**9 of the 101 rebuilt**. Four were real and are fixed (`glusterfs` +acl
++util-linux, `libSM` +util-linux, `p11-kit` +libffi, `util-linux` +readline).
+
+The other five are correct as they stand and the check will keep naming them:
+`docbook-xsl` and `gperftools` "link" perl only as `exec(perl)` in a shipped
+script, `java-bin` is a prebuilt binary distribution that compiles nothing here,
+and the recurring `systemd` is `libudev.so.1` belonging to the base OS —
+declaring it on `util-linux` would create a cycle, since systemd builds against
+util-linux.
+
+### G4 still passes
+
+Re-run 2026-09-09 against the current unstable repo: kernel booted, image
+mounted, **systemd is PID 1, multi-user.target reached**. The image is still the
+one built on 09-07 and still registers 242 packages where it should register 9;
+G4 says so itself. Rebuilding it from `roots/minimal-clean` belongs with G1.
+
+
 ---
 
 ## Builds moved to the clean rootfs — 2026-09-09
