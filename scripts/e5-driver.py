@@ -19,12 +19,14 @@ Two things this does that the E4 driver did not, both because of what E4 cost:
 """
 import json, os, re, shutil, subprocess, sys, tarfile, time
 
-# Overridable so a second run — G1's full rebuild, say — keeps its own resume
-# point instead of inheriting one that already lists most packages as published.
-REPO   = os.environ.get("HUD_REPO_DIR_DEFS", "/root/github-repo/huddefs")
+REPO   = "/root/github-repo/huddefs"
 H      = f"{REPO}/huddefs"
 OUT    = "/var/hud-build/output"
-STATE  = os.environ.get("STATE", "/var/hud-build/e5-state.json")
+# Overridable so a second driver can run beside the main queue without the two
+# clobbering each other: state is loaded once and rewritten whole after every
+# package, so two drivers sharing one file would silently lose results.
+STATE  = os.environ.get("E5_STATE", "/var/hud-build/e5-state.json")
+RESULTS = os.environ.get("E5_RESULTS", "/var/hud-build/e5-results.json")
 BFREPO = "root@172.19.1.7"
 INBOX  = "/var/hud-build/incoming"
 WRAP   = "/var/hud-build/bin/hud-unstable"
@@ -165,6 +167,29 @@ def already_v2(pkg):
     return "Source-SHA256:" in s and re.search(r"^Build-Depends:", s, re.M)
 
 
+def commit_conversion(pkg):
+    """Commit a conversion the moment it is made, not at the end of the run.
+
+    convert-python.py rewrites the definition in place. Holding a run's worth of
+    those as untracked worktree changes lost all 33 of them once already: a
+    "git merge --ff-only" against this worktree could not fast-forward and git's
+    cleanup reset it to HEAD, so the definitions read v1 again while the packages
+    built from their v2 forms were already published. Committing per package
+    means the worst case is one lost conversion rather than a whole run's.
+
+    A failure here is reported, not fatal. A package that builds is worth more
+    than a tidy history, and the definition stays recoverable from the artifact.
+    """
+    f = "huddefs/%s/%s.huddef" % (pkg, pkg)
+    cmd = ("cd %s && git add -- %s && "
+           "{ git diff --cached --quiet -- %s || "
+           "git commit -q -m 'convert %s to huddef v2'; }" % (REPO, f, f, pkg))
+    rc, log = sh(cmd, timeout=120)
+    if rc:
+        print("    WARN: could not commit %s conversion: %s"
+              % (pkg, log.strip()[-160:]), flush=True)
+
+
 def one(pkg):
     rec = {"pkg": pkg}
     t0 = time.time()
@@ -181,6 +206,7 @@ def one(pkg):
         if rec["convert"].get("status") != "converted":
             rec.update(stage="convert", ok=False, note=str(rec["convert"]))
             return rec
+        commit_conversion(pkg)
     else:
         rec["convert"] = {"status": "already v2"}
 
@@ -257,7 +283,7 @@ def main(listfile):
             state["failed"][pkg] = {"stage": rec.get("stage"), "note": rec.get("note")}
             print(f"    FAIL at {rec.get('stage')}: {rec.get('note')}", flush=True)
         save_state(state)
-        json.dump(results, open("/var/hud-build/e5-results.json", "w"), indent=1)
+        json.dump(results, open(RESULTS, "w"), indent=1)
     print(f"\npublished {len(state['published'])} / {len(pkgs)} requested; "
           f"{len(state['failed'])} failed", flush=True)
 

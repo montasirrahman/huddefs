@@ -48,6 +48,43 @@ if [ -z "${HUD_UNSTABLE_LOCKED:-}" ]; then
     exec flock -w 300 "$LOCK" "$0" "$@"
 fi
 
+# Archive the definition the package was actually built from.
+#
+# hud-repo-manager copies "<name>-<version>.huddef" into the pool only if it
+# finds one sitting beside the .hud being added. The driver ships the .hud
+# alone, so nothing was archived and the pool kept whatever stale definition
+# was there from the original seeding — for python3-attrs, the v1 file, while
+# the shipped bits were built from a converted v2. CLAUDE.md calls the archived
+# huddef the tiebreaker for which definition is real, so a stale one is worse
+# than none.
+#
+# hud-build stores the definition it used inside the package at
+# opt/hud/share/hud/info/<pkg>/<pkg>.huddef. Extracting that and laying it
+# beside the .hud makes the pool copy evidence again: it is the file that
+# produced these bits, not a guess about them.
+#
+# Name and version come from the extracted definition rather than from the
+# filename — splitting "python3-attrs-25.3.0-x86_64.hud" on dashes cannot tell
+# a version apart from a name that contains digits.
+stage_definition() {
+    local art="$1" tmp def name version
+    [ -f "$art" ] || return 0
+
+    def=$(tar tf "$art" 2>/dev/null \
+          | grep -m1 -E '^\./opt/hud/share/hud/info/[^/]+/[^/]+\.huddef$') || return 0
+    [ -n "$def" ] || return 0
+
+    tmp=$(mktemp) || return 0
+    if ! tar xOf "$art" "$def" > "$tmp" 2>/dev/null; then rm -f "$tmp"; return 0; fi
+
+    name=$(sed -n 's/^Package:[[:space:]]*//p'  "$tmp" | head -1)
+    version=$(sed -n 's/^Version:[[:space:]]*//p' "$tmp" | head -1)
+    if [ -z "$name" ] || [ -z "$version" ]; then rm -f "$tmp"; return 0; fi
+
+    mv "$tmp" "$(dirname "$art")/${name}-${version}.huddef"
+    chmod 644 "$(dirname "$art")/${name}-${version}.huddef"
+}
+
 # `add` on a name+version that already exists prompts "Replace existing version?
 # [y/N]" and reads from stdin. In a driver there is no tty, the read fails, the
 # answer is empty, and the manager prints "Skipped" and exits 0 — so E5 would
@@ -57,10 +94,14 @@ fi
 # missing --root, not a version), so replacing is the normal case here, not an
 # exceptional one. `--replace` answers the prompt instead of leaving it to a
 # stdin that is not there. It is opt-in so an accidental add still stops.
-if [ "${1:-}" = "add" ] && [ "${2:-}" = "--replace" ]; then
-    shift 2
-    printf 'y\n' | "$MANAGER" add "$@"
-    exit $?
+if [ "${1:-}" = "add" ]; then
+    if [ "${2:-}" = "--replace" ]; then
+        shift 2
+        stage_definition "${!#}"
+        printf 'y\n' | "$MANAGER" add "$@"
+        exit $?
+    fi
+    stage_definition "${!#}"
 fi
 
 exec "$MANAGER" "$@"
