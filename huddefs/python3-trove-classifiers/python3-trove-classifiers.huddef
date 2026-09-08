@@ -4,17 +4,20 @@ Package: python3-trove-classifiers
 Version: 2025.8.6.13
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: trove-classifiers-2025.8.6.13 - valid PyPI classifiers per PEP 301
 Source: https://files.pythonhosted.org/packages/source/t/trove_classifiers/trove_classifiers-2025.8.6.13.tar.gz
+Source-SHA256:    5a0abad839d2ed810f213ab133d555d267124ddea29f1d8a50d6eca12a50ae6e
+
+Build-Depends:    python3, python-setuptools, python3-calver
+Depends:          auto
+Provides:         auto
+
 [build]
 sed -i '/calver/s/^/#/;$iversion="2025.8.6.13"' setup.py
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user trove-classifiers
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist trove-classifiers --break-system-packages
+
 [postinst]
 echo "python3-trove-classifiers 2025.8.6.13 installed"
-[prerm]
-pip3 uninstall -y trove-classifiers 2>/dev/null || true
-[postrm]
-# Cleanup if needed

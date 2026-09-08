@@ -4,16 +4,19 @@ Package: python3-meson-python
 Version: 0.18.0
 Architecture: x86_64
 Section: python
-Depends: python3,python3-pyproject-metadata,patchelf
 Description: meson_python-0.18.0 - Python build backend (PEP 517) for Meson projects
 Source: https://files.pythonhosted.org/packages/source/m/meson_python/meson_python-0.18.0.tar.gz
+Source-SHA256:    c56a99ec9df669a40662fe46960321af6e4b14106c14db228709c1628e23848d
+
+Build-Depends:    python3, python3-pyproject-metadata, patchelf, python3-packaging
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user meson_python
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist meson_python --break-system-packages
+
 [postinst]
 echo "python3-meson-python 0.18.0 installed"
-[prerm]
-pip3 uninstall -y meson_python 2>/dev/null || true
-[postrm]
-# Cleanup if needed

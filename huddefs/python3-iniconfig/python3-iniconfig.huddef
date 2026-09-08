@@ -4,16 +4,19 @@ Package: python3-iniconfig
 Version: 2.1.0
 Architecture: x86_64
 Section: python
-Depends: python3,python3-hatch-vcs
 Description: Iniconfig-2.1.0 - small and simple INI-file parser module
 Source: https://files.pythonhosted.org/packages/source/i/iniconfig/iniconfig-2.1.0.tar.gz
+Source-SHA256:    3abbd2e30b36733fee78f9c7f7308f2d0050e88f0087fd25c2645f63c773e1c7
+
+Build-Depends:    python3, python3-hatch-vcs, python3-hatchling
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user iniconfig
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist iniconfig --break-system-packages
+
 [postinst]
 echo "python3-iniconfig 2.1.0 installed"
-[prerm]
-pip3 uninstall -y iniconfig 2>/dev/null || true
-[postrm]
-# Cleanup if needed

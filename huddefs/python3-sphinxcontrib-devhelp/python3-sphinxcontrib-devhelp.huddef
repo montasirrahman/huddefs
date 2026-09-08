@@ -4,16 +4,19 @@ Package: python3-sphinxcontrib-devhelp
 Version: 2.0.0
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: sphinxcontrib-devhelp-2.0.0 - Sphinx extension for Devhelp documents
 Source: https://files.pythonhosted.org/packages/source/s/sphinxcontrib-devhelp/sphinxcontrib_devhelp-2.0.0.tar.gz
+Source-SHA256:    411f5d96d445d1d73bb5d52133377b4248ec79db5c793ce7dbe59e074b4dd1ad
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user sphinxcontrib-devhelp
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist sphinxcontrib-devhelp --break-system-packages
+
 [postinst]
 echo "python3-sphinxcontrib-devhelp 2.0.0 installed"
-[prerm]
-pip3 uninstall -y sphinxcontrib-devhelp 2>/dev/null || true
-[postrm]
-# Cleanup if needed

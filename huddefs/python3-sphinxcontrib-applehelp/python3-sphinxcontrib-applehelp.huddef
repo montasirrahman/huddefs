@@ -4,16 +4,19 @@ Package: python3-sphinxcontrib-applehelp
 Version: 2.0.0
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: sphinxcontrib-applehelp-2.0.0 - Sphinx extension for Apple help books
 Source: https://files.pythonhosted.org/packages/source/s/sphinxcontrib-applehelp/sphinxcontrib_applehelp-2.0.0.tar.gz
+Source-SHA256:    2f29ef331735ce958efa4734873f084941970894c6090408b079c61b2e1c06d1
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user sphinxcontrib-applehelp
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist sphinxcontrib-applehelp --break-system-packages
+
 [postinst]
 echo "python3-sphinxcontrib-applehelp 2.0.0 installed"
-[prerm]
-pip3 uninstall -y sphinxcontrib-applehelp 2>/dev/null || true
-[postrm]
-# Cleanup if needed

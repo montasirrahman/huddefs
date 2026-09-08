@@ -4,16 +4,19 @@ Package: python3-cachecontrol
 Version: 0.14.3
 Architecture: x86_64
 Section: python
-Depends: python3,python3-msgpack,python3-requests
 Description: CacheControl-0.14.3 - caching algorithms for use with requests
 Source: https://github.com/psf/cachecontrol/archive/v0.14.3/cachecontrol-0.14.3.tar.gz
+Source-SHA256:    822e4f1e048f35c9edd19426b4fe8260daf4168732c65c6ff9bc0d8acea24d7b
+
+Build-Depends:    python3, python3-msgpack, python3-requests, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user cachecontrol
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist cachecontrol --break-system-packages
+
 [postinst]
 echo "python3-cachecontrol 0.14.3 installed"
-[prerm]
-pip3 uninstall -y cachecontrol 2>/dev/null || true
-[postrm]
-# Cleanup if needed

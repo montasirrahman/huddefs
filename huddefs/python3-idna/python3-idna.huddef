@@ -4,16 +4,19 @@ Package: python3-idna
 Version: 3.10
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: Idna-3.10 - Internationalized Domain Names in Applications (IDNA) support
 Source: https://files.pythonhosted.org/packages/source/i/idna/idna-3.10.tar.gz
+Source-SHA256:    12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user idna
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist idna --break-system-packages
+
 [postinst]
 echo "python3-idna 3.10 installed"
-[prerm]
-pip3 uninstall -y idna 2>/dev/null || true
-[postrm]
-# Cleanup if needed

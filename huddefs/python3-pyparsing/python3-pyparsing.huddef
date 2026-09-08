@@ -4,16 +4,19 @@ Package: python3-pyparsing
 Version: 3.2.3
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: pyparsing-3.2.3 - alternative approach to creating simple grammars
 Source: https://files.pythonhosted.org/packages/source/p/pyparsing/pyparsing-3.2.3.tar.gz
+Source-SHA256:    b9c13f1ab8b3b542f72e28f634bad4de758ab3ce4546e4301970ad6fa77c38be
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user pyparsing
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist pyparsing --break-system-packages
+
 [postinst]
 echo "python3-pyparsing 3.2.3 installed"
-[prerm]
-pip3 uninstall -y pyparsing 2>/dev/null || true
-[postrm]
-# Cleanup if needed

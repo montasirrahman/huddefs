@@ -4,16 +4,19 @@ Package: python3-alabaster
 Version: 1.0.0
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: Alabaster-1.0.0 - theme for Sphinx documentation system
 Source: https://files.pythonhosted.org/packages/source/a/alabaster/alabaster-1.0.0.tar.gz
+Source-SHA256:    c00dca57bca26fa62a6d7d0a9fcce65f3e026e9bfe33e9c538fd3fbb2144fd9e
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user alabaster
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist alabaster --break-system-packages
+
 [postinst]
 echo "python3-alabaster 1.0.0 installed"
-[prerm]
-pip3 uninstall -y alabaster 2>/dev/null || true
-[postrm]
-# Cleanup if needed
