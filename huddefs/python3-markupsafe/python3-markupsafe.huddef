@@ -1,0 +1,32 @@
+# HUD Package Definition - markupsafe 3.0.2
+#
+# Added 2026-09-09. Packaged because a build declared it and it was not here.
+# jinja2 needs it, and jinja2 is what systemd's build needs. It has a C
+# speedup module, so this is not noarch.
+
+Package: python3-markupsafe
+Version: 3.0.2
+Architecture: x86_64
+Section: python
+Description: markupsafe 3.0.2 - safely add untrusted strings to HTML/XML markup
+Source: https://files.pythonhosted.org/packages/source/m/markupsafe/markupsafe-3.0.2.tar.gz
+Source-SHA256:    ee55d3edf80167e48ea11a923c7386f4669df67d7994554387f84e7d8b0a2bf0
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
+[configure]
+# Nothing to configure
+
+[build]
+# Nothing to build; pip drives the PEP 517 backend in [install].
+
+[install]
+# --root so the payload lands in $DESTDIR rather than the build container's own
+# Python, and --no-build-isolation because the network is disabled during a
+# build so pip must use the backend already present.
+pip3 install --no-deps --no-build-isolation --prefix=/opt/hud --root=$DESTDIR . --break-system-packages
+
+[postinst]
+echo "markupsafe 3.0.2 installed to /opt/hud"

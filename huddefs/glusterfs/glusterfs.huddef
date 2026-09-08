@@ -20,7 +20,7 @@ Description: Distributed scalable network filesystem
 Source: https://download.gluster.org/pub/gluster/glusterfs/11/11.1/glusterfs-11.1.tar.gz
 Source-SHA256:    6a31b8450d02cd12f47f4571c031e9d6b8705279a0e8970ae9a05e1c87dffb76
 
-Build-Depends:    python3, liburcu, libxml2, openssl, libaio, readline, ncurses, libtirpc, sqlite
+Build-Depends:    python3, liburcu, libxml2, openssl, libaio, readline, ncurses, libtirpc, sqlite, python3-pyxattr
 Depends:          auto
 Provides:         auto
 
@@ -33,7 +33,11 @@ export LDFLAGS="-L/opt/hud/lib -L/opt/hud/lib64 -ltirpc"
 export PYTHON=/usr/bin/python3
 
 # Install Python dependencies
-pip3 install pyxattr --break-system-packages -q 2>/dev/null || true
+# pyxattr comes from Build-Depends now. This line was
+#     pip3 install pyxattr --break-system-packages -q 2>/dev/null || true
+# — a network install during a build, guarded so its failure was silent. Same
+# shape as qemu's patch, and it left glusterfs building against whatever the
+# base system happened to have.
 
 # Replace broken config.sub and config.guess
 for f in config.sub config.guess; do

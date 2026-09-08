@@ -1,0 +1,36 @@
+# HUD Package Definition - jinja2 3.1.6
+#
+# Added 2026-09-09. Packaged because a build declared it and it was not here.
+# systemd's [configure] ran
+#     python3 -c "import jinja2" 2>/dev/null || pip3 install jinja2 --break-system-packages
+# which reaches the network during a build. It never fired, because the base
+# system happens to have jinja2 — so systemd has been building against a module
+# this repository does not ship and cannot reproduce. Packaging it is the fix;
+# removing the pip line without packaging it would just move the failure.
+
+Package: python3-jinja2
+Version: 3.1.6
+Architecture: noarch
+Section: python
+Description: jinja2 3.1.6 - templating engine, required to build systemd
+Source: https://files.pythonhosted.org/packages/source/j/jinja2/jinja2-3.1.6.tar.gz
+Source-SHA256:    0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d
+
+Build-Depends:    python3, python3-flit-core, python3-markupsafe
+Depends:          auto
+Provides:         auto
+
+[configure]
+# Nothing to configure
+
+[build]
+# Nothing to build; pip drives the PEP 517 backend in [install].
+
+[install]
+# --root so the payload lands in $DESTDIR rather than the build container's own
+# Python, and --no-build-isolation because the network is disabled during a
+# build so pip must use the backend already present.
+pip3 install --no-deps --no-build-isolation --prefix=/opt/hud --root=$DESTDIR . --break-system-packages
+
+[postinst]
+echo "jinja2 3.1.6 installed to /opt/hud"

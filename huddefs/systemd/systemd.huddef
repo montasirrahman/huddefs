@@ -7,13 +7,18 @@ Package: systemd
 Version: 257.8
 Architecture: x86_64
 Section: system
-Depends: dbus, libcap, libgcrypt, util-linux, kmod, acl, xz, zstd
+Depends: dbus, libcap, libgcrypt, util-linux, kmod, acl, xz, zstd, python3-jinja2
 Description: System and service manager for Linux, including udev device manager and logind
 Source: https://github.com/systemd/systemd/archive/v257.8/systemd-257.8.tar.gz
 
 [configure]
 # Ensure jinja2 Python module is installed (required for build)
-python3 -c "import jinja2" 2>/dev/null || pip3 install jinja2 --break-system-packages
+# jinja2 comes from Build-Depends now. This line was
+#     python3 -c "import jinja2" || pip3 install jinja2 --break-system-packages
+# which reaches the network during a build. It never fired, because the base
+# system happens to carry jinja2 — so the check passed and systemd was built
+# against a module this repository does not ship. Declaring python3-jinja2 makes
+# the dependency real.
 
 # Remove unneeded groups from udev rules
 sed -e 's/GROUP="render"/GROUP="video"/' \

@@ -1,0 +1,34 @@
+# HUD Package Definition - pyxattr 0.8.1
+#
+# Added 2026-09-09. Packaged because a build declared it and it was not here.
+# glusterfs's [configure] ran
+#     pip3 install pyxattr --break-system-packages -q 2>/dev/null || true
+# — a network install, guarded by || true so it failed silently and the build
+# went on. Same shape as qemu's patch. It builds a C extension against attr.
+
+Package: python3-pyxattr
+Version: 0.8.1
+Architecture: x86_64
+Section: python
+Description: pyxattr 0.8.1 - Python bindings for extended filesystem attributes
+Source: https://files.pythonhosted.org/packages/source/p/pyxattr/pyxattr-0.8.1.tar.gz
+Source-SHA256:    48c578ecf8ea0bd4351b1752470e301a90a3761c7c21f00f953dcf6d6fa6ee5a
+
+Build-Depends:    python3, python-setuptools, attr
+Depends:          auto
+Provides:         auto
+
+[configure]
+# Nothing to configure
+
+[build]
+# Nothing to build; pip drives the PEP 517 backend in [install].
+
+[install]
+# --root so the payload lands in $DESTDIR rather than the build container's own
+# Python, and --no-build-isolation because the network is disabled during a
+# build so pip must use the backend already present.
+pip3 install --no-deps --no-build-isolation --prefix=/opt/hud --root=$DESTDIR . --break-system-packages
+
+[postinst]
+echo "pyxattr 0.8.1 installed to /opt/hud"
