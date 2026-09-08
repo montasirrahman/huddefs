@@ -179,6 +179,42 @@ signature — so the modern `.pyc` naming is kept rather than falling through to
 the legacy branch.
 
 
+### libvirt found a library that was not there — 2026-09-09
+
+`Run-time dependency libtirpc found: YES 1.3.6`, then
+`fatal error: rpc/rpc.h: No such file or directory`. Both lines are true, and
+the gap between them is a whole class of defect.
+
+libtirpc was not in libvirt's `Build-Depends`, so `/opt/hud/include/tirpc` was
+never installed. The base rootfs carries a compatibility symlink
+`/usr/include/tirpc -> /opt/hud/include/tirpc`, which therefore dangled. With no
+`/opt/hud/lib64/pkgconfig/libtirpc.pc` present, pkg-config fell through to the
+base system's `libtirpc.pc` — version 1.3.6, `prefix=/usr` — which satisfied
+meson's version check and handed the compiler `-I/usr/include/tirpc`, a path
+resolving to nothing. The packaged libtirpc is 1.3.7 and its `.pc` is correct.
+It simply was not installed.
+
+**Four more were being satisfied by the same accident.** meson found `libacl`,
+`blkid`, `readline` and `libudev` and linked all four while the definition
+declared none of them. They came from whatever the base rootfs happened to
+carry. That is the `curl` Build-Depends defect in a new place, and it is exactly
+what G1 is supposed to catch: a build that depends on the contents of the build
+root is not reproducible. All five declared; still 253 ordered, 0 cycles.
+
+### The rootfs is not full of these
+
+Worth checking rather than assuming, since a dangling compatibility symlink can
+make any undeclared dependency fail this way. The clean root has 463 dangling
+symlinks, but only **14 are build-visible** (under `include/` or `lib*/`), and
+every one is a shim into `/opt/hud` that resolves as soon as its owning package
+is installed — tirpc, X11, tcmalloc, libvirt, firewalld, dbus units.
+
+Of the 80 system `.pc` files outside the prefix, exactly one names an include
+directory that does not resolve: `libtirpc.pc`. So this trap is close to unique
+in this root, and the fix is per-package — declare what you use — rather than
+surgery on the rootfs.
+
+
 ---
 
 ## Builds moved to the clean rootfs — 2026-09-09
