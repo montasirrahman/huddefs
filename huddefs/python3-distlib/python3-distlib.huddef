@@ -19,7 +19,7 @@ Provides:         auto
 # Nothing to build
 
 [install]
-pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR . --break-system-packages
+pip3 install --no-build-isolation --no-deps --prefix=/opt/hud --root=$DESTDIR . --break-system-packages
 
 [postinst]
 echo "✓ Python distlib 0.3.9 installed"
