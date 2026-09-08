@@ -239,3 +239,24 @@ Fetch and merge on bf-repo. Let bf-build pull only between runs, or commit
 first. If it has already happened, `scripts/recover-from-artifact.py` restores
 definitions from `opt/hud/share/hud/info/<pkg>/<pkg>.huddef` inside the shipped
 `.hud` — that copy is the file that actually produced the bits.
+
+## `Depends: auto, <extras>` — for what no scan can find
+
+`Depends: auto` derives runtime dependencies from the built artifact: sonames
+from the ELF, interpreters from shebangs, `python3dist(...)` from metadata.
+That is right for almost everything, and it is why build tools stopped leaking
+into `Depends`.
+
+It cannot find a dependency the artifact never mentions. `xmlto` is a shell
+script whose capabilities are `exec(bash)` and `exec(xsltproc)`; nothing in it
+names the DocBook DTD it cannot convert a document without. Fonts, CA
+certificates and timezone data are the same shape.
+
+Name those after `auto`:
+
+    Depends:          auto, docbook
+
+The extras are appended to the derived set and de-duplicated. Use it only for
+dependencies that genuinely cannot be derived, and say in a comment why — an
+entry here is a claim that the scanner is not wrong, which is a claim worth
+justifying. Do not use it to paper over a missing `Build-Depends`.

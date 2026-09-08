@@ -347,7 +347,21 @@ ok "$(echo "$PROVIDES" | tr ',' '\n' | grep -c . || true) provides, $(echo "$REQ
 # python3-lxml installed while libxml2, libxslt and zlib did not. Requires stays
 # as capabilities because that is what the capability graph reads, and what
 # makes a soname bump visible.
-if [ "$DEPENDS" = "auto" ]; then
+# "auto" may be followed by extra package names: `Depends: auto, docbook`.
+#
+# Some runtime dependencies cannot be derived from the artifact by any amount of
+# scanning, because nothing in the artifact refers to them. xmlto is a shell
+# script whose capabilities are exec(bash) and exec(xsltproc); nothing in it
+# names the DocBook DTD it cannot work without. The same is true of a package
+# that needs fonts, CA certificates, or timezone data. Before this, such a
+# package had to abandon derivation entirely and hand-write the whole list —
+# which is how build tools ended up in Depends in the first place.
+case "$DEPENDS" in
+    auto|auto,*) DEPENDS_MODE=auto ;;
+    *)           DEPENDS_MODE=manual ;;
+esac
+
+if [ "$DEPENDS_MODE" = "auto" ]; then
     # Resolve by absolute path if it is not on PATH: a systemd unit's default
     # PATH does not include /usr/local/bin, and silently falling back to raw
     # capabilities here would reinstate the exact defect this replaces.
@@ -361,6 +375,19 @@ written as capability strings, which the client cannot resolve. Install it to
         warn "$(cat /tmp/hud-unresolved.$$)"
     fi
     rm -f /tmp/hud-unresolved.$$
+
+    # Anything after "auto" is appended, de-duplicated, order preserved.
+    EXTRA_DEPS=${DEPENDS#auto}
+    EXTRA_DEPS=${EXTRA_DEPS#,}
+    if [ -n "$(printf '%s' "$EXTRA_DEPS" | tr -d '[:space:]')" ]; then
+        for d in $(printf '%s' "$EXTRA_DEPS" | tr ',' ' '); do
+            case ",$(printf '%s' "$RUNTIME_DEPS" | tr -d ' ')," in
+                *",$d,"*) ;;
+                *) RUNTIME_DEPS="${RUNTIME_DEPS:+$RUNTIME_DEPS,}$d" ;;
+            esac
+        done
+        info "Depends: declared additions -> $EXTRA_DEPS"
+    fi
     info "Depends (packages): ${RUNTIME_DEPS:-none}"
 else
     RUNTIME_DEPS="$DEPENDS"
