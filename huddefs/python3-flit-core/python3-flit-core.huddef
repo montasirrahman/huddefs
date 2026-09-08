@@ -1,0 +1,43 @@
+# HUD Package Definition - flit_core 3.12.0
+#
+# Added 2026-09-08. One of three Python build backends this distribution needed
+# and did not have; between them they blocked 33 of the 66 empty python3-*
+# packages. See docs/python-bootstrap.md.
+# flit_core builds ITSELF: build-system.requires is empty and backend-path is
+# ["."], so pip loads the backend straight out of the source tree. That is what
+# makes it the right place to start the Python bootstrap — it needs nothing that
+# is not already here.
+#
+# 18 of the 66 empty python3-* packages name flit_core as their backend and
+# could not be built at all without it: alabaster, build, cachecontrol,
+# docutils, editables, idna, pathspec, pyparsing, pyproject-hooks,
+# pyproject-metadata, roman-numerals-py, sphinx and the six sphinxcontrib-*.
+
+Package: python3-flit-core
+Version: 3.12.0
+Architecture: noarch
+Section: python
+Description: flit_core 3.12.0 - the PEP 517 build backend flit and many other projects use
+Source: https://files.pythonhosted.org/packages/source/f/flit_core/flit_core-3.12.0.tar.gz
+Source-SHA256:    18f63100d6f94385c6ed57a72073443e1a71a4acb4339491615d0f16d6ff01b2
+
+Build-Depends:    python3
+Depends:          auto
+Provides:         auto
+
+[configure]
+# Nothing to configure
+
+[build]
+# Nothing to build; pip drives the PEP 517 backend in [install].
+
+[install]
+# --root is the whole point. Without it pip installs into the build container's
+# own Python and the package ships metadata and nothing else — the defect that
+# left 66 packages at roughly 750 bytes. --no-build-isolation because the
+# network is disabled during the build, so pip must use the backend already
+# present rather than fetching one.
+pip3 install --no-deps --no-build-isolation --prefix=/opt/hud --root=$DESTDIR . --break-system-packages
+
+[postinst]
+echo "flit_core 3.12.0 installed to /opt/hud"

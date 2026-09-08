@@ -1,0 +1,37 @@
+# HUD Package Definition - packaging 25.0
+#
+# Added 2026-09-08. One of three Python build backends this distribution needed
+# and did not have; between them they blocked 33 of the 66 empty python3-*
+# packages. See docs/python-bootstrap.md.
+# Built by flit_core, hence the Build-Depends. packaging blocks 14 of the 66
+# empty python3-* packages, directly or through hatchling and setuptools_scm,
+# both of which import it while running as a build backend.
+
+Package: python3-packaging
+Version: 25.0
+Architecture: noarch
+Section: python
+Description: packaging 25.0 - core utilities for Python package versions and requirements
+Source: https://files.pythonhosted.org/packages/source/p/packaging/packaging-25.0.tar.gz
+Source-SHA256:    d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
+[configure]
+# Nothing to configure
+
+[build]
+# Nothing to build; pip drives the PEP 517 backend in [install].
+
+[install]
+# --root is the whole point. Without it pip installs into the build container's
+# own Python and the package ships metadata and nothing else — the defect that
+# left 66 packages at roughly 750 bytes. --no-build-isolation because the
+# network is disabled during the build, so pip must use the backend already
+# present rather than fetching one.
+pip3 install --no-deps --no-build-isolation --prefix=/opt/hud --root=$DESTDIR . --break-system-packages
+
+[postinst]
+echo "packaging 25.0 installed to /opt/hud"

@@ -1,0 +1,38 @@
+# HUD Package Definition - calver 2025.4.17
+#
+# Added 2026-09-08. One of three Python build backends this distribution needed
+# and did not have; between them they blocked 33 of the 66 empty python3-*
+# packages. See docs/python-bootstrap.md.
+# A setuptools plugin, so it builds with setuptools alone. It is here for one
+# reason: python3-trove-classifiers uses calendar versioning and cannot build
+# without it, and trove_classifiers is imported by hatchling whenever hatchling
+# runs as a backend.
+
+Package: python3-calver
+Version: 2025.4.17
+Architecture: noarch
+Section: python
+Description: calver 2025.4.17 - setuptools plugin for calendar versioning
+Source: https://files.pythonhosted.org/packages/source/c/calver/calver-2025.4.17.tar.gz
+Source-SHA256:    460702737d620f5c3d4175450485180a1b7f7a422c5db0e6af3e655c7395ec7e
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
+[configure]
+# Nothing to configure
+
+[build]
+# Nothing to build; pip drives the PEP 517 backend in [install].
+
+[install]
+# --root is the whole point. Without it pip installs into the build container's
+# own Python and the package ships metadata and nothing else — the defect that
+# left 66 packages at roughly 750 bytes. --no-build-isolation because the
+# network is disabled during the build, so pip must use the backend already
+# present rather than fetching one.
+pip3 install --no-deps --no-build-isolation --prefix=/opt/hud --root=$DESTDIR . --break-system-packages
+
+[postinst]
+echo "calver 2025.4.17 installed to /opt/hud"
