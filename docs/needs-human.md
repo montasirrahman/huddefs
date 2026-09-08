@@ -394,3 +394,91 @@ Two findings from them that do not depend on this decision:
 - **`openldap`'s `.la`-to-`.so` sed ran against `/etc/openldap` on the build
   host** while `make install` had just written those files into `$DESTDIR`, so
   the shipped `slapd.conf` still names `.la` files that are not installed.
+
+---
+
+## BLOCKING: `Depends: auto` produces something the deployed client cannot use
+
+**Every package rebuilt under huddef v2 publishes runtime dependencies the `hud`
+client silently fails to resolve. Nothing installs them. 42 such packages are
+already in unstable.**
+
+This is not a bug in a definition. It is a gap between the format and the client,
+and it has to be settled before any v2 package reaches the live repository.
+
+### Demonstrated, not inferred
+
+In a clean root pointing at unstable:
+
+```
+$ hud install -y python3-lxml
+[!] Dependency not in repository: libc.so.6 (required by python3-lxml)
+[!] Dependency not in repository: libexslt.so.0 (required by python3-lxml)
+[!] Dependency not in repository: libxml2.so.16 (required by python3-lxml)
+[!] Dependency not in repository: libxslt.so.1 (required by python3-lxml)
+[!] Dependency not in repository: libz.so.1 (required by python3-lxml)
+[!] Dependency not in repository: python3dist(cssselect) (required by python3-lxml)
+```
+
+`python3-lxml` installs. `libxml2`, `libxslt` and `zlib` do not. The result is a
+package that cannot load.
+
+### Why
+
+`Depends: auto` writes **capabilities** into the package's `Depends:` field —
+`libxml2.so.16`, `exec(perl)`, `python3dist(cssselect)` — and `hud-repo-manager`
+copies that field verbatim into the `depends` column of `packages.list`. The
+client then treats each entry as a **package name**:
+
+```bash
+avail_ver=$(get_latest_version "$dep_name")     # SELECT ... WHERE name='libxml2.so.16'
+if [ -z "$avail_ver" ]; then
+    log_warning "Dependency not in repository: $dep_name (required by $pkg)"
+    continue                                    # and carries on
+fi
+```
+
+It warns and continues. **`hud install` still exits 0.**
+
+This is why `qemu` failed after 2,600 objects: `dtc` was installed and verified,
+and `/opt/hud/bin/dtc` still could not start for want of `libyaml-0.so.2`.
+`dtc`'s own metadata is incomplete, but fixing it would not help — rebuilt under
+v2 it would emit `libyaml-0.so.2`, which resolves to nothing.
+
+### Why it has not been noticed
+
+The old build root contained the remnants of 242 packages, so almost everything
+a build needed was already present. G4's boot gate installs `yajl`, which has no
+dependencies. The clean root is the first environment where a missing runtime
+dependency is actually missing — which is an argument for the regenerated root
+quite separate from the one it failed to support.
+
+### The options
+
+1. **Map capabilities back to package names in `hud-build`, before writing
+   `Depends:`.** Keep `Requires:` as capabilities so the graph stays exact, and
+   make `Depends:` the package names the client already understands.
+   `scripts/build-soname-map.sh` already produces the mapping and G2's graph
+   already resolves both directions. **No client change, no deployment, works
+   with the v1.1.0 client in the field.**
+2. **Teach the client to resolve capabilities**, by adding a `provides` column to
+   `packages.list` and looking dependencies up against it. This is the design the
+   v2 spec describes and it is better in the long run — soname bumps become
+   visible, renames stop mattering. It is also a fourth D8-class client change,
+   and it helps nothing until the new client is deployed everywhere.
+3. **Hand-write `Depends:` per package.** 245 definitions, permanently, and it
+   discards the auto-detection that makes the data trustworthy.
+
+**Recommendation: (1) now, (2) later.** (1) unblocks publishing immediately and
+is reversible; (2) is where this should end up, and the graph built in G2 is
+already the model for it. Doing (2) first means nothing can be published until
+the client is deployed, which is the one thing the standing constraints forbid
+doing quickly.
+
+### Until it is decided
+
+- **Do not publish v2-rebuilt packages to the live repository.** They install
+  without their dependencies, and the client reports success.
+- Unstable is fine — it exists for exactly this.
+- Build-time dependencies are unaffected: `hud-build` installs `Build-Depends`,
+  which are package names and always were.
