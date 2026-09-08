@@ -69,16 +69,30 @@ G1 rebuilds them, and the graph should be rebuilt after it.
 ## Current shape
 
 ```
-packages                      251
-  shipping no payload          34
-provided capabilities         599
-required, as capabilities     126
-  unprovided                  104
-required, as package names    263
-  naming no known package     111
+                              2026-09-07   2026-09-08
+packages                      251          251
+  shipping no payload          34           33
+provides rows                 657          716
+requires, as capabilities     126          ...
+  unprovided                  104          107
+requires, as package names    263          ...
+  naming no known package     111          106
 ```
 
-The 34 empty packages are what remains of the 67 the sweep found — 33 have been
-fixed and republished, and the rest are the E5/E6 set blocked on `flit_core`,
-`packaging` and `calver`. Both numbers should reach zero, and `hud-graph stats`
-is the cheapest way to watch them.
+The 33 empty packages are the E5/E6 set blocked on `flit_core`, `packaging` and
+`calver`; every other package that shipped nothing is fixed. Name-kind edges
+fall as packages are rebuilt under v2, and `hud-graph stats` is the cheapest way
+to watch both numbers reach zero.
+
+## The graph describes something the client cannot use
+
+Recorded here because the graph is what made it obvious. `Depends: auto` emits
+capabilities, `hud-repo-manager` copies them into the index, and the deployed
+client looks each one up as a **package name** — so it warns "Dependency not in
+repository: libxml2.so.16" and installs nothing. Demonstrated in a clean root;
+see the blocking entry in `docs/needs-human.md`.
+
+The graph is the right model and the client has not caught up with it. The
+recommended interim fix uses this same mapping in the opposite direction: have
+`hud-build` resolve capabilities back to package names before writing
+`Depends:`, keeping `Requires:` as capabilities so the graph stays exact.
