@@ -22,31 +22,31 @@ is not packaged, package it. A green build is not evidence — check that the
 artifact has a payload, that its libraries resolve, and that its declared
 dependencies actually install.
 
-STATE: E4, G3, E8, E9, G2 and G4 are done. E5/E6 is 33 of 66. E7 is 9 of 10
-mechanical rebuilt. 45 packages published to /var/www/hud-unstable. The build
-driver's failure list is empty. G5 step 0 (nested KVM) is proven.
+STATE: E4, G3, E8, E9, G2, G4 done. Every structural blocker is CLOSED:
+  - Depends: auto now resolves to package names (resolve-capabilities.py);
+    Requires keeps capabilities. Verified: hud install pulls real dependencies.
+  - flit_core, packaging, calver packaged -> all 66 python3-* are buildable.
+  - File-ownership policy decided: docs/file-ownership-policy.md.
+  - The cmake -> curl -> brotli cycle is broken. 250 packages, 250 ordered,
+    0 cycles, and no Build-Depends names anything unpackaged.
+  - No build section reaches the network. jinja2/markupsafe/pyxattr packaged.
+  - G5's two halves are proven separately; scripts/g5-gate.sh waits on libvirt.
 
 QUEUE, in order:
-  1. BLOCKING — docs/needs-human.md, "Depends: auto produces something the
-     deployed client cannot use". Every v2-rebuilt package publishes capability
-     strings (libxml2.so.16) that the client looks up as package NAMES, warns
-     about, and skips; hud install then exits 0. All 45 published packages
-     install without their runtime dependencies. Fix: map capabilities back to
-     package names in hud-build before writing Depends, keeping Requires as
-     capabilities. scripts/build-soname-map.sh already produces the mapping.
-  2. Package flit_core, packaging and calver — they block 33 of the 66 empty
-     python3-* packages. All three build with setuptools alone.
-  3. Decide who owns files outside /opt/hud — blocks E7's remaining 10 and, via
-     libvirt, G5. docs/needs-human.md has the inventory and a recommendation.
-  4. The six still failing on BOTH build roots: ncurses, libxslt, libvorbis,
-     libxcb, libXt, lcms2. The rootfs is ruled out; each needs its own
-     diagnosis. The last four turned out to be a missing Build-Depends, a wrong
-     Source, and two headers/paths — expect the same shape.
-  5. G1 — full rebuild, dependency-ordered, against roots/minimal-clean.
-     scripts/build-order.py gives the order and names the cmake -> curl ->
-     brotli cycle. Run docs/empty-package-sweep.md at the end and fail on a hit.
-  6. G5 — the VM starts libvirtd and boots a guest. Waits on item 3.
-  7. docs/roadmap-to-appliance.md, then stop.
+  1. Watch the build queue drain. One unit on bf-build, dependency-ordered,
+     with a supervisor writing /var/hud-build/e5/heartbeat.log every 10 min.
+       ssh bf-build 'systemctl is-active queue; tail -3 /var/hud-build/e5/heartbeat.log'
+       bash scripts/status.sh          # one screen of everything
+     Fix each failure at the ROOT CAUSE and re-queue it. Five definitions have
+     already turned out to be incapable of building what they published.
+  2. G1 — scripts/g1-rebuild.sh. Full rebuild against roots/minimal-clean, four
+     exit gates that can each fail it: every package has a payload, the lint is
+     clean, no capability Depends remain, nothing failed to build. It also does
+     the cmake second pass against system curl.
+  3. G5 — scripts/g5-gate.sh, once libvirt is built and published.
+  4. Then the hard gate's remaining items: SHA256 verification and signing in
+     the client, and the FHS vs /opt/hud decision.
+  5. docs/roadmap-to-appliance.md, then stop.
 
 HOW TO WORK HERE
   - Verify the ARTIFACT, never the record of producing it. Seven of eight hud
