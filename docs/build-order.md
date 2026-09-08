@@ -14,7 +14,30 @@ ninja.
 Cycles are reported, never broken by picking an order. A cycle in `Build-Depends`
 is a real bootstrap problem, and silently choosing a starting point hides it.
 
-## Result: 246 packages, 221 orderable, 25 behind one cycle
+## RESOLVED 2026-09-09: 250 packages, all 250 ordered, no cycles
+
+`cmake` now bootstraps with `--no-system-curl`, which cuts the loop, and
+`patchelf` is packaged, which removes the last unpackaged `Build-Depends`.
+`python-setuptools` named `python`, the base system's name for `python3`.
+
+```
+250 packages, 250 ordered, 0 in cycles
+```
+
+Cutting at cmake rather than brotli was forced: brotli 1.1.0 has no build system
+but cmake, so it cannot be built first. cmake's bundled curl is reachable only
+through `file(DOWNLOAD)` and `ctest_submit`, neither of which any build here
+uses — the network is disabled during builds. The cost is that cmake's curl does
+not get security updates with the system one, and **the proper answer is a
+second pass: rebuild cmake against system curl once curl exists.** G1 should do
+that, and until it does the trade is written down rather than implied.
+
+The original analysis follows, because it explains why the cycle existed and why
+it was invisible for so long.
+
+---
+
+## (original) Result: 246 packages, 221 orderable, 25 behind one cycle
 
 ```
 cmake   ->  curl

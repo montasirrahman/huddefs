@@ -12,7 +12,7 @@ Source-SHA256:    81ee8170028865581a8e10eaf055afb620fa4baa0beb6387241241a9750335
 
 
 
-Build-Depends:    curl, libarchive, nghttp2
+Build-Depends:    libarchive, nghttp2
 Depends:          auto
 Provides:         auto
 
@@ -28,8 +28,26 @@ sed -i '/"lib64"/s/64//' Modules/GNUInstallDirs.cmake
 # CMake cache by hand — it is not a library, provides no soname, and nothing in
 # the repository depends on it. cmake, ctest and cpack all build normally.
 # Recorded in docs/reduced-packages.md.
+# --no-system-curl breaks the one genuine bootstrap cycle in the distribution:
+#
+#     cmake -> curl -> brotli -> cmake
+#
+# curl declares brotli, brotli builds with cmake, and cmake linked the system
+# curl. 25 of the 249 packages sit behind that loop and none of them can be
+# built from source without cutting it somewhere.
+#
+# Cutting it here is the cheapest cut. cmake's bundled curl is reachable only
+# through cmake's own file(DOWNLOAD) and ctest_submit, neither of which any
+# build here uses — the network is disabled during builds. Cutting it at brotli
+# instead is not possible: brotli 1.1.0 has no build system but cmake.
+#
+# The cost is that cmake's curl does not get security updates with the system
+# one. The proper answer is a second pass — rebuild cmake with system curl once
+# curl exists — and G1 should do that. Until it does, this is the honest
+# trade and it is written down rather than implied.
 ./bootstrap --prefix=/opt/hud \
             --mandir=/opt/hud/share/man \
+            --no-system-curl \
             -- -DBUILD_CursesDialog=OFF \
             --no-system-jsoncpp \
             --no-system-cppdap \

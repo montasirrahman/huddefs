@@ -1,0 +1,35 @@
+# HUD Package Definition - patchelf 0.18.0
+#
+# Added 2026-09-09. python3-meson-python declares patchelf and it was not a
+# package here, so the dependency was one of only two in the whole tree that
+# named something the repository did not have. meson-python uses it to rewrite
+# RPATHs in the wheels it builds; without it, a meson-built Python extension can
+# ship with an RPATH pointing into the build tree.
+#
+# It is a single self-contained C++ program with an autotools build and no
+# dependencies beyond a compiler, which is why packaging it was the right answer
+# rather than dropping the dependency.
+
+Package: patchelf
+Version: 0.18.0
+Architecture: x86_64
+Section: development
+Description: patchelf 0.18.0 - modify the dynamic linker and RPATH of ELF executables
+Source: https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0.tar.gz
+Source-SHA256:    64de10e4c6b8b8379db7e87f58030f336ea747c0515f381132e810dbf84a86e7
+
+Build-Depends:
+Depends:          auto
+Provides:         auto
+
+[configure]
+./configure --prefix=/opt/hud
+
+[build]
+make -j$(nproc)
+
+[install]
+make DESTDIR=$DESTDIR install
+
+[postinst]
+echo "patchelf 0.18.0 installed to /opt/hud"
