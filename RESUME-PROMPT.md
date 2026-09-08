@@ -27,8 +27,11 @@ STATE: E4, G3, E8, E9, G2, G4 done. Every structural blocker is CLOSED:
     Requires keeps capabilities. Verified: hud install pulls real dependencies.
   - flit_core, packaging, calver packaged -> all 66 python3-* are buildable.
   - File-ownership policy decided: docs/file-ownership-policy.md.
-  - The cmake -> curl -> brotli cycle is broken. 250 packages, 250 ordered,
+  - The cmake -> curl -> brotli cycle is broken. 253 packages, 253 ordered,
     0 cycles, and no Build-Depends names anything unpackaged.
+  - E4 is genuinely finished: all 253 definitions are v2 and carry a
+    Source-SHA256. Verify by format (grep -L 'Source-SHA256:'), never by a
+    state file.
   - No build section reaches the network. jinja2/markupsafe/pyxattr packaged.
   - G5's two halves are proven separately; scripts/g5-gate.sh waits on libvirt.
 
@@ -61,6 +64,24 @@ HOW TO WORK HERE
     and the reverse on bf-build with remote bfrepo -> ssh://root@172.19.1.7/...
   - git lives only at /opt/hud/bin/git. Always export PATH in a systemd unit.
   - Never hardcode a build unit name; it changes every run.
+  - NEVER git-merge into bf-build's worktree while a build is running there.
+    convert-python.py rewrites definitions in place, and a `git merge --ff-only`
+    that cannot fast-forward RESETS THE WORKTREE and discards them — that is how
+    33 converted definitions were lost on 2026-09-09 while the packages built
+    from them were already published. Copy files with scp instead, or wait for
+    the run to end. If it has already happened,
+    scripts/recover-from-artifact.py restores each definition from
+    opt/hud/share/hud/info/<pkg>/<pkg>.huddef inside the shipped .hud — the
+    copy that actually produced the bits.
+  - Two build drivers can run at once. e5-driver.py loads its state once and
+    rewrites it whole, so give the second one its own E5_STATE and E5_RESULTS
+    (scripts/run-queue2.sh does). Publishing overlaps safely: hud-unstable
+    takes a flock. Do not run a third — bf-build has 4 cores and 5.8 GB, and
+    nodejs linking V8 beside two other builds risks the OOM killer.
+  - A gate that cannot fail is worse than no gate. g1-rebuild.sh had three of
+    them on 2026-09-09: it addressed the driver's state file by a name the
+    driver no longer read, and one gate tested `tail`'s exit status instead of
+    the check's. Read a gate before trusting a pass.
 
 NEVER, regardless of progress:
   - write under /var/www/hud-repo/, or run hud-repo-manager add/remove there
