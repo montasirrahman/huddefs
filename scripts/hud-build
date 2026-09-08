@@ -206,10 +206,29 @@ fi
 # --- 4. stage source and patches ---------------------------------------------
 if [ -n "$TARBALL" ]; then
     info "Unpacking source"
-    tar -xf "$TARBALL" -C "$ROOT/build"
+    case "$TARBALL" in
+        *.zip)
+            # docbook ships a .zip. tar reports "This does not look like a tar
+            # archive" and skips headers until it gives up, so the failure looks
+            # like a corrupt download rather than the wrong tool.
+            command -v unzip >/dev/null \
+                || die "$TARBALL is a zip and unzip is not installed"
+            unzip -q -o "$TARBALL" -d "$ROOT/build" ;;
+        *)  tar -xf "$TARBALL" -C "$ROOT/build" ;;
+    esac
+
     srcname=$(ls "$ROOT/build")
-    [ "$(echo "$srcname" | wc -l)" -eq 1 ] || die "tarball did not unpack to a single directory"
-    SRC_IN_ROOT="/build/$srcname"
+    if [ "$(echo "$srcname" | wc -l)" -ne 1 ]; then
+        # A zip that unpacks flat has no single top directory — docbook's does
+        # exactly that, which is what its `ExtractDir: .` header was describing.
+        # Build in /build itself rather than refusing.
+        case "$TARBALL" in
+            *.zip) SRC_IN_ROOT="/build" ;;
+            *) die "tarball did not unpack to a single directory" ;;
+        esac
+    else
+        SRC_IN_ROOT="/build/$srcname"
+    fi
 else
     SRC_IN_ROOT="/build"
 fi
