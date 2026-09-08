@@ -397,7 +397,27 @@ Two findings from them that do not depend on this decision:
 
 ---
 
-## BLOCKING: `Depends: auto` produces something the deployed client cannot use
+## ~~BLOCKING~~ RESOLVED 2026-09-08: `Depends: auto` produced something the deployed client could not use
+
+**Fixed in `hud-build` via `scripts/resolve-capabilities.py`.** `Depends:` now
+carries package names the client resolves; `Requires:` keeps the capabilities the
+graph needs. Verified end to end in a clean root:
+
+```
+$ hud install -y python3-lxml
+The following dependencies will be installed:
+  icu, libxml2, docbook, libgpg-error, libgcrypt, zlib, perl, docbook-xsl, libxslt
+```
+
+against the warnings it produced before. Every package published from now on
+gets resolvable dependencies; the 45 published earlier are being rebuilt.
+
+The original analysis is kept below because it explains why the two fields differ
+and why the interim fix was chosen over changing the client.
+
+---
+
+## (original) BLOCKING: `Depends: auto` produces something the deployed client cannot use
 
 **Every package rebuilt under huddef v2 publishes runtime dependencies the `hud`
 client silently fails to resolve. Nothing installs them. 42 such packages are
