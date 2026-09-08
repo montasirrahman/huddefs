@@ -39,9 +39,24 @@ make DESTDIR=$DESTDIR install
 # Create libncurses.so symlink (needed by some packages)
 ln -sfv libncursesw.so $DESTDIR/opt/hud/lib/libncurses.so
 
-# Fix curses.h to always use wide-character data structures
+# Fix curses.h to always use wide-character data structures.
+#
+# The path was $DESTDIR/opt/hud/include/curses.h, which does not exist and
+# cannot: --enable-widec makes ncurses install its headers into
+# include/ncursesw/, and include/ncurses is a symlink to that directory. The
+# build therefore died with
+#     sed: can't read /dest/opt/hud/include/curses.h: No such file or directory
+# every time, and the published ncurses was built by some other means.
 sed -e 's/^#if.*XOPEN.*$/#if 1/' \
-    -i $DESTDIR/opt/hud/include/curses.h
+    -i $DESTDIR/opt/hud/include/ncursesw/curses.h
+
+# A top-level curses.h and ncurses.h, for the many packages that include
+# <curses.h> without knowing about the widec layout. util-linux is the reason
+# this matters: its configure probes for ncursesw/ncurses.h and falls back to
+# narrow curses when it cannot find a usable header, after which get_wch is an
+# implicit declaration and GCC 15 makes that an error.
+ln -sfv ncursesw/curses.h  $DESTDIR/opt/hud/include/curses.h
+ln -sfv ncursesw/ncurses.h $DESTDIR/opt/hud/include/ncurses.h
 
 # Create non-wide character compatibility symlinks
 for lib in ncurses form panel menu; do
@@ -50,8 +65,9 @@ for lib in ncurses form panel menu; do
     ln -sfv lib${lib}w.a $DESTDIR/opt/hud/lib/lib${lib}.a 2>/dev/null || true
 done
 
-# Create include directory symlink
-ln -sfv ncursesw $DESTDIR/opt/hud/include/ncurses 2>/dev/null || true
+# The include directory symlink. Unguarded: if this fails the package is wrong,
+# and `|| true` would ship it anyway.
+ln -sfn ncursesw $DESTDIR/opt/hud/include/ncurses
 
 # Create pkg-config symlinks for non-wide versions
 for pc in ncurses form panel menu; do
