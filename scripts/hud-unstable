@@ -29,6 +29,25 @@ esac
 
 export HUD_REPO_DIR="$real"
 
+# Serialise every write to the repository.
+#
+# hud-repo-manager has no locking of its own. `add` copies into the pool and
+# INSERTs into packages.db, and `update-index` rewrites packages.list from that
+# database — so two concurrent publishes can interleave a copy with an index
+# regeneration and produce an index that does not describe the pool. Nothing
+# would report it; the next machine to run `hud update` would simply get a
+# wrong answer.
+#
+# flock on a dedicated file rather than on the database: sqlite does its own
+# locking for the INSERT but nothing covers the pool copy and the index rewrite
+# as one unit. 300s is generous — a publish is a copy and a query — and timing
+# out is better than stacking up.
+LOCK="/var/lock/hud-unstable.lock"
+if [ -z "${HUD_UNSTABLE_LOCKED:-}" ]; then
+    export HUD_UNSTABLE_LOCKED=1
+    exec flock -w 300 "$LOCK" "$0" "$@"
+fi
+
 # `add` on a name+version that already exists prompts "Replace existing version?
 # [y/N]" and reads from stdin. In a driver there is no tty, the read fails, the
 # answer is empty, and the manager prints "Skipped" and exits 0 — so E5 would
