@@ -228,6 +228,12 @@ if [ -n "$MISSING" ]; then
         2>/dev/null | tr -d '\r')
     own="" ; gone=""
     while read -r lib; do
+        # systemd-nspawn allocates a pty, so every line read back from it carries
+        # a trailing CR — the same trap this script already documents for the
+        # Build-Date comparison. MISSING comes from nspawn too, and comparing
+        # "libjvm.so\r" against a stripped SHIPPED list silently never matches,
+        # which is why java-bin still failed after the split was added.
+        lib=$(printf '%s' "$lib" | tr -d '\r' | sed 's/[[:space:]]*$//')
         [ -n "$lib" ] || continue
         if echo "$SHIPPED" | grep -qxF "$lib"; then
             own="$own$lib
