@@ -136,9 +136,16 @@ if [ ! -e /etc/NetworkManager/NetworkManager.conf ]; then
     install -v -Dm644 /opt/hud/share/networkmanager/defaults/NetworkManager.conf /etc/NetworkManager/NetworkManager.conf
 fi
 groupadd -fg 86 netdev 2>/dev/null || true
-systemctl daemon-reload
-systemctl enable NetworkManager.service
-systemctl start NetworkManager.service || true
+# systemd may not be PID 1 where this installs — a build container, a chroot, an
+# image being assembled. systemctl then fails with "System has not been booted
+# with systemd as init system" and takes the whole install with it, which is how
+# dnsmasq, firewalld, glusterfs, libvirt and networkmanager failed their install
+# tests. dhcpcd already had this guard.
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    systemctl enable NetworkManager.service
+    systemctl start NetworkManager.service || true
+fi
 echo "NetworkManager 1.54.0 installed and enabled"
 echo "Commands: nmtui, nmcli"
 echo "Check status: systemctl status NetworkManager"

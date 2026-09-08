@@ -71,11 +71,33 @@ def code(body):
             if l.strip() and not l.strip().startswith("#")]
 
 
+def shell_parses(body):
+    """Does this section parse as shell?
+
+    Worth a rule of its own because three separate edits produced sections that
+    did not: lifting a heredoc out of `if ... then <heredoc> fi` left five empty
+    blocks in linux-pam, and rewriting an append as a redirect turned `>>` into
+    `> >` in glusterfs. Both shipped as valid-looking definitions and failed at
+    install time.
+    """
+    import subprocess
+    r = subprocess.run(["bash", "-n"], input=body, text=True, capture_output=True)
+    return (r.returncode == 0,
+            r.stderr.strip().splitlines()[0] if r.stderr.strip() else "")
+
+
 def check(pkg):
     f = os.path.join(H, pkg, f"{pkg}.huddef")
     head, secs = sections(open(f, errors="replace").read())
     v2 = "Source-SHA256:" in head and re.search(r"^Build-Depends:", head, re.M)
     errs, warns = [], []
+
+    for name, body in secs.items():
+        if name not in BUILD_SECTIONS + ("postinst", "prerm", "postrm") or not body.strip():
+            continue
+        good, why = shell_parses(body)
+        if not good:
+            errs.append(f"shell-parses: [{name}] is not valid shell: {why[:70]}")
 
     if re.search(r"^Patch:\s*http", head, re.M):
         errs.append("no-v1-patch-url: `Patch:` names a URL; the builder never fetches it")

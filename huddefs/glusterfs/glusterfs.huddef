@@ -105,11 +105,11 @@ install -v -dm755 $DESTDIR/etc/glusterfs
 
 install -v -dm755 $DESTDIR/etc/firewalld/services
 
+# Both library directories in one drop-in. The second line was an append in v1
+# and the policy transformer turned ">>" into "> >", which bash rejects — it
+# matched the first ">" as the redirect and left the second in the content.
 install -v -dm755 $DESTDIR/etc/ld.so.conf.d
-echo "/opt/hud/lib64" > $DESTDIR/etc/ld.so.conf.d/glusterfs.conf
-
-install -v -dm755 $DESTDIR/etc/ld.so.conf.d
-echo "/opt/hud/lib64/glusterfs" > > $DESTDIR/etc/ld.so.conf.d/glusterfs.conf
+printf '%s\n' /opt/hud/lib64 /opt/hud/lib64/glusterfs > $DESTDIR/etc/ld.so.conf.d/glusterfs.conf
 
 install -v -dm755 $DESTDIR/usr/local/lib/systemd/system
 cat > $DESTDIR/usr/local/lib/systemd/system/glusterd.service << "EOFSVC"
@@ -166,9 +166,14 @@ chown -R gluster:gluster /var/run/gluster
 # Create firewalld service definition
 
 # Enable and start service
-systemctl daemon-reload
-systemctl enable glusterd.service
-systemctl start glusterd.service || true
+# systemd may not be PID 1 where this installs — a build container, a chroot, an
+# image being assembled. systemctl then fails with "System has not been booted
+# with systemd as init system" and takes the whole install with it.
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    systemctl enable glusterd.service
+    systemctl start glusterd.service || true
+fi
 
 # Add firewall rules if firewalld is running
 if systemctl is-active --quiet firewalld; then

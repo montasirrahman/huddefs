@@ -137,7 +137,7 @@ ROOT="$WORK/root"
 # systemd-nspawn machine names accept only [A-Za-z0-9-._]; wpa_supplicant's
 # underscore produced "Invalid machine name: bld-wpa_supplicant-zmp0Cw" and the
 # build failed before it started. Substitute anything else.
-MACHINE="bld-$(basename "$WORK" | tr -c 'A-Za-z0-9.-' '-')"
+MACHINE="bld-$(printf '%s' "$(basename "$WORK")" | tr -c 'A-Za-z0-9.-' '-')"
 
 # Cleanup must unmount before deleting. If $ROOT is still a mountpoint, `rm -rf`
 # would delete straight through the overlay into the pristine lower tree, which

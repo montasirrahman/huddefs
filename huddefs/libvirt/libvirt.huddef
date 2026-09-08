@@ -350,15 +350,20 @@ rm -f /etc/systemd/system/libvirtd.service 2>/dev/null || true
 # ============================================================
 # ENABLE AND START SERVICES
 # ============================================================
-systemctl daemon-reload
-systemctl enable virtlockd.socket
-systemctl enable virtlogd.socket
-systemctl enable virtqemud.service
-systemctl enable virtnetworkd.service
-systemctl start virtlockd.socket || true
-systemctl start virtlogd.socket || true
-systemctl start virtqemud.service || true
-systemctl start virtnetworkd.service || true
+# systemd may not be PID 1 where this installs — a build container, a chroot, an
+# image being assembled. systemctl then fails with "System has not been booted
+# with systemd as init system" and takes the whole install with it.
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    systemctl enable virtlockd.socket
+    systemctl enable virtlogd.socket
+    systemctl enable virtqemud.service
+    systemctl enable virtnetworkd.service
+    systemctl start virtlockd.socket || true
+    systemctl start virtlogd.socket || true
+    systemctl start virtqemud.service || true
+    systemctl start virtnetworkd.service || true
+fi
 
 echo ""
 echo "============================================"

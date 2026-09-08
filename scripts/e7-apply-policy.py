@@ -138,7 +138,14 @@ def main(pkgs):
         for i, line in enumerate(lines):
             if i in consumed:
                 continue
-            m = re.match(r"\s*((?:printf|echo)\s+.*?)\s*>\s*(/\S+)\s*$", line)
+            # (?<!>) so an APPEND is not mistaken for a truncating redirect.
+            # Without it, `echo x >> /etc/f` became `echo x > > $DESTDIR/etc/f`
+            # — the first > taken as the redirect, the second left in the
+            # content — which bash rejects. Appends are left alone: turning one
+            # into a truncate silently changes what the file ends up holding.
+            if re.search(r">>\s*/\S+\s*$", line):
+                continue
+            m = re.match(r"\s*((?:printf|echo)\s+.*?)\s*(?<!>)>\s*(/\S+)\s*$", line)
             if not m:
                 continue
             content, path = m.group(1), m.group(2)

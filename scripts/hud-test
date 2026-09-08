@@ -67,8 +67,10 @@ RUN="$TEST_ROOT/run-$$"
 # Explicit, for the same reason hud-build names its container: nspawn derives the
 # name from the basename, and an unnamed test container can collide with another
 # run's. RUN is already unique; this makes it unmistakable.
-# Same character restriction as hud-build's: nspawn rejects underscores.
-MACHINE="tst-$(basename "$RUN" | tr -c 'A-Za-z0-9.-' '-')"
+# Same character restriction as hud-build's: nspawn rejects underscores, and
+# printf rather than echo so tr does not turn the trailing newline into a
+# dash — nspawn rejects a name ending in one.
+MACHINE="tst-$(printf '%s' "$(basename "$RUN")" | tr -c 'A-Za-z0-9.-' '-')"
 
 # Unmount before deleting. If $RUN is still a mountpoint, `rm -rf` deletes
 # through the overlay into the pristine lower tree that every build depends on.

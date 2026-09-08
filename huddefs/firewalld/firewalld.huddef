@@ -136,9 +136,16 @@ ldconfig
 
 # Create systemd service with all required environment variables
 
-systemctl daemon-reload
-systemctl enable firewalld.service || true
-systemctl start firewalld.service || true
+# systemd may not be PID 1 where this installs — a build container, a chroot, an
+# image being assembled. systemctl then fails with "System has not been booted
+# with systemd as init system" and takes the whole install with it, which is how
+# dnsmasq, firewalld, glusterfs, libvirt and networkmanager failed their install
+# tests. dhcpcd already had this guard.
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    systemctl enable firewalld.service || true
+    systemctl start firewalld.service || true
+fi
 
 echo ""
 echo "firewalld 2.3.2 installed"
