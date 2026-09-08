@@ -24,7 +24,18 @@ Source-SHA256:    e1bd7bd31b7c0d0ae073dec050bb5b0232b3e4adebdc58ea82fe8b366c7657
 # which is the driver this distribution exists to use. python-setuptools because
 # meson's build scripts import distutils, removed from Python 3.13 — setuptools
 # ships the compatibility shim.
-Build-Depends:    qemu, python3, glib, libxml2, yajl, libpciaccess, numactl, polkit, dbus, libnl, gnutls, libgcrypt, curl, libssh2, nftables, dnsmasq, dmidecode, json-c, python-setuptools
+# libtirpc, acl, util-linux, readline and systemd were added 2026-09-09.
+# meson found every one of them and used it, but none was declared: the build
+# was linking whatever the base rootfs happened to carry. libtirpc is what
+# turned that into a failure — undeclared, so /opt/hud/include/tirpc was never
+# installed, the rootfs's compatibility symlink /usr/include/tirpc pointed at
+# nothing, and pkg-config fell through to the system libtirpc.pc (1.3.6, and
+# describing headers that are not there) instead of the packaged 1.3.7. The
+# build got -I/usr/include/tirpc and could not find rpc/rpc.h.
+#
+# The other four were being satisfied silently by the same accident. They
+# supply libacl.so.1, libblkid.so.1, libreadline.so.8 and libudev.so.1.
+Build-Depends:    qemu, python3, glib, libxml2, yajl, libpciaccess, numactl, polkit, dbus, libnl, gnutls, libgcrypt, curl, libssh2, nftables, dnsmasq, dmidecode, json-c, python-setuptools, libtirpc, acl, util-linux, readline, systemd
 Depends:          auto
 Provides:         auto
 
