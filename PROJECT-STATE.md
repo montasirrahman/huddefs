@@ -76,21 +76,28 @@ error:
 | `docbook` | `Source:` is a `.zip` and hud-build only ever ran `tar` | teach hud-build to unzip, and to allow a flat unpack |
 | `docbook-xsl`, `docbook` | `[postinst]` calls `xmlcatalog` in a non-login shell that never sources `hud-env.sh` | set `PATH` in postinst; declare `libxml2` explicitly |
 | `qemu` | SDL2's own header includes `X11/Xlib.h` | `Build-Depends: libX11` |
-| `java-bin` | hud-test reported the package's **own** `libjvm.so` as unresolved | hud-test now separates self-shipped from genuinely absent |
+| `java-bin` | hud-test reported the package's **own** `libjvm.so` as unresolved | hud-test separates self-shipped from genuinely absent — and the split silently never fired until the pty's trailing CR was stripped from both sides of the comparison |
+| `qemu` (2nd) | `dtc` installed and verified, and still could not start: `libyaml-0.so.2` missing, because the published `dtc` declares only `glib` | `Build-Depends: libyaml` — a workaround for dtc's metadata, see the client finding below |
 
 **The published `openldap` was never built from its definition.** It cannot have
 been — the definition builds Berkeley DB with openldap's configure flags. It was
 built by hand, and nothing in the pipeline could have noticed.
 
-### Published today
+### Published today — 45 in unstable, no failures outstanding
 
-`util-linux` (406 files, 8.2 MB), `giflib` (with both security patches applied),
-`openldap` (178 files), `docbook-xsl` (**1,838 files, 24.8 MB, from 5 KB**).
-40 packages published to unstable in total.
+`util-linux` (406 files, 8.2 MB), `giflib` (both security patches applied),
+`openldap` (178 files), `docbook-xsl` (**1,838 files, 24.8 MB, from 5 KB**),
+`docbook` (31 files), `qemu` (**139 files, 73.6 MB**), `java-bin` (306 files,
+227 MB). The driver's failure list is empty.
 
 **The qemu patch applies.** `>>> applying qemu-10.0.3-python_fixes-1.patch /
 patching file python/scripts/mkvenv.py` — the thing `CLAUDE.md` suspected had
-never happened. qemu is rebuilding with `libX11` added.
+never happened, now confirmed applying and the package rebuilt with it. The
+patch itself is a build-time fix to `mkvenv.py` and correctly does not ship.
+
+**Nine of E7's ten are rebuilt and published.** Only `nodejs` remains: it
+compiles V8 and exceeded the driver's two-hour timeout, so it is running with
+`BUILD_TIMEOUT=18000`.
 
 ### The only empty packages left are the 33 that are blocked
 
