@@ -80,22 +80,16 @@ EOF
 [postinst]
 ldconfig 2>/dev/null || true
 
-# Create basic PAM configuration files if they don't exist
+# The five files below ship as tracked defaults under
+# /opt/hud/share/linux-pam/defaults and are copied here only when the target is
+# absent. Never unconditionally: v1 overwrote system-auth, system-account,
+# system-session, system-password and other on every install, and getting PAM
+# configuration wrong locks every user out of the machine.
 
-if [ ! -f /etc/pam.d/system-account ]; then
-fi
 
-if [ ! -f /etc/pam.d/system-auth ]; then
-fi
 
-if [ ! -f /etc/pam.d/system-session ]; then
-fi
 
-if [ ! -f /etc/pam.d/system-password ]; then
-fi
 
-if [ ! -f /etc/pam.d/other ]; then
-fi
 
 echo "linux-pam 1.7.1 installed to /opt/hud"
 echo "NOTE: Shadow and Systemd should be reinstalled after installing Linux-PAM"

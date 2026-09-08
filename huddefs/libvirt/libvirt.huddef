@@ -20,7 +20,11 @@ Description: Virtualization API library for managing hypervisors (QEMU/KVM)
 Source: https://download.libvirt.org/libvirt-10.10.0.tar.xz
 Source-SHA256:    e1bd7bd31b7c0d0ae073dec050bb5b0232b3e4adebdc58ea82fe8b366c765796
 
-Build-Depends:    qemu, python3, glib, libxml2, yajl, libpciaccess, numactl, polkit, dbus, libnl, gnutls, libgcrypt, curl, libssh2, nftables, dnsmasq, dmidecode
+# json-c because meson stops with "json-c is required to build QEMU driver",
+# which is the driver this distribution exists to use. python-setuptools because
+# meson's build scripts import distutils, removed from Python 3.13 — setuptools
+# ships the compatibility shim.
+Build-Depends:    qemu, python3, glib, libxml2, yajl, libpciaccess, numactl, polkit, dbus, libnl, gnutls, libgcrypt, curl, libssh2, nftables, dnsmasq, dmidecode, json-c, python-setuptools
 Depends:          auto
 Provides:         auto
 

@@ -11,7 +11,11 @@ Description: Network configuration and management daemon (with introspection/Pyt
 Source: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/releases/1.54.0/downloads/NetworkManager-1.54.0.tar.xz
 Source-SHA256:    6c104c8e0bd5a3bbbb9ce28b7670e72924e058fa9303e90dab2815d70a530879
 
-Build-Depends:    libndp, curl, dhcpcd, glib, iptables, libpsl, newt, polkit, vala, dbus, systemd, gnutls, gobject-introspection, libnl
+# python-setuptools: the build dies with "No module named 'distutils'". Python
+# 3.13 removed distutils and setuptools carries the shim meson and
+# g-ir-scanner still import. Same cause as gobject-introspection, graphene,
+# gstreamer and harfbuzz in E4.
+Build-Depends:    libndp, curl, dhcpcd, glib, iptables, libpsl, newt, polkit, vala, dbus, systemd, gnutls, gobject-introspection, libnl, python-setuptools
 Depends:          auto
 Provides:         auto
 

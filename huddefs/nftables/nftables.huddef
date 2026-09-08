@@ -25,7 +25,9 @@ Description: Netfilter tables userspace tools (modern iptables replacement)
 Source: https://www.netfilter.org/projects/nftables/files/nftables-1.1.1.tar.xz
 Source-SHA256:    6358830f3a64f31e39b0ad421d7dadcd240b72343ded48d8ef13b8faf204865a
 
-Build-Depends:    libnftnl, libmnl, readline, gmp, jansson
+# libedit: configure fails with "No suitable version of libedit found" without
+# it. nft's interactive mode is built by default and needs the line editor.
+Build-Depends:    libnftnl, libmnl, readline, gmp, jansson, libedit
 Depends:          auto
 Provides:         auto
 

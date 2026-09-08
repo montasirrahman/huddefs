@@ -105,18 +105,20 @@ def pep517_backend(tarball):
             names = [m.name for m in t.getmembers() if m.isfile()]
             read = lambda n: t.extractfile(n).read()
     except Exception:
-        return "setuptools.build_meta:__legacy__", []
+        return "setuptools.build_meta:__legacy__", [], None, []
     cands = [(n.count("/"), n) for n in names
              if os.path.basename(n) == "pyproject.toml"]
     if not cands:
-        return "setuptools.build_meta:__legacy__", []
+        return "setuptools.build_meta:__legacy__", [], None, []
     try:
         data = tomllib.loads(read(min(cands)[1]).decode("utf-8", "replace"))
     except Exception:
-        return "setuptools.build_meta:__legacy__", []
+        return "setuptools.build_meta:__legacy__", [], None, []
     bs = data.get("build-system", {})
     return (bs.get("build-backend") or "setuptools.build_meta:__legacy__",
-            bs.get("requires", []))
+            bs.get("requires", []),
+            bs.get("backend-path"),
+            data.get("project", {}).get("dependencies", []))
 
 
 def convert(pkg):
@@ -169,7 +171,7 @@ def convert(pkg):
     # unless the real python-setuptools package is installed over it. It is
     # 2.8 MB and intact in the pool, so declaring it is the fix — and it is
     # honest besides: a package built by setuptools does depend on setuptools.
-    backend, breqs = pep517_backend(tarball)
+    backend, breqs, backend_path, projdeps = pep517_backend(tarball)
 
     # Whatever builds this package has to BE here. The backend is named in
     # build-system.build-backend and its dependencies in build-system.requires,
@@ -220,9 +222,18 @@ def convert(pkg):
                 return True
         return True
 
+    # A self-hosting backend imports its OWN runtime dependencies while building
+    # itself. hatchling declares build-system.requires = [] and backend-path
+    # ["backend"], so pip loads it from the source tree — and it then imports
+    # packaging, which nothing had declared. The build died with
+    #     ModuleNotFoundError: No module named 'packaging'
+    # after converting perfectly. The same applies to setuptools_scm,
+    # charset-normalizer, meson-python and PyYAML, all of which set backend-path.
+    extra = [dist_of(d) for d in projdeps if marker_applies(d)] if backend_path else []
+
     wanted = []
     mod = re.split(r"[.:]", backend or "")[0].strip()
-    for key in [mod] + [dist_of(r) for r in breqs if marker_applies(r)]:
+    for key in [mod] + [dist_of(r) for r in breqs if marker_applies(r)] + extra:
         pkg_name = BACKEND_PKG.get(key, BACKEND_PKG.get(key.replace("-", "_")))
         if pkg_name and pkg_name not in bd and pkg_name not in wanted and pkg_name != pkg:
             wanted.append(pkg_name)

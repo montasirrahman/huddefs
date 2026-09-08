@@ -209,6 +209,28 @@ def main(pkgs):
                            + "# Moved out of [postinst] by docs/file-ownership-policy.md:\n"
                            + "# anything created there is untracked and survives `hud remove`.\n"
                            + "\n\n".join(moved_install) + "\n")
+        # Refuse to write shell that does not parse. Taking a heredoc out of the
+        # middle of an `if ... then <heredoc> fi` leaves an empty block, and
+        # bash rejects it — linux-pam ended up with five of them and its install
+        # test failed with "syntax error near unexpected token `fi'". A
+        # transformer that can produce broken shell must check its own output.
+        import subprocess
+        for name in ("postinst", "prerm", "postrm", "install"):
+            if name not in secs:
+                continue
+            r = subprocess.run(["bash", "-n"], input=secs[name],
+                               text=True, capture_output=True)
+            if r.returncode != 0:
+                print(f"{pkg}: REFUSING to write — [{name}] would not parse: "
+                      f"{r.stderr.strip().splitlines()[0] if r.stderr.strip() else '?'}")
+                print(f"    the definition is unchanged; fix it by hand")
+                bad = True
+                break
+        else:
+            bad = False
+        if bad:
+            continue
+
         body = "\n".join(f"[{s}]\n{secs[s].rstrip()}\n" for s in order if s in secs)
         open(f, "w").write(head.rstrip("\n") + "\n\n" + body)
         print(f"{pkg}: {len(changes)} change(s)")

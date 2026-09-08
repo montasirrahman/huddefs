@@ -15,6 +15,15 @@ Depends:          auto
 Provides:         auto
 
 [configure]
+# -std=gnu17 because md5.c uses K&R function definitions:
+#     md5.c:139: error: too many arguments to function 'MD5_memcpy'; expected 0, have 3
+# GCC 15 defaults to C23, where an empty parameter list means "no parameters"
+# rather than "unspecified", so every call to those functions is an error. This
+# is the conventional fix across distributions and it is what CLAUDE.md's
+# toolchain-strictness precedent prescribes — the package then ships exactly
+# what it shipped before, rather than less.
+export CFLAGS="-std=gnu17 ${CFLAGS:-}"
+
 ./configure --prefix=/opt/hud --sysconfdir=/opt/hud/etc --enable-auth-sasldb --with-dbpath=/opt/hud/etc/sasldb2
 
 [build]
