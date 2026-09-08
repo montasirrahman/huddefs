@@ -20,7 +20,9 @@ Description: Distributed scalable network filesystem
 Source: https://download.gluster.org/pub/gluster/glusterfs/11/11.1/glusterfs-11.1.tar.gz
 Source-SHA256:    6a31b8450d02cd12f47f4571c031e9d6b8705279a0e8970ae9a05e1c87dffb76
 
-Build-Depends:    python3, liburcu, libxml2, openssl, libaio, readline, ncurses, libtirpc, sqlite, python3-pyxattr
+# gperftools provides tcmalloc; configure stops with "tcmalloc library needs
+# to be present" without it.
+Build-Depends:    python3, liburcu, libxml2, openssl, libaio, readline, ncurses, libtirpc, sqlite, python3-pyxattr, gperftools
 Depends:          auto
 Provides:         auto
 

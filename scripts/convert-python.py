@@ -72,6 +72,15 @@ def fix_install(body, pkg):
                 new = re.sub(r'(\bpip3?\s+install\b)', r'\1 --no-deps', new, count=1)
             if "--break-system-packages" not in new:
                 new += " --break-system-packages"
+            # Without --no-build-isolation pip builds in a fresh venv and
+            # DOWNLOADS the backend, which cannot work with the network
+            # disabled. python3-distlib failed with
+            #     ERROR: No matching distribution found for setuptools>=44
+            # after retrying the network three times. The backend it needs is
+            # declared in Build-Depends and is already installed.
+            if "--no-build-isolation" not in new:
+                new = re.sub(r"(\bpip3?\s+install\b)", r"\1 --no-build-isolation",
+                             new, count=1)
             # drop flags that conflict with a staged install
             new = new.replace(" --no-user", "")
             out.append(new)
