@@ -4,16 +4,22 @@ Package: python3-py3c
 Version: 1.4
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: Py3c-1.4 - helps port C extensions to Python 3
 Source: https://github.com/encukou/py3c/archive/v1.4/py3c-1.4.tar.gz
+Source-SHA256:    abc745079ef906148817f4472c3fb4bc41d62a9ea51a746b53e09819494ac006
+
+Build-Depends:    python3, python-setuptools
+Depends:          auto
+Provides:         auto
+
 [build]
 # Headers-only package, no build needed
+
 [install]
 make prefix=/opt/hud install
+
 [postinst]
 echo "python3-py3c 1.4 installed"
+
 [prerm]
 # Manual removal if needed
-[postrm]
-# Cleanup if needed

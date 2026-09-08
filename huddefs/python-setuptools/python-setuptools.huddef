@@ -7,9 +7,13 @@ Version: 80.9.0
 Architecture: x86_64
 Section: python
 # `python` was the base system's name; the package here is python3.
-Depends: python3
 Description: Python packaging and distribution tools
 Source: https://files.pythonhosted.org/packages/source/s/setuptools/setuptools-80.9.0.tar.gz
+Source-SHA256:    f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c
+
+Build-Depends:    python3
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"

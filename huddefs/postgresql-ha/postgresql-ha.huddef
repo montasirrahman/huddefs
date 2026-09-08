@@ -17,10 +17,14 @@ Package: postgresql-ha
 Version: 17.6
 Architecture: x86_64
 Section: databases
-Depends: openssl, icu, libxml2, libxslt, systemd
 Recommends: pgbouncer, haproxy, keepalived
 Description: PostgreSQL with High Availability and Replication support
 Source: https://ftp.postgresql.org/pub/source/v17.6/postgresql-17.6.tar.bz2
+Source-SHA256:    e0630a3600aea27511715563259ec2111cd5f4353a4b040e0be827f94cd7a8b0
+
+Build-Depends:    openssl, icu, libxml2, libxslt, systemd, python-setuptools
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
