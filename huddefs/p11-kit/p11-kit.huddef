@@ -9,7 +9,7 @@ Description: Library to load and enumerate PKCS#11 modules for cryptographic tok
 Source: https://github.com/p11-glue/p11-kit/releases/download/0.25.5/p11-kit-0.25.5.tar.xz
 Source-SHA256:    04d0a86450cdb1be018f26af6699857171a188ac6d5b8c90786a60854e1198e5
 
-Build-Depends:    libtasn1
+Build-Depends:    libtasn1, libffi
 Depends:          auto
 Provides:         auto
 
