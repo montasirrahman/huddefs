@@ -287,6 +287,18 @@ fi
     echo "export CPPFLAGS=\"-I$PREFIX/include \${CPPFLAGS:-}\""
     echo "export LIBRARY_PATH=\"\${LIBRARY_PATH:-$PREFIX/lib:$PREFIX/lib64}\""
     echo "export XDG_DATA_DIRS=\"\${XDG_DATA_DIRS:-$PREFIX/share:/usr/local/share:/usr/share}\""
+    # libxml2 looks for its catalog at /etc/xml/catalog. The docbook and
+    # docbook-xsl packages build theirs at $PREFIX/etc/xml/catalog, because
+    # that is where a package installing under the prefix must put it — so
+    # nothing consulted it and every DTD lookup fell through to the URL in the
+    # document's DOCTYPE. With --private-network that is a failed build, which
+    # is how postgresql-ldap died on
+    #   failed to load "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+    # one step after installing the very package that resolves it locally.
+    #
+    # Both paths, prefix first: a definition may still rely on a system catalog,
+    # and libxml2 ignores an entry that does not exist.
+    echo "export XML_CATALOG_FILES=\"\${XML_CATALOG_FILES:-$PREFIX/etc/xml/catalog /etc/xml/catalog}\""
     echo "cd \$SRCDIR"
 
     # patches: failure is fatal, no || true

@@ -21,7 +21,19 @@ Description: PostgreSQL with LDAP authentication and High Availability support
 Source: https://ftp.postgresql.org/pub/source/v17.6/postgresql-17.6.tar.bz2
 Source-SHA256:    e0630a3600aea27511715563259ec2111cd5f4353a4b040e0be827f94cd7a8b0
 
-Build-Depends:    openssl, icu, libxml2, libxslt, openldap, systemd, python-setuptools
+# docbook and docbook-xsl added 2026-09-09. [install] runs `make install-docs`,
+# which builds the SGML manual and therefore needs the DocBook XML DTD and the
+# XSL stylesheets. Neither was declared, so libxml2 fell through to the URL in
+# the DOCTYPE and the build died on
+#   failed to load "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+# once [build] stopped having a network. The shipped package contains 1143 HTML
+# files, so the docs used to be built by fetching the DTD mid-build — the same
+# defect as qemu's wget'd patch, in a package nobody was looking at.
+#
+# hud-build now exports XML_CATALOG_FILES pointing at $PREFIX/etc/xml/catalog,
+# which is where these two packages build their catalog; libxml2's default of
+# /etc/xml/catalog never saw it.
+Build-Depends:    openssl, icu, libxml2, libxslt, openldap, systemd, python-setuptools, docbook, docbook-xsl
 Depends:          auto
 Provides:         auto
 
