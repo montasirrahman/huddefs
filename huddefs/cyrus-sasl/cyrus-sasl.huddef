@@ -17,10 +17,19 @@ Service: saslauthd
 make -j$(nproc)
 
 [install]
+# DESTDIR is exported by the builder, so `make install` stages correctly.
 make install &&
-install -v -dm755                          /usr/share/doc/cyrus-sasl-2.1.28/html &&
-install -v -m644  saslauthd/LDAP_SASLAUTHD /usr/share/doc/cyrus-sasl-2.1.28      &&
-install -v -m644
+
+# Documentation, into the prefix and staged. v1 wrote it to /usr/share/doc on
+# the build host with no $DESTDIR, so it never shipped — and the last line was
+# truncated mid-command:
+#     install -v -m644
+# with no arguments at all, which under `set -euo pipefail` fails the build. The
+# definition as written could not have produced the package that is published.
+install -v -dm755 $DESTDIR/opt/hud/share/doc/cyrus-sasl-2.1.28/html &&
+install -v -m644 saslauthd/LDAP_SASLAUTHD $DESTDIR/opt/hud/share/doc/cyrus-sasl-2.1.28/ &&
+install -v -m644 doc/legacy/*.html $DESTDIR/opt/hud/share/doc/cyrus-sasl-2.1.28/html/ 2>/dev/null || \
+install -v -m644 doc/html/*.html $DESTDIR/opt/hud/share/doc/cyrus-sasl-2.1.28/html/
 
 [postinst]
 ldconfig 2>/dev/null || true

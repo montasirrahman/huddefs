@@ -81,6 +81,25 @@ cd build
 make DESTDIR=$DESTDIR install
 install -vdm755 $DESTDIR/etc/qemu
 
+# Moved out of [postinst] by docs/file-ownership-policy.md:
+# anything created there is untracked and survives `hud remove`.
+install -v -dm755 $DESTDIR/usr/bin
+ln -sfn /opt/hud/bin/qemu-system-x86_64 $DESTDIR/usr/bin/qemu-system-x86_64
+
+install -v -dm755 $DESTDIR/usr/bin
+ln -sfn /opt/hud/bin/qemu-img $DESTDIR/usr/bin/qemu-img
+
+install -v -dm755 $DESTDIR/usr/bin
+ln -sfn /opt/hud/bin/qemu-nbd $DESTDIR/usr/bin/qemu-nbd
+
+install -v -dm755 $DESTDIR/etc/qemu
+
+install -v -dm755 $DESTDIR/opt/hud/share/qemu/defaults
+cat > $DESTDIR/opt/hud/share/qemu/defaults/bridge.conf << "EOF"
+allow br0
+allow virbr0
+EOF
+
 [postinst]
 ldconfig
 
@@ -95,18 +114,15 @@ chmod 4750 /opt/hud/libexec/qemu-bridge-helper 2>/dev/null || true
 ln -sfv qemu-system-$(uname -m) /opt/hud/bin/qemu
 
 # Create symlinks in /usr/bin for libvirt compatibility
-ln -sf /opt/hud/bin/qemu-system-x86_64 /usr/bin/qemu-system-x86_64 2>/dev/null || true
-ln -sf /opt/hud/bin/qemu-img /usr/bin/qemu-img 2>/dev/null || true
-ln -sf /opt/hud/bin/qemu-nbd /usr/bin/qemu-nbd 2>/dev/null || true
 
 # Setup QEMU configuration
-install -vdm755 /etc/qemu
-cat > /etc/qemu/bridge.conf << 'EOF'
-allow br0
-allow virbr0
-EOF
 
 echo "QEMU 10.0.3 installed"
 echo "Binary: /opt/hud/bin/qemu-system-x86_64"
 echo "Add users to 'kvm' group for hardware acceleration: usermod -aG kvm <username>"
 echo "Test: qemu-system-x86_64 --version"
+
+# /etc/qemu/bridge.conf: ship a default, never clobber an edited file.
+if [ ! -e /etc/qemu/bridge.conf ]; then
+    install -v -Dm644 /opt/hud/share/qemu/defaults/bridge.conf /etc/qemu/bridge.conf
+fi

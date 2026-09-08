@@ -38,29 +38,32 @@ make
 [install]
 DESTDIR=$DESTDIR make install
 
-[postinst]
-ldconfig
+# Moved out of [postinst] by docs/file-ownership-policy.md:
+# anything created there is untracked and survives `hud remove`.
+install -v -dm755 $DESTDIR/etc/firewalld
 
-# Create directories
-install -vdm755 /etc/firewalld
-install -vdm755 /etc/firewalld/zones
-install -vdm755 /etc/firewalld/services
-install -vdm755 /var/lib/firewalld
+install -v -dm755 $DESTDIR/etc/firewalld/zones
 
-# Symlink firewalld data files
-ln -sf /opt/hud/lib/firewalld /usr/lib/firewalld 2>/dev/null || true
-ln -sf /opt/hud/sbin/firewalld /usr/sbin/firewalld 2>/dev/null || true
+install -v -dm755 $DESTDIR/etc/firewalld/services
 
-# Create wrapper script for firewall-cmd with proper PYTHONPATH
-cat > /usr/bin/firewall-cmd << 'EOFWRAP'
+install -v -dm755 $DESTDIR/var/lib/firewalld
+
+install -v -dm755 $DESTDIR/usr/lib
+ln -sfn /opt/hud/lib/firewalld $DESTDIR/usr/lib/firewalld
+
+install -v -dm755 $DESTDIR/usr/sbin
+ln -sfn /opt/hud/sbin/firewalld $DESTDIR/usr/sbin/firewalld
+
+install -v -dm755 $DESTDIR/usr/bin
+cat > $DESTDIR/usr/bin/firewall-cmd << "EOFWRAP"
 #!/bin/bash
 export PYTHONPATH=/opt/hud/lib/python3.13/site-packages
 exec /opt/hud/bin/firewall-cmd "$@"
 EOFWRAP
-chmod +x /usr/bin/firewall-cmd
+chmod 755 $DESTDIR/usr/bin/firewall-cmd
 
-# Create firewalld config with nftables backend and disabled problematic options
-cat > /etc/firewalld/firewalld.conf << 'EOFCONF'
+install -v -dm755 $DESTDIR/opt/hud/share/firewalld/defaults
+cat > $DESTDIR/opt/hud/share/firewalld/defaults/firewalld.conf << "EOFCONF"
 # firewalld configuration
 DefaultZone=public
 CleanupOnExit=yes
@@ -75,8 +78,8 @@ NftablesTableOwner=no
 NftablesCounters=no
 EOFCONF
 
-# Create libvirt zone for virtual networking
-cat > /etc/firewalld/zones/libvirt.xml << 'EOFXML'
+install -v -dm755 $DESTDIR/opt/hud/share/firewalld/defaults
+cat > $DESTDIR/opt/hud/share/firewalld/defaults/libvirt.xml << "EOFXML"
 <?xml version="1.0" encoding="utf-8"?>
 <zone target="ACCEPT">
   <short>libvirt</short>
@@ -84,8 +87,8 @@ cat > /etc/firewalld/zones/libvirt.xml << 'EOFXML'
 </zone>
 EOFXML
 
-# Create systemd service with all required environment variables
-cat > /etc/systemd/system/firewalld.service << 'EOFSVC'
+install -v -dm755 $DESTDIR/usr/local/lib/systemd/system
+cat > $DESTDIR/usr/local/lib/systemd/system/firewalld.service << "EOFSVC"
 [Unit]
 Description=firewalld - dynamic firewall daemon
 Before=network-pre.target
@@ -114,6 +117,21 @@ RestartSec=5
 WantedBy=multi-user.target
 EOFSVC
 
+[postinst]
+ldconfig
+
+# Create directories
+
+# Symlink firewalld data files
+
+# The wrapper is shipped and already mode 755 by [install]; nothing to do here.
+
+# Create firewalld config with nftables backend and disabled problematic options
+
+# Create libvirt zone for virtual networking
+
+# Create systemd service with all required environment variables
+
 systemctl daemon-reload
 systemctl enable firewalld.service || true
 systemctl start firewalld.service || true
@@ -127,3 +145,13 @@ echo "Zones:  firewall-cmd --get-zones"
 echo "Reload: firewall-cmd --reload"
 echo ""
 echo "Service enabled and started automatically"
+
+# /etc/firewalld/firewalld.conf: ship a default, never clobber an edited file.
+if [ ! -e /etc/firewalld/firewalld.conf ]; then
+    install -v -Dm644 /opt/hud/share/firewalld/defaults/firewalld.conf /etc/firewalld/firewalld.conf
+fi
+
+# /etc/firewalld/zones/libvirt.xml: ship a default, never clobber an edited file.
+if [ ! -e /etc/firewalld/zones/libvirt.xml ]; then
+    install -v -Dm644 /opt/hud/share/firewalld/defaults/libvirt.xml /etc/firewalld/zones/libvirt.xml
+fi

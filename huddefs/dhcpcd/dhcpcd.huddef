@@ -40,12 +40,18 @@ DESTDIR=$DESTDIR make install
 # The lease database directory and the unit template. Both were built by
 # [postinst], so neither appeared in FILES: the unit stayed on disk after
 # `hud remove dhcpcd` and systemd went on offering dhcpcd@.service for a binary
-# that was gone. The unit is a file this package owns, under the package prefix,
-# so it belongs in [install] like any other shipped file.
+# that was gone.
+#
+# The unit goes to /usr/local/lib/systemd/system, not /opt/hud/lib/systemd/system
+# where E7 first put it. systemd does not search the prefix — `systemctl show
+# --property=UnitPath` does not list it — so the unit shipped, was tracked, and
+# was inert. /usr/local/lib/systemd/system is in the search path, ranks above the
+# base system's units and below /etc/systemd/system where an admin override
+# belongs. See docs/file-ownership-policy.md.
 install -v -dm755 $DESTDIR/var/lib/dhcpcd
-install -v -dm755 $DESTDIR/opt/hud/lib/systemd/system
+install -v -dm755 $DESTDIR/usr/local/lib/systemd/system
 
-cat > $DESTDIR/opt/hud/lib/systemd/system/dhcpcd@.service << "EOF"
+cat > $DESTDIR/usr/local/lib/systemd/system/dhcpcd@.service << "EOF"
 [Unit]
 Description=DHCP Client Daemon on %I
 Wants=network.target

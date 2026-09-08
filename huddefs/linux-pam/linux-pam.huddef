@@ -27,46 +27,40 @@ cd build &&
 DESTDIR=$DESTDIR ninja install &&
 chmod -v 4755 $DESTDIR/opt/hud/sbin/unix_chkpwd
 
-[postinst]
-ldconfig 2>/dev/null || true
+# Moved out of [postinst] by docs/file-ownership-policy.md:
+# anything created there is untracked and survives `hud remove`.
+install -v -dm755 $DESTDIR/etc/pam.d
 
-# Create basic PAM configuration files if they don't exist
-install -vdm755 /etc/pam.d
-
-if [ ! -f /etc/pam.d/system-account ]; then
-cat > /etc/pam.d/system-account << "EOF"
+install -v -dm755 $DESTDIR/opt/hud/share/linux-pam/defaults
+cat > $DESTDIR/opt/hud/share/linux-pam/defaults/system-account << "EOF"
 # Begin /etc/pam.d/system-account
 account   required    pam_unix.so
 # End /etc/pam.d/system-account
 EOF
-fi
 
-if [ ! -f /etc/pam.d/system-auth ]; then
-cat > /etc/pam.d/system-auth << "EOF"
+install -v -dm755 $DESTDIR/opt/hud/share/linux-pam/defaults
+cat > $DESTDIR/opt/hud/share/linux-pam/defaults/system-auth << "EOF"
 # Begin /etc/pam.d/system-auth
 auth      required    pam_unix.so
 # End /etc/pam.d/system-auth
 EOF
-fi
 
-if [ ! -f /etc/pam.d/system-session ]; then
-cat > /etc/pam.d/system-session << "EOF"
+install -v -dm755 $DESTDIR/opt/hud/share/linux-pam/defaults
+cat > $DESTDIR/opt/hud/share/linux-pam/defaults/system-session << "EOF"
 # Begin /etc/pam.d/system-session
 session   required    pam_unix.so
 # End /etc/pam.d/system-session
 EOF
-fi
 
-if [ ! -f /etc/pam.d/system-password ]; then
-cat > /etc/pam.d/system-password << "EOF"
+install -v -dm755 $DESTDIR/opt/hud/share/linux-pam/defaults
+cat > $DESTDIR/opt/hud/share/linux-pam/defaults/system-password << "EOF"
 # Begin /etc/pam.d/system-password
 password  required    pam_unix.so       yescrypt shadow try_first_pass
 # End /etc/pam.d/system-password
 EOF
-fi
 
-if [ ! -f /etc/pam.d/other ]; then
-cat > /etc/pam.d/other << "EOF"
+install -v -dm755 $DESTDIR/opt/hud/share/linux-pam/defaults
+cat > $DESTDIR/opt/hud/share/linux-pam/defaults/other << "EOF"
 # Begin /etc/pam.d/other
 auth        required        pam_warn.so
 auth        required        pam_deny.so
@@ -78,10 +72,54 @@ session     required        pam_warn.so
 session     required        pam_deny.so
 # End /etc/pam.d/other
 EOF
+
+[postinst]
+ldconfig 2>/dev/null || true
+
+# Create basic PAM configuration files if they don't exist
+
+if [ ! -f /etc/pam.d/system-account ]; then
+fi
+
+if [ ! -f /etc/pam.d/system-auth ]; then
+fi
+
+if [ ! -f /etc/pam.d/system-session ]; then
+fi
+
+if [ ! -f /etc/pam.d/system-password ]; then
+fi
+
+if [ ! -f /etc/pam.d/other ]; then
 fi
 
 echo "linux-pam 1.7.1 installed to /opt/hud"
 echo "NOTE: Shadow and Systemd should be reinstalled after installing Linux-PAM"
+
+# /etc/pam.d/system-account: ship a default, never clobber an edited file.
+if [ ! -e /etc/pam.d/system-account ]; then
+    install -v -Dm644 /opt/hud/share/linux-pam/defaults/system-account /etc/pam.d/system-account
+fi
+
+# /etc/pam.d/system-auth: ship a default, never clobber an edited file.
+if [ ! -e /etc/pam.d/system-auth ]; then
+    install -v -Dm644 /opt/hud/share/linux-pam/defaults/system-auth /etc/pam.d/system-auth
+fi
+
+# /etc/pam.d/system-session: ship a default, never clobber an edited file.
+if [ ! -e /etc/pam.d/system-session ]; then
+    install -v -Dm644 /opt/hud/share/linux-pam/defaults/system-session /etc/pam.d/system-session
+fi
+
+# /etc/pam.d/system-password: ship a default, never clobber an edited file.
+if [ ! -e /etc/pam.d/system-password ]; then
+    install -v -Dm644 /opt/hud/share/linux-pam/defaults/system-password /etc/pam.d/system-password
+fi
+
+# /etc/pam.d/other: ship a default, never clobber an edited file.
+if [ ! -e /etc/pam.d/other ]; then
+    install -v -Dm644 /opt/hud/share/linux-pam/defaults/other /etc/pam.d/other
+fi
 
 [prerm]
 # Do not remove PAM configuration files as system may become unusable

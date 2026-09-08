@@ -85,24 +85,62 @@ echo "Checking for generated NetworkManager GIR files..."
 ls -la $DESTDIR/opt/hud/share/gir-1.0/NM-1.0.gir 2>/dev/null || echo "WARNING: NM-1.0.gir not found"
 ls -la $DESTDIR/opt/hud/lib/girepository-1.0/NM-1.0.typelib 2>/dev/null || echo "WARNING: NM-1.0.typelib not found"
 
+# Moved out of [postinst] by docs/file-ownership-policy.md:
+# anything created there is untracked and survives `hud remove`.
+install -v -dm755 $DESTDIR/etc/NetworkManager/conf.d
+
+install -v -dm755 $DESTDIR/usr/share/polkit-1/rules.d
+
+install -v -dm755 $DESTDIR/usr/bin
+ln -sfn /opt/hud/bin/nmcli $DESTDIR/usr/bin/nmcli
+
+install -v -dm755 $DESTDIR/usr/bin
+ln -sfn /opt/hud/bin/nmtui $DESTDIR/usr/bin/nmtui
+
+install -v -dm755 $DESTDIR/usr/sbin
+ln -sfn /opt/hud/sbin/NetworkManager $DESTDIR/usr/sbin/NetworkManager
+
+# Moved out of [postinst] by docs/file-ownership-policy.md:
+# anything created there is untracked and survives `hud remove`.
+install -v -dm755 $DESTDIR/opt/hud/share/networkmanager/defaults
+printf '[main]\nplugins=keyfile\n' > $DESTDIR/opt/hud/share/networkmanager/defaults/NetworkManager.conf
+printf '[main]\nauth-polkit=true\n' > $DESTDIR/opt/hud/share/networkmanager/defaults/polkit.conf
+
+install -v -dm755 $DESTDIR/opt/hud/share/networkmanager/defaults
+printf '[main]\ndhcp=dhcpcd\n' > $DESTDIR/opt/hud/share/networkmanager/defaults/dhcp.conf
+
+install -v -dm755 $DESTDIR/usr/share/polkit-1/rules.d
+printf 'polkit.addRule(function(action, subject) { if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("netdev")) { return polkit.Result.YES; } });\n' > $DESTDIR/usr/share/polkit-1/rules.d/org.freedesktop.NetworkManager.rules
+
+install -v -dm755 $DESTDIR/usr/local/lib/systemd/system
+printf '[Unit]\nDescription=Network Manager\nDocumentation=man:NetworkManager(8)\nWants=network.target\nAfter=network-pre.target dbus.service\nBefore=network.target\n\n[Service]\nType=dbus\nBusName=org.freedesktop.NetworkManager\nExecReload=/bin/kill -HUP $MAINPID\nExecStart=/opt/hud/sbin/NetworkManager --no-daemon\nRestart=on-failure\nRestartSec=1s\nProtectSystem=true\nProtectHome=read-only\n\n[Install]\nWantedBy=multi-user.target\nAlias=dbus-org.freedesktop.NetworkManager.service\n' > $DESTDIR/usr/local/lib/systemd/system/NetworkManager.service
+
+install -v -dm755 $DESTDIR/usr/local/lib/systemd/system
+printf '[Unit]\nDescription=Network Manager Wait Online\nRequires=NetworkManager.service\nAfter=NetworkManager.service\nBefore=network-online.target\n\n[Service]\nType=oneshot\nExecStart=/opt/hud/bin/nm-online -s -q\nRemainAfterExit=yes\n\n[Install]\nWantedBy=network-online.target\n' > $DESTDIR/usr/local/lib/systemd/system/NetworkManager-wait-online.service
+
+install -v -dm755 $DESTDIR/usr/local/lib/systemd/system
+printf '[Unit]\nDescription=Network Manager Script Dispatcher Service\nWants=NetworkManager.service\nAfter=NetworkManager.service\n\n[Service]\nType=dbus\nBusName=org.freedesktop.nm_dispatcher\nExecStart=/opt/hud/libexec/nm-dispatcher\nNotifyAccess=main\n\n[Install]\nWantedBy=NetworkManager.service\n' > $DESTDIR/usr/local/lib/systemd/system/NetworkManager-dispatcher.service
+
 [postinst]
 ldconfig
-install -vdm755 /etc/NetworkManager/conf.d
-test -f /etc/NetworkManager/NetworkManager.conf || printf '[main]\nplugins=keyfile\n' > /etc/NetworkManager/NetworkManager.conf
-printf '[main]\nauth-polkit=true\n' > /etc/NetworkManager/conf.d/polkit.conf
-printf '[main]\ndhcp=dhcpcd\n' > /etc/NetworkManager/conf.d/dhcp.conf
+# NetworkManager.conf: ship a default, never clobber an edited file.
+if [ ! -e /etc/NetworkManager/NetworkManager.conf ]; then
+    install -v -Dm644 /opt/hud/share/networkmanager/defaults/NetworkManager.conf /etc/NetworkManager/NetworkManager.conf
+fi
 groupadd -fg 86 netdev 2>/dev/null || true
-install -vdm755 /usr/share/polkit-1/rules.d
-printf 'polkit.addRule(function(action, subject) { if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("netdev")) { return polkit.Result.YES; } });\n' > /usr/share/polkit-1/rules.d/org.freedesktop.NetworkManager.rules
-ln -sf /opt/hud/bin/nmcli /usr/bin/nmcli 2>/dev/null || true
-ln -sf /opt/hud/bin/nmtui /usr/bin/nmtui 2>/dev/null || true
-ln -sf /opt/hud/sbin/NetworkManager /usr/sbin/NetworkManager 2>/dev/null || true
-printf '[Unit]\nDescription=Network Manager\nDocumentation=man:NetworkManager(8)\nWants=network.target\nAfter=network-pre.target dbus.service\nBefore=network.target\n\n[Service]\nType=dbus\nBusName=org.freedesktop.NetworkManager\nExecReload=/bin/kill -HUP $MAINPID\nExecStart=/opt/hud/sbin/NetworkManager --no-daemon\nRestart=on-failure\nRestartSec=1s\nProtectSystem=true\nProtectHome=read-only\n\n[Install]\nWantedBy=multi-user.target\nAlias=dbus-org.freedesktop.NetworkManager.service\n' > /etc/systemd/system/NetworkManager.service
-printf '[Unit]\nDescription=Network Manager Wait Online\nRequires=NetworkManager.service\nAfter=NetworkManager.service\nBefore=network-online.target\n\n[Service]\nType=oneshot\nExecStart=/opt/hud/bin/nm-online -s -q\nRemainAfterExit=yes\n\n[Install]\nWantedBy=network-online.target\n' > /etc/systemd/system/NetworkManager-wait-online.service
-printf '[Unit]\nDescription=Network Manager Script Dispatcher Service\nWants=NetworkManager.service\nAfter=NetworkManager.service\n\n[Service]\nType=dbus\nBusName=org.freedesktop.nm_dispatcher\nExecStart=/opt/hud/libexec/nm-dispatcher\nNotifyAccess=main\n\n[Install]\nWantedBy=NetworkManager.service\n' > /etc/systemd/system/NetworkManager-dispatcher.service
 systemctl daemon-reload
 systemctl enable NetworkManager.service
 systemctl start NetworkManager.service || true
 echo "NetworkManager 1.54.0 installed and enabled"
 echo "Commands: nmtui, nmcli"
 echo "Check status: systemctl status NetworkManager"
+
+# /etc/NetworkManager/conf.d/polkit.conf: ship a default, never clobber an edited file.
+if [ ! -e /etc/NetworkManager/conf.d/polkit.conf ]; then
+    install -v -Dm644 /opt/hud/share/networkmanager/defaults/polkit.conf /etc/NetworkManager/conf.d/polkit.conf
+fi
+
+# /etc/NetworkManager/conf.d/dhcp.conf: ship a default, never clobber an edited file.
+if [ ! -e /etc/NetworkManager/conf.d/dhcp.conf ]; then
+    install -v -Dm644 /opt/hud/share/networkmanager/defaults/dhcp.conf /etc/NetworkManager/conf.d/dhcp.conf
+fi

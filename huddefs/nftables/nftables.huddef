@@ -46,21 +46,18 @@ make -j$(nproc)
 [install]
 DESTDIR=$DESTDIR make install
 
-[postinst]
-ldconfig
+# Moved out of [postinst] by docs/file-ownership-policy.md:
+# anything created there is untracked and survives `hud remove`.
+install -v -dm755 $DESTDIR/usr/sbin
+ln -sfn /opt/hud/sbin/nft $DESTDIR/usr/sbin/nft
 
-# Add library path to system ldconfig
-echo "/opt/hud/lib" > /etc/ld.so.conf.d/hud.conf
-echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/hud.conf
-ldconfig
+install -v -dm755 $DESTDIR/sbin
+ln -sfn /opt/hud/sbin/nft $DESTDIR/sbin/nft
 
-# Create symlinks
-ln -sf /opt/hud/sbin/nft /usr/sbin/nft 2>/dev/null || true
-ln -sf /opt/hud/sbin/nft /sbin/nft 2>/dev/null || true
+install -v -dm755 $DESTDIR/etc/nftables
 
-# Create basic nftables config
-install -vdm755 /etc/nftables
-cat > /etc/nftables/nftables.conf << 'EOF'
+install -v -dm755 $DESTDIR/opt/hud/share/nftables/defaults
+cat > $DESTDIR/opt/hud/share/nftables/defaults/nftables.conf << "EOF"
 #!/usr/sbin/nft -f
 # Basic nftables configuration
 # Managed by firewalld when firewalld is running
@@ -80,9 +77,26 @@ table inet filter {
 }
 EOF
 
+[postinst]
+ldconfig
+
+# Add library path to system ldconfig
+echo "/opt/hud/lib" > /etc/ld.so.conf.d/hud.conf
+echo "/opt/hud/lib64" >> /etc/ld.so.conf.d/hud.conf
+ldconfig
+
+# Create symlinks
+
+# Create basic nftables config
+
 echo ""
 echo "nftables 1.1.1 installed"
 echo "Binary: /opt/hud/sbin/nft (symlinked to /usr/sbin/nft)"
 echo ""
 echo "Test: nft list tables"
 echo "Note: firewalld manages nftables rules when running"
+
+# /etc/nftables/nftables.conf: ship a default, never clobber an edited file.
+if [ ! -e /etc/nftables/nftables.conf ]; then
+    install -v -Dm644 /opt/hud/share/nftables/defaults/nftables.conf /etc/nftables/nftables.conf
+fi

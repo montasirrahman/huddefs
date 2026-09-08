@@ -34,18 +34,18 @@ make install \
     LOCALEDIR=/opt/hud/share/locale \
     DESTDIR=$DESTDIR
 
-[postinst]
-ldconfig
+# Moved out of [postinst] by docs/file-ownership-policy.md:
+# anything created there is untracked and survives `hud remove`.
+install -v -dm755 $DESTDIR/usr/sbin
+ln -sfn /opt/hud/sbin/dnsmasq $DESTDIR/usr/sbin/dnsmasq
 
-# Create symlinks for libvirt to find dnsmasq
-ln -sf /opt/hud/sbin/dnsmasq /usr/sbin/dnsmasq 2>/dev/null || true
-ln -sf /opt/hud/sbin/dnsmasq /sbin/dnsmasq 2>/dev/null || true
+install -v -dm755 $DESTDIR/sbin
+ln -sfn /opt/hud/sbin/dnsmasq $DESTDIR/sbin/dnsmasq
 
-# Create dnsmasq config directory
-install -vdm755 /etc/dnsmasq.d
+install -v -dm755 $DESTDIR/etc/dnsmasq.d
 
-# Create basic dnsmasq config (standalone use only - libvirt manages its own)
-cat > /etc/dnsmasq.conf << 'EOF'
+install -v -dm755 $DESTDIR/opt/hud/share/dnsmasq/defaults
+cat > $DESTDIR/opt/hud/share/dnsmasq/defaults/dnsmasq.conf << "EOF"
 # dnsmasq configuration
 # Note: libvirt manages dnsmasq for virtual networks separately
 # This config is for standalone dnsmasq use only
@@ -64,8 +64,8 @@ bogus-priv
 conf-dir=/etc/dnsmasq.d/,*.conf
 EOF
 
-# Create systemd service (for standalone use, not needed for libvirt)
-cat > /etc/systemd/system/dnsmasq.service << 'EOFSVC'
+install -v -dm755 $DESTDIR/usr/local/lib/systemd/system
+cat > $DESTDIR/usr/local/lib/systemd/system/dnsmasq.service << "EOFSVC"
 [Unit]
 Description=dnsmasq - A lightweight DHCP and caching DNS server
 Documentation=man:dnsmasq(8)
@@ -83,6 +83,17 @@ Restart=on-failure
 WantedBy=multi-user.target
 EOFSVC
 
+[postinst]
+ldconfig
+
+# Create symlinks for libvirt to find dnsmasq
+
+# Create dnsmasq config directory
+
+# Create basic dnsmasq config (standalone use only - libvirt manages its own)
+
+# Create systemd service (for standalone use, not needed for libvirt)
+
 systemctl daemon-reload
 # Don't enable by default - libvirt manages dnsmasq for virtual networks
 
@@ -96,3 +107,8 @@ echo "  virsh net-start default"
 echo ""
 echo "For standalone DNS caching (optional):"
 echo "  systemctl enable --now dnsmasq"
+
+# /etc/dnsmasq.conf: ship a default, never clobber an edited file.
+if [ ! -e /etc/dnsmasq.conf ]; then
+    install -v -Dm644 /opt/hud/share/dnsmasq/defaults/dnsmasq.conf /etc/dnsmasq.conf
+fi

@@ -91,6 +91,14 @@ def scan(pkg):
         return {"error": "no definition"}
     secs = sections(open(f, errors="replace").read())
     found = []
+
+    # The compliant pattern from docs/file-ownership-policy.md: the file ships
+    # as a tracked default inside the prefix and [postinst] copies it into place
+    # only when the target is absent. That is a write to /etc and it is the
+    # intended one, so reporting it would make the scanner flag its own answer.
+    compliant = set()
+    for m in re.finditer(r"if\s+\[\s+!\s+-e\s+(\S+)\s*\]", secs.get("postinst", "")):
+        compliant.add(m.group(1))
     for sec in ("configure", "build", "install", "check", "postinst", "prerm", "postrm"):
         body = secs.get(sec)
         if not body:
@@ -113,6 +121,8 @@ def scan(pkg):
                 v = verb
                 if verb == "install" and re.search(r"-\S*d\S*\s", line):
                     v = "mkdir"
+                if sec == "postinst" and path in compliant:
+                    break
                 kind = classify(sec, path, v)
                 if kind:
                     found.append({"section": sec, "verb": v, "path": path,

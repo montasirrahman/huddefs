@@ -80,14 +80,22 @@ install -v -m644 dbus/fi.w1.wpa_supplicant1.service \
 install -v -m644 dbus/dbus-wpa_supplicant.conf \
                  $DESTDIR/etc/dbus-1/system.d/wpa_supplicant.conf
 
+# Moved out of [postinst] by docs/file-ownership-policy.md:
+# anything created there is untracked and survives `hud remove`.
+install -v -dm755 $DESTDIR/usr/sbin
+ln -sfn /opt/hud/sbin/wpa_supplicant $DESTDIR/usr/sbin/wpa_supplicant
+
+install -v -dm755 $DESTDIR/usr/sbin
+ln -sfn /opt/hud/sbin/wpa_cli $DESTDIR/usr/sbin/wpa_cli
+
+install -v -dm755 $DESTDIR/usr/sbin
+ln -sfn /opt/hud/sbin/wpa_passphrase $DESTDIR/usr/sbin/wpa_passphrase
+
 [postinst]
 # Create symlinks for system access
-ln -sf /opt/hud/sbin/wpa_supplicant /usr/sbin/wpa_supplicant 2>/dev/null || true
-ln -sf /opt/hud/sbin/wpa_cli /usr/sbin/wpa_cli 2>/dev/null || true
-ln -sf /opt/hud/sbin/wpa_passphrase /usr/sbin/wpa_passphrase 2>/dev/null || true
 
 # Create wpa_supplicant config directory
-install -v -dm755 /etc/wpa_supplicant
+# Staged by [install]; creating it here would leave it untracked.
 
 # Reload D-Bus to recognize new service
 systemctl reload dbus 2>/dev/null || true

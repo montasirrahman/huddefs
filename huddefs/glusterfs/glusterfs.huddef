@@ -82,33 +82,29 @@ rm -rf $DESTDIR/lib64 2>/dev/null || true
 cd extras/hook-scripts
 cp -a * $DESTDIR/opt/hud/share/glusterfs/scripts/ 2>/dev/null || true
 
-[postinst]
-# Add library paths
-echo "/opt/hud/lib64" > /etc/ld.so.conf.d/glusterfs.conf
-echo "/opt/hud/lib64/glusterfs" >> /etc/ld.so.conf.d/glusterfs.conf
-ldconfig
+# Moved out of [postinst] by docs/file-ownership-policy.md:
+# anything created there is untracked and survives `hud remove`.
+install -v -dm755 $DESTDIR/sbin
+ln -sfn /opt/hud/sbin/mount.glusterfs $DESTDIR/sbin/mount.glusterfs
 
-# Create mount helper symlink (safe - only adds one file)
-ln -sf /opt/hud/sbin/mount.glusterfs /sbin/mount.glusterfs
+install -v -dm755 $DESTDIR/var/lib/glusterd
 
-# Create gluster user and group
-groupadd -r gluster 2>/dev/null || true
-useradd -r -g gluster -d /var/lib/glusterd -s /sbin/nologin \
-    -c "GlusterFS user" gluster 2>/dev/null || true
+install -v -dm755 $DESTDIR/var/log/glusterfs
 
-# Create directories
-mkdir -p /var/lib/glusterd
-mkdir -p /var/log/glusterfs
-mkdir -p /var/run/gluster
-mkdir -p /etc/glusterfs
+install -v -dm755 $DESTDIR/var/run/gluster
 
-# Set ownership
-chown -R gluster:gluster /var/lib/glusterd
-chown -R gluster:gluster /var/log/glusterfs
-chown -R gluster:gluster /var/run/gluster
+install -v -dm755 $DESTDIR/etc/glusterfs
 
-# Create systemd service for glusterd
-cat > /etc/systemd/system/glusterd.service << 'EOFSVC'
+install -v -dm755 $DESTDIR/etc/firewalld/services
+
+install -v -dm755 $DESTDIR/etc/ld.so.conf.d
+echo "/opt/hud/lib64" > $DESTDIR/etc/ld.so.conf.d/glusterfs.conf
+
+install -v -dm755 $DESTDIR/etc/ld.so.conf.d
+echo "/opt/hud/lib64/glusterfs" > > $DESTDIR/etc/ld.so.conf.d/glusterfs.conf
+
+install -v -dm755 $DESTDIR/usr/local/lib/systemd/system
+cat > $DESTDIR/usr/local/lib/systemd/system/glusterd.service << "EOFSVC"
 [Unit]
 Description=GlusterFS Management Daemon
 Requires=network.target
@@ -128,9 +124,8 @@ LimitNOFILE=65536
 WantedBy=multi-user.target
 EOFSVC
 
-# Create firewalld service definition
-mkdir -p /etc/firewalld/services
-cat > /etc/firewalld/services/glusterfs.xml << 'EOFXML'
+install -v -dm755 $DESTDIR/opt/hud/share/glusterfs/defaults
+cat > $DESTDIR/opt/hud/share/glusterfs/defaults/glusterfs.xml << "EOFXML"
 <?xml version="1.0" encoding="utf-8"?>
 <service>
   <short>GlusterFS</short>
@@ -139,6 +134,28 @@ cat > /etc/firewalld/services/glusterfs.xml << 'EOFXML'
   <port protocol="tcp" port="49152-49251"/>
 </service>
 EOFXML
+
+[postinst]
+# Add library paths
+ldconfig
+
+# Create mount helper symlink (safe - only adds one file)
+
+# Create gluster user and group
+groupadd -r gluster 2>/dev/null || true
+useradd -r -g gluster -d /var/lib/glusterd -s /sbin/nologin \
+    -c "GlusterFS user" gluster 2>/dev/null || true
+
+# Create directories
+
+# Set ownership
+chown -R gluster:gluster /var/lib/glusterd
+chown -R gluster:gluster /var/log/glusterfs
+chown -R gluster:gluster /var/run/gluster
+
+# Create systemd service for glusterd
+
+# Create firewalld service definition
 
 # Enable and start service
 systemctl daemon-reload
@@ -164,3 +181,8 @@ echo "  gluster volume info"
 echo ""
 echo "Firewall ports opened: 24007-24008, 49152-49251"
 echo ""
+
+# /etc/firewalld/services/glusterfs.xml: ship a default, never clobber an edited file.
+if [ ! -e /etc/firewalld/services/glusterfs.xml ]; then
+    install -v -Dm644 /opt/hud/share/glusterfs/defaults/glusterfs.xml /etc/firewalld/services/glusterfs.xml
+fi
