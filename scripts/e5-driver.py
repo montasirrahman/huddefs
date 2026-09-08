@@ -19,10 +19,12 @@ Two things this does that the E4 driver did not, both because of what E4 cost:
 """
 import json, os, re, shutil, subprocess, sys, tarfile, time
 
-REPO   = "/root/github-repo/huddefs"
+# Overridable so a second run — G1's full rebuild, say — keeps its own resume
+# point instead of inheriting one that already lists most packages as published.
+REPO   = os.environ.get("HUD_REPO_DIR_DEFS", "/root/github-repo/huddefs")
 H      = f"{REPO}/huddefs"
 OUT    = "/var/hud-build/output"
-STATE  = "/var/hud-build/e5-state.json"
+STATE  = os.environ.get("STATE", "/var/hud-build/e5-state.json")
 BFREPO = "root@172.19.1.7"
 INBOX  = "/var/hud-build/incoming"
 WRAP   = "/var/hud-build/bin/hud-unstable"
