@@ -10,7 +10,12 @@
 # distribution.
 set -euo pipefail
 
-TARBALL="${1:-/var/hud-build/base-rootfs-minimal.tar.zst}"
+# Default is the CLEAN rootfs — the one built by installing the nine bootstrap
+# packages onto a clean base, which is what builds now use. The old default was
+# the tarball made by deleting 236 packages out of a populated tree; an image
+# from that registers 242 packages where it should register 9, and G4 has been
+# reporting exactly that on every run.
+TARBALL="${1:-/var/hud-build/base-rootfs-minimal-clean.tar.zst}"
 IMG="${2:-/var/hud-build/g4/rootfs.img}"
 SIZE_GB="${SIZE_GB:-6}"
 
