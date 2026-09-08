@@ -16,9 +16,13 @@ Package: glusterfs
 Version: 11.1
 Architecture: x86_64
 Section: storage
-Depends: python3, liburcu, libxml2, openssl, libaio, readline, ncurses, libtirpc, sqlite
 Description: Distributed scalable network filesystem
 Source: https://download.gluster.org/pub/gluster/glusterfs/11/11.1/glusterfs-11.1.tar.gz
+Source-SHA256:    6a31b8450d02cd12f47f4571c031e9d6b8705279a0e8970ae9a05e1c87dffb76
+
+Build-Depends:    python3, liburcu, libxml2, openssl, libaio, readline, ncurses, libtirpc, sqlite
+Depends:          auto
+Provides:         auto
 
 [configure]
 export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH}"
