@@ -182,7 +182,10 @@ def one(pkg):
     else:
         rec["convert"] = {"status": "already v2"}
 
-    rc, log = sh(f"hud-build {H}/{pkg}/{pkg}.huddef")
+    # nodejs compiles V8 and needs more than the two-hour default; anything
+    # that slow should say so rather than be discovered by a timeout.
+    rc, log = sh(f"hud-build {H}/{pkg}/{pkg}.huddef",
+                 timeout=int(os.environ.get("BUILD_TIMEOUT", "7200")))
     rec["build_s"] = int(time.time() - t0)
     if rc:
         m = re.findall(r"(?:error|Error|ERROR)[:\s].{0,120}", log)
