@@ -15,6 +15,13 @@ bf-repo keeps the repo, nginx, publishing, and G4/G5 (it has the only /dev/kvm).
 
 WORK NON-STOP. Do not stop to ask for confirmation. Push after every batch.
 
+THIS IS A PRODUCTION DISTRIBUTION. Do not skip a package, and do not work around
+a failure. Find the ROOT CAUSE and fix it, then follow the dependency chain down
+until everything the package needs exists and is declared. If something it needs
+is not packaged, package it. A green build is not evidence — check that the
+artifact has a payload, that its libraries resolve, and that its declared
+dependencies actually install.
+
 STATE: E4, G3, E8, E9, G2 and G4 are done. E5/E6 is 33 of 66. E7 is 9 of 10
 mechanical rebuilt. 45 packages published to /var/www/hud-unstable. The build
 driver's failure list is empty. G5 step 0 (nested KVM) is proven.

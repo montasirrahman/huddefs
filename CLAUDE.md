@@ -24,6 +24,29 @@ previously accumulated 941 files for 245 packages that way; do not restart it.
 Before editing any `.huddef`, read `docs/huddef-v2-spec.md`. It defines every
 header field and section, and explains which v1 patterns are forbidden.
 
+## This is a production distribution — no package is skipped
+
+**Every package must build, and every dependency it needs must exist and be
+declared.** Not "most of them"; not "the ones that were easy". A package that is
+skipped, or that builds because something was left lying around in the build
+root, is a package that will fail on a machine that installs it.
+
+That means:
+
+- **Find the root cause.** A failure is not resolved by removing the thing that
+  failed, by adding `|| true`, or by moving the package to a list of exceptions.
+  Read the error, work out what is actually missing or wrong, and fix that.
+- **Follow the dependency down.** If a package needs something that is not
+  packaged, package it. `util-linux` needed `ncurses` declared; `qemu` needed
+  `libX11` and then `libyaml`, the second because `dtc`'s own metadata was
+  incomplete. The chain ends when everything it needs is present and declared,
+  not when the build happens to go green.
+- **A green build proves nothing on its own.** Check the artifact: it has a
+  payload, its libraries resolve, its declared dependencies install.
+
+Deferring a package to `docs/needs-human.md` is for a genuine design decision
+that changes the distribution — not for a build that is merely hard.
+
 ## Hard rules
 
 These are not style preferences. Violating them produces packages that are
