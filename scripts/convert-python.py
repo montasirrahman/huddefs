@@ -170,15 +170,63 @@ def convert(pkg):
     # 2.8 MB and intact in the pool, so declaring it is the fix — and it is
     # honest besides: a package built by setuptools does depend on setuptools.
     backend, breqs = pep517_backend(tarball)
-    # Both spellings matter. Most packages name the backend
-    # "setuptools.build_meta"; PyYAML names its own "_pyyaml_pep517" and lists
-    # setuptools in requires, and that module imports setuptools when pip loads
-    # it. Keying only on the backend name missed it and the build died with
-    # BackendUnavailable.
-    uses_setuptools = ("setuptools" in (backend or "")
-                       or any(re.match(r"\s*setuptools\b", r) for r in breqs))
-    if uses_setuptools and "python-setuptools" not in bd:
-        bd.append("python-setuptools")
+
+    # Whatever builds this package has to BE here. The backend is named in
+    # build-system.build-backend and its dependencies in build-system.requires,
+    # and both have to become real Build-Depends — otherwise pip loads nothing
+    # and the build dies with
+    #     BackendUnavailable: Cannot import 'flit_core.buildapi'
+    #
+    # An earlier version of this only handled setuptools, so every flit_core and
+    # hatchling package converted cleanly and then failed to build.
+    #
+    # PyYAML is why the requires list is consulted as well as the backend name:
+    # it calls its backend "_pyyaml_pep517" and lists setuptools in requires,
+    # and that module imports setuptools when pip loads it.
+    BACKEND_PKG = {
+        "setuptools":     "python-setuptools",
+        "flit_core":      "python3-flit-core",
+        "flit-core":      "python3-flit-core",
+        "hatchling":      "python3-hatchling",
+        "mesonpy":        "python3-meson-python",
+        "meson-python":   "python3-meson-python",
+        "setuptools_scm": "python3-setuptools-scm",
+        "setuptools-scm": "python3-setuptools-scm",
+        "cython":         "python3-cython",
+        "packaging":      "python3-packaging",
+        "calver":         "python3-calver",
+        "trove-classifiers": "python3-trove-classifiers",
+        "pathspec":       "python3-pathspec",
+        "pluggy":         "python3-pluggy",
+        "editables":      "python3-editables",
+        "hatch-vcs":      "python3-hatch-vcs",
+        "hatch-fancy-pypi-readme": "python3-hatch-fancy-pypi-readme",
+        "pyproject-metadata": "python3-pyproject-metadata",
+        "wheel":          None,   # setuptools >= 70 builds wheels itself
+        "tomli":          None,   # stdlib tomllib on 3.11+
+    }
+
+    def dist_of(req):
+        r = re.split(r"[;\[]", req, maxsplit=1)[0]
+        return re.split(r"[<>=!~ ]", r.strip(), maxsplit=1)[0] \
+                 .strip().lower().replace("_", "-")
+
+    def marker_applies(req):
+        m = re.search(r'python_version\s*<\s*[\'"]([\d.]+)[\'"]', req)
+        if m:
+            try:
+                return tuple(int(x) for x in m.group(1).split(".")) > (3, 13)
+            except ValueError:
+                return True
+        return True
+
+    wanted = []
+    mod = re.split(r"[.:]", backend or "")[0].strip()
+    for key in [mod] + [dist_of(r) for r in breqs if marker_applies(r)]:
+        pkg_name = BACKEND_PKG.get(key, BACKEND_PKG.get(key.replace("-", "_")))
+        if pkg_name and pkg_name not in bd and pkg_name not in wanted and pkg_name != pkg:
+            wanted.append(pkg_name)
+    bd.extend(wanted)
     notes.append(f"backend {backend}")
 
     lines, seen = [], set()
