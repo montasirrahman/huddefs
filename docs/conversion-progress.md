@@ -1,5 +1,14 @@
 # Conversion progress — EASY packages
 
+> **Stale as a status report.** These sections are the per-batch record of E4 as
+> it ran, kept because the failure messages in them are evidence. Many of those
+> failures have since been explained and fixed — `freetype` by restored
+> `Build-Depends`, `util-linux` by a missing `ncurses`, `openldap` by a `Source:`
+> that named the wrong project. For current state read `PROJECT-STATE.md`; for
+> what a failure turned out to mean, `docs/rootfs-audit.md`. The batch numbers
+> repeat because the driver restarted.
+
+
 Mechanical v1 -> v2 conversion, built against the **minimal** rootfs and install
 tested. Appended one batch at a time.
 

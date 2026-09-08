@@ -41,34 +41,39 @@ You are on bf-repo. BUILDING RUNS ON bf-build over ssh — never on bf-repo, who
 USB-attached disk has failed three times under build load and lost a write.
 bf-repo keeps the repo, nginx, publishing, and G4/G5 (it has the only /dev/kvm).
 
-DONE: E4 (all 148 EASY converted), G3 (staging repo at /var/www/hud-unstable/),
-E5/E6 (33 of 66), E7 (10 of 24), E8 (all four patches now in the repo), E9
-(docbook fixed), G2 (capability graph), G4 (boot gate passes).
+DONE: E4 (all 148 EASY converted), G3 (staging repo), E5/E6 (33 of 66),
+E7 (9 of 10 mechanical rebuilt; 10 more need a decision), E8 (all four patches
+carried and applied — qemu included), E9 (docbook), G2 (capability graph),
+G4 (boot gate passes all four stages), G5 step 0 (nested KVM proven).
+45 packages published to unstable. The driver's failure list is empty.
 
 QUEUE, in order:
-  1. THE ROOTFS — regenerated, now PROVE it. docs/rootfs-audit.md.
-     The old root has 2,226 dangling symlinks and 242 registered packages where
-     it should have nine. A clean one is BUILT and PACKED:
-         bf-build:/var/hud-build/roots/minimal-clean          (9 pkgs, 0 debris)
-         bf-build:/var/hud-build/base-rootfs-minimal-clean.tar.zst   (961 M)
-     Next step is the experiment, not more building:
-         ssh bf-build 'bash /root/github-repo/huddefs/scripts/retry-against-clean-root.sh'
-     It builds freetype, libxslt, libvorbis, ncurses, libXt, libxcb, gdb and
-     lcms2 against BOTH roots and prints a verdict per package. Until it runs,
-     "the dangling symlinks caused those failures" is a hypothesis.
-     Do NOT delete the old root until a batch has been rebuilt against the new
-     one — it is what every result so far was produced against.
-  2. The three blocking decisions in docs/needs-human.md:
+  1. BLOCKING — docs/needs-human.md, "Depends: auto produces something the
+     deployed client cannot use". Every v2-rebuilt package publishes capability
+     strings (libxml2.so.16) that the client looks up as package NAMES, warns
+     about, and skips. 45 packages in unstable install without their runtime
+     dependencies, and hud install exits 0. Demonstrated, not inferred.
+     Recommendation: map capabilities back to package names in hud-build before
+     writing Depends, keeping Requires as capabilities. No client change needed.
+     NOTHING v2-REBUILT MAY GO TO THE LIVE REPO UNTIL THIS IS SETTLED.
+  2. The other two blocking decisions in docs/needs-human.md:
      - flit_core, packaging, calver are not packaged; they block 33 of the 66
-     - who owns files outside /opt/hud; blocks the other 10 of E7
-     - the cmake -> curl -> brotli cycle; blocks a genuine G1
-  3. Rebuild E8's four patched packages and E9's docbook, then E7's remaining 10
-  4. G1  — full rebuild of all 245, dependency-ordered. scripts/build-order.py
-           gives the order and names the cycle. THE milestone.
-  5. Rebuild the capability graph after G1 and watch `hud-graph stats` reach
-     zero empty packages and zero name-kind edges.
-  6. G5  — integration gate: the VM starts libvirtd and boots a guest.
-  7. docs/roadmap-to-appliance.md, then stop.
+     - who owns files outside /opt/hud; blocks E7's other 10, and G5 via libvirt
+  3. The six still failing on BOTH roots: ncurses, libxslt, libvorbis, libxcb,
+     libXt, lcms2. The rootfs is ruled out (see below), so each needs its own
+     diagnosis — util-linux turned out to need ncurses, openldap had the wrong
+     Source, qemu needed libX11 and libyaml. Expect the same shape.
+  4. G1 — full rebuild, dependency-ordered. scripts/build-order.py gives the
+     order and names the cmake -> curl -> brotli cycle. Run it against
+     roots/minimal-clean, and run docs/empty-package-sweep.md at the end.
+  5. G5 — nested KVM is proven; it waits on libvirt from item 2.
+  6. docs/roadmap-to-appliance.md, then stop.
+
+THE ROOTFS: a clean root exists at bf-build:/var/hud-build/roots/minimal-clean
+(9 packages, 0 internal dangling links) and packed as
+base-rootfs-minimal-clean.tar.zst. It did NOT explain the E4 failures — the
+experiment refuted that; see docs/rootfs-audit.md. Keep the old root until a
+batch has been rebuilt against the new one.
 
 SOLVE AND CONTINUE — do not stop for these:
   - bugs in your own scripts: fix, verify idempotent, continue, note it
