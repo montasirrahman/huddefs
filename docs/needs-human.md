@@ -502,3 +502,39 @@ doing quickly.
 - Unstable is fine — it exists for exactly this.
 - Build-time dependencies are unaffected: `hud-build` installs `Build-Depends`,
   which are package names and always were.
+
+
+---
+
+## Hard gate item 3: SHA256 verification is written, on a branch
+
+`hud` branch `fix/verify-sha256`, unmerged and undeployed like the other three
+client fixes. The running `/usr/local/bin/hud` is still v1.1.0.
+
+Two defects in one path, and they matter because the client extracts packages as
+root with `tar xzf ... -C /` over plain HTTP:
+
+- **The index carries a sha256 for every package and nothing ever checked it.**
+  The column was read into the database and never compared to the file. Now
+  verified before the path-traversal check and before extraction, on cached
+  archives too. A row with **no** hash is refused rather than allowed through —
+  anything able to serve a modified archive can also serve an index with the
+  hash removed.
+- **`download_file` retried with `curl -k` / `--no-check-certificate`** when
+  `HUD_INSECURE=1`. That is not a fallback, it is the attack. Removed, and
+  `--insecure` now exits with an error pointing at the server's CA. `CLAUDE.md`
+  rule 3 forbids exactly this, and the client was the thing violating it.
+
+Tested: correct hash accepted, wrong hash rejected with both values shown,
+missing hash refused.
+
+**What is still needed for gate 3:** package *signing*. Verification proves the
+archive matches the index; it does not prove the index is genuine. That needs a
+signing key, which by standing rule exists on neither machine, so it is a
+maintainer step and deliberately not attempted here.
+
+**Deploying any of the four client branches remains a human decision.** The
+verification change is strict on purpose — it refuses packages whose index row
+has no hash — so deploying it before every published package has a hash in the
+index would stop installs. The unstable index has one for all 254; the live
+index should be checked before anything is deployed.
