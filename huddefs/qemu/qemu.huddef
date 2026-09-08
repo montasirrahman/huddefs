@@ -16,7 +16,15 @@ Patches:          qemu-10.0.3-python_fixes-1.patch
 #   /opt/hud/include/SDL2/SDL_syswm.h:68: fatal error: X11/Xlib.h: No such file
 # Declaring sdl2 installs its runtime libraries, not the headers its headers
 # need — a build dependency on a header is the including package's to declare.
-Build-Depends:    glib, pixman, alsa-lib, dtc, libslirp, sdl2, libX11, python3-distlib
+#
+# libyaml because dtc needs it and does not say so. The published dtc declares
+# only glib, so `hud install dtc` leaves /opt/hud/bin/dtc unable to start:
+#   dtc: error while loading shared libraries: libyaml-0.so.2
+# and the build dies at pc-bios/bamboo.dtb with exit 127 after 2,600 objects.
+# Declaring it here is a workaround for dtc's own metadata; see
+# docs/needs-human.md on why fixing dtc's Depends would not help until the
+# client can resolve a capability to a package.
+Build-Depends:    glib, pixman, alsa-lib, dtc, libslirp, sdl2, libX11, libyaml, python3-distlib
 Depends:          auto
 Provides:         auto
 
