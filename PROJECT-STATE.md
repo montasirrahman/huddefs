@@ -44,6 +44,70 @@ Results land in `docs/conversion-progress.md`, one section per batch.
 
 ---
 
+## 2026-09-08 — the hypothesis was wrong, and the real causes were all different
+
+The machines were shut down and the USB disk unplugged overnight. Nothing was
+lost: the live repo still has its 251 packages with `packages.list` untouched at
+its 2026-02-19 timestamp, and both filesystems came back read-write with no I/O
+errors. A 1.3 G orphaned build directory from the killed nodejs run was cleared.
+
+### The clean-root experiment finished, and refuted the rootfs hypothesis
+
+It completed at 23:16 before the shutdown. **Seven of eight packages fail
+identically on the clean root and the old one.** The 2,226 dangling symlinks
+caused none of them. `docs/rootfs-audit.md` carries the full result and the
+correction; the section that stated the hypothesis is left standing above it.
+
+What fixed `freetype` was `repair-build-depends.py` restoring `zlib, bzip2,
+libpng`, which `repo_names()` had deleted. libpng was never installed, so
+configure said "libpng support requested but library not found" — the same
+message a dangling `libpng.pc` produces. That collision is precisely why
+guessing between them was not good enough.
+
+### Every failure since has been a different, specific cause
+
+Not one general explanation. Each was found by building it and reading the
+error:
+
+| Package | Cause | Fix |
+|---|---|---|
+| `util-linux` | declares **no** build dependencies; configure cannot find `ncursesw/ncurses.h`, so `get_wch` is an implicit declaration | `Build-Depends: ncurses` |
+| `openldap` | `Source:` named **Berkeley DB's tarball**, with a SHA256 over that wrong file so verification passed | point it at openldap; then its config lives under `/opt/hud/etc` and this version ships no plain `slapd.ldif` |
+| `docbook` | `Source:` is a `.zip` and hud-build only ever ran `tar` | teach hud-build to unzip, and to allow a flat unpack |
+| `docbook-xsl`, `docbook` | `[postinst]` calls `xmlcatalog` in a non-login shell that never sources `hud-env.sh` | set `PATH` in postinst; declare `libxml2` explicitly |
+| `qemu` | SDL2's own header includes `X11/Xlib.h` | `Build-Depends: libX11` |
+| `java-bin` | hud-test reported the package's **own** `libjvm.so` as unresolved | hud-test now separates self-shipped from genuinely absent |
+
+**The published `openldap` was never built from its definition.** It cannot have
+been — the definition builds Berkeley DB with openldap's configure flags. It was
+built by hand, and nothing in the pipeline could have noticed.
+
+### Published today
+
+`util-linux` (406 files, 8.2 MB), `giflib` (with both security patches applied),
+`openldap` (178 files), `docbook-xsl` (**1,838 files, 24.8 MB, from 5 KB**).
+40 packages published to unstable in total.
+
+**The qemu patch applies.** `>>> applying qemu-10.0.3-python_fixes-1.patch /
+patching file python/scripts/mkvenv.py` — the thing `CLAUDE.md` suspected had
+never happened. qemu is rebuilding with `libX11` added.
+
+### The only empty packages left are the 33 that are blocked
+
+Everything else that shipped nothing is fixed. `font-alias` is legitimately tiny
+— four `fonts.alias` files — and `docbook-xsl` is now 24.8 MB. The remaining 33
+are the Python set waiting on `flit_core`, `packaging` and `calver`.
+
+### What this says about the method
+
+Three of today's six causes were **declared dependencies that were present and
+still insufficient** — a header whose own includes are invisible to the
+declaration, a binary installed but not on `PATH`, a package's own library that
+the loader cannot see. A dependency graph cannot catch any of them. Building the
+thing and reading the error caught all three.
+
+---
+
 ## The build rootfs has been regenerated — 2026-09-07
 
 The root everything so far was built against is not what it claims to be:
