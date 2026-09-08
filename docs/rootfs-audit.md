@@ -228,3 +228,57 @@ definitions are edited in bulk:
 # a Source whose filename bears no resemblance to the package it claims to build
 grep -H '^Source:' huddefs/*/*.huddef
 ```
+
+---
+
+## The experiment ran, and it refuted the hypothesis — 2026-09-07 23:16
+
+`scripts/retry-against-clean-root.sh` built eight packages against both roots.
+The result contradicts the section above, so that section stands as written and
+this correction follows it rather than replacing it.
+
+```
+package      old root   clean root   verdict
+util-linux   fail       fail         not the root
+ncurses      fail       fail         not the root
+freetype     OK         OK           fine either way
+libxslt      fail       fail         not the root
+libvorbis    fail       fail         not the root
+libxcb       fail       fail         not the root
+libXt        fail       fail         not the root
+lcms2        fail       fail         not the root
+```
+
+**Seven of the eight fail identically with and without the 2,226 dangling
+symlinks. The rootfs debris did not cause them.**
+
+### What actually fixed freetype
+
+`freetype` now builds on both roots, so its E4 failure — `configure: error:
+libpng support requested but library not found` — was fixed by something else in
+between. It was: `repair-build-depends.py` restored `zlib, bzip2, libpng` to its
+`Build-Depends`, which the `repo_names()` defect had silently deleted. libpng
+was never installed into the build root, so configure could not find it.
+
+That is a better explanation than the dangling `libpng.pc` and it is the one the
+evidence supports. The two defects produce the same error message, which is
+exactly why guessing between them was not good enough.
+
+### What this changes
+
+- **The correlation was worthless.** Twelve failures each named a library that
+  dangles, and 1,779 dangling names exist, so almost any package would have
+  matched. That was said at the time and it was the right caution; the
+  experiment is what settled it.
+- **`PROJECT-STATE.md`'s note flagging the toolchain-strictness class as
+  "partly misattributed" is itself wrong** for `lcms2` — it fails on a clean
+  root too. The flag has been corrected there.
+- **The regenerated rootfs is still worth having**, on its own merits: a root
+  that claims 242 packages it does not have cannot support an honest G1, and a
+  build that finds a half-deleted dependency can still succeed against it and
+  ship something wrong. It is simply not the explanation for these eight.
+- **The seven remaining failures need individual diagnosis.** One is already
+  done: `util-linux` declares no build dependencies at all and needs `ncurses`
+  for the wide-character headers. The rest are likely the same shape — a missing
+  or wrong `Build-Depends` — which is testable and cheap now that a clean root
+  exists to test against.
