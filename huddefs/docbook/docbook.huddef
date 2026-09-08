@@ -12,7 +12,10 @@ Source-SHA256:    4e4e037a2b83c98c6c94818390d4bdd3f6e10f6ec62dd79188594e26190dc7
 ExtractDir: .
 
 Build-Depends:    libarchive, libxml2
-Depends:          auto
+# Explicit, per the v2 spec's exception for a binary invoked by exec: postinst
+# runs xmlcatalog, which comes from libxml2, and auto-detection cannot see a
+# command a shell script calls.
+Depends:          libxml2
 Provides:         auto
 
 [configure]
@@ -87,6 +90,11 @@ echo "Files installed:"
 ls -la ${DESTDIR}/opt/hud/share/xml/docbook/xml-dtd-4.5/
 
 [postinst]
+# Same as docbook-xsl: xmlcatalog is in /opt/hud/bin, and postinst runs in a
+# non-login shell that never sources /etc/profile.d/hud-env.sh, so every call
+# fails with "command not found" and takes the install with it.
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH:-/usr/bin:/bin}"
+
 # Create XML catalog entries
 if [ ! -e /opt/hud/etc/xml/docbook ]; then
     xmlcatalog --noout --create /opt/hud/etc/xml/docbook

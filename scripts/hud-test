@@ -213,10 +213,41 @@ MISSING=$(systemd-nspawn -q -D "$RUN" /bin/bash -c "
     done < /opt/hud/share/hud/info/$PKG/FILES | sort -u
 " || true)
 
+# Split what ldd could not resolve into two very different things.
+#
+# A library the package SHIPS is present; ldd just cannot see it, because
+# /opt/jdk/lib/server is on no loader path and the JDK resolves libjvm.so by its
+# own mechanism. Failing on that is a false negative about a package that is
+# fine — it is what made java-bin fail with 512 files installed and exactly one
+# "unresolved" library, its own.
+#
+# A library that is nowhere on disk is a real missing dependency and still fails.
 if [ -n "$MISSING" ]; then
-    warn "Unresolved shared libraries:"
-    echo "$MISSING" | sed 's/^/    /'
-    FAILED=1
+    SHIPPED=$(systemd-nspawn -q -D "$RUN" /bin/bash -c \
+        "grep -oE '[^/]+\.so(\.[0-9]+)*$' /opt/hud/share/hud/info/$PKG/FILES | sort -u" \
+        2>/dev/null | tr -d '\r')
+    own="" ; gone=""
+    while read -r lib; do
+        [ -n "$lib" ] || continue
+        if echo "$SHIPPED" | grep -qxF "$lib"; then
+            own="$own$lib
+"
+        else
+            gone="$gone$lib
+"
+        fi
+    done <<< "$MISSING"
+
+    if [ -n "$own" ]; then
+        warn "shipped by this package but not on the loader path (not a failure):"
+        printf '%s' "$own" | sed 's/^/    /'
+    fi
+    if [ -n "$gone" ]; then
+        warn "Unresolved shared libraries:"
+        printf '%s' "$gone" | sed 's/^/    /'
+        FAILED=1
+    fi
+    [ -n "$gone" ] || ok "No unresolved libraries from outside the package"
 else
     ok "No unresolved libraries"
 fi
