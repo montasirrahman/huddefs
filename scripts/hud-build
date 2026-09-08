@@ -128,6 +128,14 @@ fi
 WORK=$(mktemp -d "$BUILD_ROOT/work/${NAME}-XXXXXX")
 ROOT="$WORK/root"
 
+# systemd-nspawn derives the machine name from the directory's basename, and
+# every build root here is .../work/<pkg>-XXXXXX/root — so two builds at once
+# both register as "root" and the second dies with
+#   Mount point '/run/systemd/nspawn/unix-export/root' exists already, refusing.
+# which reads like a stale mount rather than a name collision. Name it after the
+# work directory, which is already unique.
+MACHINE="bld-$(basename "$WORK")"
+
 # Cleanup must unmount before deleting. If $ROOT is still a mountpoint, `rm -rf`
 # would delete straight through the overlay into the pristine lower tree, which
 # is the golden rootfs every build depends on. Never remove a mountpoint.
@@ -183,7 +191,7 @@ mkdir -p "$ROOT/build" "$ROOT/dest"
 if [ -n "$BUILD_DEPS" ]; then
     deps=$(echo "$BUILD_DEPS" | tr ',' ' ' | tr -s ' ')
     info "Installing build deps: $deps"
-    systemd-nspawn -q -D "$ROOT" \
+    systemd-nspawn -q --machine="$MACHINE" -D "$ROOT" \
         /bin/bash -c "hud update >/dev/null && hud install -y $deps" \
         || die "build dependency install failed"
 
@@ -193,7 +201,7 @@ if [ -n "$BUILD_DEPS" ]; then
     # Its exit code therefore proves nothing. Verify each dep landed.
     missing=""
     for d in $deps; do
-        systemd-nspawn -q -D "$ROOT" /bin/bash -c \
+        systemd-nspawn -q --machine="$MACHINE" -D "$ROOT" /bin/bash -c \
             "test -f /opt/hud/share/hud/info/$d/PACKAGE" >/dev/null 2>&1 \
             || missing="$missing $d"
     done
@@ -296,7 +304,7 @@ chmod +x "$ROOT/build.sh"
 
 # --- 6. build, with no network ------------------------------------------------
 info "Building (network disabled)"
-if ! systemd-nspawn -q -D "$ROOT" --private-network /build.sh; then
+if ! systemd-nspawn -q --machine="$MACHINE" -D "$ROOT" --private-network /build.sh; then
     die "build failed — see $LOG"
 fi
 ok "Build succeeded"
@@ -316,8 +324,29 @@ PROVIDES=$(echo "$SCAN" | python3 -c 'import json,sys; print(",".join(json.load(
 REQUIRES=$(echo "$SCAN" | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin)["requires"]))')
 ok "$(echo "$PROVIDES" | tr ',' '\n' | grep -c . || true) provides, $(echo "$REQUIRES" | tr ',' '\n' | grep -c . || true) requires"
 
+# Depends: gets PACKAGE NAMES. Requires: keeps the capabilities.
+#
+# They are not the same claim and the client only understands one of them. It
+# looks every Depends entry up as a package name, so writing "libxml2.so.16"
+# there makes it warn "Dependency not in repository", skip it, and exit 0 —
+# python3-lxml installed while libxml2, libxslt and zlib did not. Requires stays
+# as capabilities because that is what the capability graph reads, and what
+# makes a soname bump visible.
 if [ "$DEPENDS" = "auto" ]; then
-    RUNTIME_DEPS="$REQUIRES"
+    # Resolve by absolute path if it is not on PATH: a systemd unit's default
+    # PATH does not include /usr/local/bin, and silently falling back to raw
+    # capabilities here would reinstate the exact defect this replaces.
+    RESOLVER=$(command -v resolve-capabilities.py 2>/dev/null || true)
+    [ -n "$RESOLVER" ] || RESOLVER=/usr/local/bin/resolve-capabilities.py
+    [ -x "$RESOLVER" ] || die "resolve-capabilities.py not found; Depends would be
+written as capability strings, which the client cannot resolve. Install it to
+/usr/local/bin or put it on PATH."
+    RUNTIME_DEPS=$("$RESOLVER" "$REQUIRES" 2>/tmp/hud-unresolved.$$)
+    if [ -s /tmp/hud-unresolved.$$ ]; then
+        warn "$(cat /tmp/hud-unresolved.$$)"
+    fi
+    rm -f /tmp/hud-unresolved.$$
+    info "Depends (packages): ${RUNTIME_DEPS:-none}"
 else
     RUNTIME_DEPS="$DEPENDS"
     warn "Depends: is hand-written; detected requires recorded separately"

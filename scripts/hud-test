@@ -64,6 +64,10 @@ info "Rootfs: $BASE_ROOTFS"
 command -v systemd-nspawn >/dev/null || die "systemd-nspawn not found"
 
 RUN="$TEST_ROOT/run-$$"
+# Explicit, for the same reason hud-build names its container: nspawn derives the
+# name from the basename, and an unnamed test container can collide with another
+# run's. RUN is already unique; this makes it unmistakable.
+MACHINE="tst-$(basename "$RUN")"
 
 # Unmount before deleting. If $RUN is still a mountpoint, `rm -rf` deletes
 # through the overlay into the pristine lower tree that every build depends on.
@@ -106,7 +110,7 @@ info "Test root: $RUN_MODE"
 FAILED=0
 step() {
     local label="$1"; shift
-    if systemd-nspawn -q -D "$RUN" /bin/bash -c "$*"; then
+    if systemd-nspawn -q --machine="$MACHINE" -D "$RUN" /bin/bash -c "$*"; then
         ok "$label"
     else
         echo "${RED}[✗]${NC} $label"
@@ -118,7 +122,7 @@ step() {
 # --- install the declared dependencies first --------------------------------
 if [ -n "$PREDEPS" ]; then
     info "Installing declared dependencies: $PREDEPS"
-    if systemd-nspawn -q -D "$RUN" /bin/bash -c \
+    if systemd-nspawn -q --machine="$MACHINE" -D "$RUN" /bin/bash -c \
         "hud update >/dev/null 2>&1 && hud install -y $PREDEPS >/dev/null 2>&1"; then
         ok "dependencies installed"
     else
@@ -133,7 +137,7 @@ fi
 # build date of whatever is there now so we can prove it changed.
 # systemd-nspawn allocates a pty, so anything read back from it carries a
 # trailing CR. Strip it, or every string comparison below fails on equal values.
-BEFORE=$(systemd-nspawn -q -D "$RUN" /bin/bash -c \
+BEFORE=$(systemd-nspawn -q --machine="$MACHINE" -D "$RUN" /bin/bash -c \
     "grep '^Build-Date:' /opt/hud/share/hud/info/$PKG/PACKAGE 2>/dev/null" 2>/dev/null \
     | tr -d '\r' | sed 's/[[:space:]]*$//' || true)
 if [ -n "$BEFORE" ]; then
@@ -170,7 +174,7 @@ fi
 # --- did the package under test actually land? -------------------------------
 # `hud install` exits 0 even when it resolved nothing, so its exit code proves
 # nothing on its own. Compare what is installed now against what we shipped.
-AFTER=$(systemd-nspawn -q -D "$RUN" /bin/bash -c \
+AFTER=$(systemd-nspawn -q --machine="$MACHINE" -D "$RUN" /bin/bash -c \
     "grep '^Build-Date:' /opt/hud/share/hud/info/$PKG/PACKAGE 2>/dev/null" 2>/dev/null \
     | tr -d '\r' | sed 's/[[:space:]]*$//' || true)
 [ -n "$AFTER" ] || die "no $PKG metadata after install — nothing was installed"
@@ -189,7 +193,7 @@ ok "installed package is the one under test (${AFTER#Build-Date: })"
 
 # --- did anything actually land? ---------------------------------------------
 # This is the check that would have caught the ~750-byte python3-* packages.
-FILE_COUNT=$(systemd-nspawn -q -D "$RUN" /bin/bash -c \
+FILE_COUNT=$(systemd-nspawn -q --machine="$MACHINE" -D "$RUN" /bin/bash -c \
     "wc -l < /opt/hud/share/hud/info/$PKG/FILES 2>/dev/null || echo 0" | tr -d '[:space:]')
 
 if [ "${FILE_COUNT:-0}" -lt 2 ]; then
@@ -203,7 +207,7 @@ ok "FILES lists $FILE_COUNT entries"
 
 # --- are the shared libraries it needs actually present? ---------------------
 info "Checking for unresolved libraries"
-MISSING=$(systemd-nspawn -q -D "$RUN" /bin/bash -c "
+MISSING=$(systemd-nspawn -q --machine="$MACHINE" -D "$RUN" /bin/bash -c "
     export LD_LIBRARY_PATH=/opt/hud/lib:/opt/hud/lib64
     while read -r f; do
         [ -f \"/\$f\" ] || continue
@@ -223,7 +227,7 @@ MISSING=$(systemd-nspawn -q -D "$RUN" /bin/bash -c "
 #
 # A library that is nowhere on disk is a real missing dependency and still fails.
 if [ -n "$MISSING" ]; then
-    SHIPPED=$(systemd-nspawn -q -D "$RUN" /bin/bash -c \
+    SHIPPED=$(systemd-nspawn -q --machine="$MACHINE" -D "$RUN" /bin/bash -c \
         "grep -oE '[^/]+\.so(\.[0-9]+)*$' /opt/hud/share/hud/info/$PKG/FILES | sort -u" \
         2>/dev/null | tr -d '\r')
     own="" ; gone=""
