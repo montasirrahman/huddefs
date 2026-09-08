@@ -19,12 +19,14 @@ printf '  I/O errors: bf-repo %s, bf-build %s (last 30 min)\n' "$io_r" "$io_b"
 
 echo
 echo "=== builds ==="
-ssh $B 'for u in redo py33 e7ten nodejs-build; do
-    s=$(systemctl is-active $u 2>/dev/null || echo -)
+ssh $B 'for u in queue queue-sup; do
+    s=$(systemctl is-active $u 2>/dev/null | head -1)
+    [ -n "$s" ] || s=-
     n=$(journalctl -u $u --no-pager -o cat 2>/dev/null | grep -c PUBLISHED | head -1)
     printf "  %-14s %-10s %s published\n" "$u" "$s" "$n"
 done
-echo "  currently: $(ps -eo args --no-headers | grep -oE "hud-build [^ ]+/[a-z0-9.+-]+\.huddef" | sed "s|.*/||" | head -1)"'
+echo "  currently: $(ps -eo args --no-headers | grep -oE "hud-build [^ ]+/[a-z0-9.+-]+\.huddef" | sed "s|.*/||" | head -1)"
+echo "  heartbeat: $(tail -1 /var/hud-build/e5/heartbeat.log 2>/dev/null)"'
 
 echo
 echo "=== repositories ==="
