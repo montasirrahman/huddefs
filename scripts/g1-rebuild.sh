@@ -63,8 +63,16 @@ print(len(d['order']),'packages in dependency order')
 " | tee -a "$LOG"
 
 # --- the rebuild -------------------------------------------------------------
+# E5_STATE, not STATE: the driver renamed the variable when a second queue
+# started running beside the first. Passing the old name left G1 writing to
+# e5-state.json — the file that already lists ~100 packages as published — so
+# the driver would have skipped every one of them and G1 would have reported a
+# full from-scratch rebuild after building almost nothing. A milestone that can
+# pass without doing the work is worse than no milestone.
 say "starting the rebuild; state in $STATE"
-STATE="$STATE" python3 "$REPO/scripts/e5-driver.py" /var/hud-build/g1/batch.json 2>&1 | tee -a "$LOG"
+[ -s "$STATE" ] || echo '{"published": [], "failed": {}}' > "$STATE"
+E5_STATE="$STATE" E5_RESULTS="/var/hud-build/g1/results.json" \
+    python3 "$REPO/scripts/e5-driver.py" /var/hud-build/g1/batch.json 2>&1 | tee -a "$LOG"
 
 # --- second pass: cmake against the system curl ------------------------------
 # cmake bootstraps with --no-system-curl to break the cmake -> curl -> brotli
@@ -77,12 +85,20 @@ if grep -q '^\s*--no-system-curl' "$REPO/huddefs/cmake/cmake.huddef"; then
     if hud-build "$REPO/huddefs/cmake/cmake.huddef" >>"$LOG" 2>&1; then
         say "  cmake rebuilt against system curl"
         /var/hud-build/pub.sh cmake >>"$LOG" 2>&1 && say "  published"
+        # Keep the edit: it is what built the cmake now in the repository.
+        # Reverting it would leave the definition claiming --no-system-curl
+        # while the shipped package links the system curl — the same
+        # record-disagrees-with-artifact defect that lost 33 conversions.
+        cd "$REPO" && git add -- huddefs/cmake/cmake.huddef && \
+            git commit -q -m "cmake: link the system curl after the bootstrap pass" \
+            && say "  definition committed"
     else
         say "  WARNING: cmake would not build against the system curl."
         say "  The bootstrap cmake stands. This is the trade documented in"
         say "  docs/build-order.md and it is now measured rather than assumed."
+        # Only revert on failure: the shipped cmake is the bootstrap one.
+        cd "$REPO" && git checkout -- huddefs/cmake/cmake.huddef
     fi
-    cd "$REPO" && git checkout -- huddefs/cmake/cmake.huddef
 fi
 
 # --- the gates ---------------------------------------------------------------
@@ -129,7 +145,11 @@ say "-- every dependency in the index names a package the index has --"
 # networkmanager carries "ddbus" and "10gobject-introspection" from a botched
 # sed in the original packaging, which is exactly the kind of thing a rebuild is
 # supposed to remove.
-if python3 "$REPO/scripts/check-index.py" 2>&1 | tee -a "$LOG" | tail -1 >/dev/null; then
+# Run it, THEN test it. Written as a pipeline, the `if` tested the exit status
+# of `tail`, which is zero whatever check-index found — so this gate reported
+# success against an index that check-index was rejecting with status 1.
+python3 "$REPO/scripts/check-index.py" 2>&1 | tee -a "$LOG"
+if [ "${PIPESTATUS[0]}" -eq 0 ]; then
     say "   every dependency resolves"
 else
     say "GATE FAILED: the index has dependencies nothing provides (see above)"
