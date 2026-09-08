@@ -70,8 +70,19 @@ stage_definition() {
     local art="$1" tmp def name version
     [ -f "$art" ] || return 0
 
-    def=$(tar tf "$art" 2>/dev/null \
-          | grep -m1 -E '^\./opt/hud/share/hud/info/[^/]+/[^/]+\.huddef$') || return 0
+    # List once, then match — never `tar tf ... | grep -m1`.
+    #
+    # Under `set -o pipefail` that pipeline reports failure on success: grep -m1
+    # exits at the first match, tar is still writing, tar takes SIGPIPE, and the
+    # pipeline takes tar's status. The `|| return 0` then bailed silently and
+    # every publish stored no definition while reporting success — the exact
+    # green-but-wrong shape this wrapper exists to prevent. It survived a test
+    # because sourcing the function alone does not carry the script's pipefail.
+    local listing
+    listing=$(tar tf "$art" 2>/dev/null) || return 0
+    def=$(printf '%s\n' "$listing" \
+          | grep -E '^\./opt/hud/share/hud/info/[^/]+/[^/]+\.huddef$' || true)
+    def=${def%%$'\n'*}
     [ -n "$def" ] || return 0
 
     tmp=$(mktemp) || return 0
