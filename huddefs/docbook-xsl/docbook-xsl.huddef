@@ -57,6 +57,12 @@ install -v -m644 RELEASE-NOTES* NEWS* $DESTDIR/opt/hud/share/doc/docbook-xsl-non
 install -v -m755 -d $DESTDIR/opt/hud/etc/xml
 
 [postinst]
+# xmlcatalog lives in /opt/hud/bin, and postinst runs in whatever environment the
+# client had — a non-login shell that never sources /etc/profile.d/hud-env.sh.
+# Without this every call fails with "xmlcatalog: command not found" and the
+# install aborts, which is what the install test caught even with libxml2
+# installed.
+export PATH="/opt/hud/bin:/opt/hud/sbin:${PATH:-/usr/bin:/bin}"
 
 if [ ! -f /opt/hud/etc/xml/catalog ]; then
     xmlcatalog --noout --create /opt/hud/etc/xml/catalog

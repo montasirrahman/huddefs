@@ -12,7 +12,11 @@ Source: https://download.qemu.org/qemu-10.0.3.tar.xz
 Source-SHA256:    5c891267b1534a774465db8b1a0dfcb0c5e6d7ecb6f71345625adf4e0889945b
 Patches:          qemu-10.0.3-python_fixes-1.patch
 
-Build-Depends:    glib, pixman, alsa-lib, dtc, libslirp, sdl2, python3-distlib
+# libX11 because SDL2's own header pulls in X11's:
+#   /opt/hud/include/SDL2/SDL_syswm.h:68: fatal error: X11/Xlib.h: No such file
+# Declaring sdl2 installs its runtime libraries, not the headers its headers
+# need — a build dependency on a header is the including package's to declare.
+Build-Depends:    glib, pixman, alsa-lib, dtc, libslirp, sdl2, libX11, python3-distlib
 Depends:          auto
 Provides:         auto
 
