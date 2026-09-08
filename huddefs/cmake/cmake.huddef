@@ -45,14 +45,21 @@ sed -i '/"lib64"/s/64//' Modules/GNUInstallDirs.cmake
 # one. The proper answer is a second pass — rebuild cmake with system curl once
 # curl exists — and G1 should do that. Until it does, this is the honest
 # trade and it is written down rather than implied.
+# Everything after `--` is passed to CMAKE, not to bootstrap. The definition had
+# --no-system-jsoncpp, --no-system-cppdap, --no-system-librhash and --parallel
+# on the far side of it, so the bootstrap cmake was invoked with them and
+# stopped:
+#     CMake Error: Unknown argument --parallel=4
+# They are bootstrap options and belong before the separator.
+# -DBUILD_CursesDialog=OFF is a cmake variable and correctly stays after it.
 ./bootstrap --prefix=/opt/hud \
             --mandir=/opt/hud/share/man \
             --no-system-curl \
-            -- -DBUILD_CursesDialog=OFF \
             --no-system-jsoncpp \
             --no-system-cppdap \
             --no-system-librhash \
-            --parallel=$(nproc)
+            --parallel=$(nproc) \
+            -- -DBUILD_CursesDialog=OFF
 
 [build]
 make -j$(nproc)
