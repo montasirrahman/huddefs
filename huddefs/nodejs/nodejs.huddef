@@ -17,7 +17,16 @@ Provides:         auto
 ./configure --prefix=/opt/hud --shared-openssl --shared-zlib
 
 [build]
-make -j$(nproc)
+# -j2, not -j$(nproc). V8's C++ is template-heavy enough that each cc1plus
+# holds 0.8-1.5 GB resident; four of them on bf-build's 5.8 GB took the machine
+# to 57 MB free with 2.7 GB of swap in use while libvirt was also building.
+# Nothing was OOM-killed, but an hour of V8 compilation is a poor thing to
+# gamble, and G1 rebuilds this package with the rest of the distribution.
+#
+# Halving the jobs roughly halves peak memory and costs wall-clock time on a
+# build that is already the longest in the repository. That trade is worth it
+# for a run that must not fail near the end.
+make -j2
 
 [install]
 # DESTDIR is exported by the builder, so `make install` stages correctly.
