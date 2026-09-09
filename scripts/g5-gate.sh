@@ -110,8 +110,16 @@ sync; umount "$MNT"; rmdir "$MNT"; trap - EXIT
 # --- run ---------------------------------------------------------------------
 echo "booting the outer VM with -cpu host so it has its own /dev/kvm"
 echo "log: $LOG"
+# -snapshot for the same reason as the boot gate: the guest mounts this image
+# as a read-write root, and G4's copy of this line let an interrupted run leave
+# the filesystem dirty — the next boot died with "libcrypto.so.3: file too
+# short", which reads like a broken distribution and was a truncated file. G4
+# and G5 share one image, so a G5 run that is killed would break G4 too.
+#
+# The files staged above (the inner guest, its kernel, guest.xml) are written
+# before boot and still apply: the overlay discards only what the guest writes.
 timeout "$TIMEOUT" qemu-system-x86_64 \
-    -enable-kvm -cpu host -m 2048 -smp "${SMP:-1}" -nographic -no-reboot \
+    -enable-kvm -cpu host -m 2048 -smp "${SMP:-1}" -nographic -no-reboot -snapshot \
     -kernel "$KERNEL" \
     -drive file="$IMG",format=raw,if=virtio \
     -netdev user,id=n0 -device virtio-net-pci,netdev=n0 \
