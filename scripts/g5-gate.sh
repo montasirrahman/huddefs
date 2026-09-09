@@ -78,7 +78,13 @@ StandardError=journal+console
 Environment=PATH=/opt/hud/bin:/opt/hud/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin
 # Network first: the same fixed SLIRP address the G4 gate uses, because nothing
 # in this image brings an interface up and network-online.target never arrives.
-ExecStart=/bin/sh -c 'IF=\$(ls /sys/class/net | grep -v lo | head -1); \\
+# First interface with a BACKING DEVICE, not the first alphabetically.
+# /sys/class/net lists virtual interfaces too, and the base image carries a
+# leftover bond0 that sorts ahead of any real NIC — G4 spent three runs putting
+# its address on a carrier-less bond and reporting the resulting failure as a
+# setup problem. Only real NICs have a device/ symlink.
+ExecStart=/bin/sh -c 'for d in /sys/class/net/*/device; do [ -e "\$d" ] || continue; IF=\$(basename "\$(dirname "\$d")"); break; done; \\
+  [ -n "\$IF" ] || { echo "G5-NET-NONE no interface has a backing device"; exit 1; }; \\
   ip link set "\$IF" up; ip addr add 10.0.2.15/24 dev "\$IF" 2>/dev/null; \\
   ip route add default via 10.0.2.2 2>/dev/null; echo "G5-NET \$IF"'
 ExecStart=/bin/sh -c 'hud update 2>&1 | tail -2'
