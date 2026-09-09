@@ -538,3 +538,45 @@ verification change is strict on purpose — it refuses packages whose index row
 has no hash — so deploying it before every published package has a hash in the
 index would stop installs. The unstable index has one for all 254; the live
 index should be checked before anything is deployed.
+
+---
+
+## `hud install` does not run `ldconfig` — 2026-09-09
+
+Found while diagnosing what looked like a broken `curl` on bf-build:
+
+    curl: error while loading shared libraries: libnghttp2.so.14:
+      cannot open shared object file: No such file or directory
+
+Two things were true at once, and each hid the other.
+
+**nghttp2 and brotli were genuinely absent** from bf-build's `/opt/hud/lib` —
+two of the nine bootstrap floor packages, with the other seven present.
+Reinstalling both from the unstable pool restored every file their manifests
+list.
+
+**And the loader still could not see them.** `/etc/ld.so.conf.d/hud.conf`
+already lists `/opt/hud/lib` and `/opt/hud/lib64`, but `ldconfig -p` knew
+nothing about `libnghttp2` — the cache was stale, because **nothing in the
+install path regenerates it**. `hud install` finishes by printing
+
+    Note: Run 'source /etc/profile.d/hud-env.sh' to use installed packages
+
+which papers over it with `LD_LIBRARY_PATH` instead of fixing it. Running
+`ldconfig` once made `curl` work with no environment at all.
+
+**Why it matters beyond one host.** Install a library package on a fresh
+machine and nothing can link against it until something else happens to run
+`ldconfig`. Inside a build container it is masked, because `hud-build` exports
+`LD_LIBRARY_PATH` into the build script — so this only bites real users and
+host-level tooling. `hud-build` fetches sources with the host's `curl`, so on a
+machine in this state any package whose tarball is not already cached would fail
+to download for a reason that names the wrong thing entirely.
+
+**Recommendation:** `hud install` and `hud remove` should run `ldconfig` after
+touching `/opt/hud/lib*`, and the "source hud-env.sh" note should go. It is a
+one-line change in the client, but the client is on the HALT list — deploying to
+`/usr/local/bin` is a human decision — so it is recorded rather than made.
+
+**Workaround until then:** `ldconfig` after installing library packages. Done on
+bf-build 2026-09-09; `ldd /opt/hud/bin/curl` went from 4 unresolved to 0.
