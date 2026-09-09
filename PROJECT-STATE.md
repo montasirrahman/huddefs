@@ -363,6 +363,42 @@ and passing anyway, because booting is not what that check gates. Default fixed;
 the image now registers **9**.
 
 
+### Four "package failures" that were one network outage — 2026-09-09
+
+After the restart, `queue2` recorded four failures: `postgresql-ha` at test, and
+`postgresql-ldap-ha`, `networkmanager` and `libvirt` with
+
+    Build-Depends did not install: <the entire list>
+    hud install reported success anyway.
+
+None of the four was at fault. Between roughly 16:21 and 16:49 local, bf-build
+could not reach bf-repo. nginx was healthy throughout — its access log shows 81
+requests served to the G4 VM in the same window — and it logged no errors. There
+were no firewall rules on bf-build, the routes were correct, and the repository
+answered `HTTP 200` again by 16:49 with nothing changed.
+
+**How one outage produces four package defects.** `hud update` failing leaves 0
+packages available, so every Build-Depends resolves to nothing and `hud install`
+still exits 0. `hud-build` catches that — correctly — but the message it prints
+names the package and points at the definition. `postgresql-ha` got further
+still: it built a 30 MB artifact, then failed its install test with
+
+    [!] Unresolved shared libraries: libxml2.so.16, libxslt.so.1
+
+because `hud-test --deps` could not fetch libxml2 or libxslt either. The package
+was fine. Re-run with the repository up and the same artifact reports
+`[✓] No unresolved libraries` and `[✓] postgresql-ha passed`, unchanged. Its
+metadata was correct all along:
+`Depends: icu,libxml2,libxslt,openssl,readline,zlib`.
+
+**Fixed so it cannot happen a third time.** `hud-build` now probes
+`$REPO/packages.list` inside the build root before installing anything — six
+attempts over about two minutes, the URL taken from that root's own
+`sources.list` — and if it never answers, dies naming the repository and the
+word infrastructure rather than the package. A transient outage should cost a
+wait, not a diagnosis.
+
+
 ---
 
 ## Builds moved to the clean rootfs — 2026-09-09
