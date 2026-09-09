@@ -283,6 +283,86 @@ one built on 09-07 and still registers 242 packages where it should register 9;
 G4 says so itself. Rebuilding it from `roots/minimal-clean` belongs with G1.
 
 
+### Both machines rebooted mid-campaign — 2026-09-09, 15:25 local
+
+Everything in flight was lost: nodejs at 1h27m, libvirt and postgresql-ldap
+mid-build. The transient units and both supervisors went with them, and the
+journal does not persist, so the only surviving record was the state files.
+
+**The state files then said every package had failed** with `Build-Depends did
+not install ... hud install reported success anyway`. That reads like a
+catastrophe and was not one: it is what every build records while the machines
+are shutting down and the repository is unreachable. Two probe builds settled
+it — `patchelf` (no dependencies) and `libICE` (three) both built clean, with
+`Build deps installed and verified`. The failures were cleared rather than
+investigated, because a rebuild is the test.
+
+101 published survived, including the four the side driver had finished
+(glusterfs, libICE, libSM, libXt); those were folded into the main state so they
+are not built twice. The repository came through intact: 258 rows, 0 capability
+strings, 0 stale pool archives.
+
+Restarted as **nodejs alone in `queue`** — it is the long pole at roughly two
+hours — with postgresql-ldap, postgresql-ha, postgresql-ldap-ha, networkmanager
+and libvirt in `queue2`. **Both now have a supervisor**; only `queue` had one
+before, so a `queue2` that died was nobody's job to restart.
+
+### bf-build's own curl is broken, and it does not matter
+
+`curl` on the bf-build HOST cannot start: `libnghttp2.so.14` and
+`libbrotlidec.so.1` are missing from `/opt/hud/lib` — two of the nine bootstrap
+floor libraries, with the other seven present. This looked like the cause of the
+mass failure and is not: builds install their dependencies inside the container
+from the build root's own `/opt/hud`, which is complete. Worth fixing so
+host-level tooling works, but it blocks nothing and is not what broke.
+
+### The boot gate was corrupting the image it tests
+
+After the reboot G4 failed at stage 3a with
+
+    /sbin/init: error while loading shared libraries:
+      /opt/hud/lib/libcrypto.so.3: file too short
+
+which reads exactly like a broken distribution and was nothing of the kind. The
+same image had booted cleanly twenty minutes earlier. `e2fsck -fn` found orphan
+inodes and wrong free block and inode counts — an unclean shutdown while
+mounted. The reboot had killed a `qemu` that had the image as a read-write root.
+
+**`qemu` now runs with `-snapshot`.** The guest gets a writable root backed by a
+temporary overlay that is discarded on exit; the master is never modified.
+Pre-boot edits still apply, because the overlay discards only what the guest
+writes. A gate that damages its own fixture cannot be trusted twice, and this
+one was a single interrupted run away from sending someone after a packaging
+bug that did not exist.
+
+### Stage 4 reported "not prepared" on a run where it was prepared
+
+Two bugs, and the first hid the second.
+
+The unit chose its interface with `ls /sys/class/net | grep -v lo | head -1` —
+first alphabetically, not first working. `/sys/class/net` lists virtual
+interfaces, and the base image carries a leftover `bond0` that sorts ahead of
+any real NIC. The address went onto a carrier-less bond, `hud update` could not
+reach the repository, the unit never printed `G4-UPDATE-DONE`, and the gate uses
+that marker to decide whether stage 4 was set up **at all** — so a failure
+presented as an absence. Now selects the first interface with a `device/`
+symlink, which only real NICs have. Verified: `G4-NET iface=eth0`.
+
+The success check tested for a yajl library **by name** while `PKG` is
+configurable, so any other package fell through to "a manifest exists" — the
+client's own claim, and this client exits 0 on failure. It now requires every
+path in the package's `FILES` manifest to be present on disk.
+
+### G4 against the clean rootfs
+
+The image builder still defaulted to `base-rootfs-minimal.tar.zst`, the tarball
+made by deleting 236 packages out of a populated tree, while builds moved to
+`base-rootfs-minimal-clean.tar.zst` weeks ago. G4 had been reporting the
+consequence every run — *image has 242 packages registered ... it should be 9* —
+and passing anyway, because booting is not what that check gates. Default fixed;
+the image now registers **9**.
+
+
 ---
 
 ## Builds moved to the clean rootfs — 2026-09-09
