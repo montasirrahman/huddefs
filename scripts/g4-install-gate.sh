@@ -49,14 +49,33 @@ Environment=PATH=/opt/hud/bin:/opt/hud/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/b
 # commands do — so nothing here trusts an exit code. Each step prints a marker
 # the gate greps for, and the last one checks the FILESYSTEM for a file the
 # package ships rather than asking the client whether it succeeded.
-ExecStart=/bin/sh -c 'IF=\$(ls /sys/class/net | grep -v lo | head -1); \\
+# The interface is the first one with a BACKING DEVICE, not the first one
+# alphabetically. /sys/class/net also lists virtual interfaces, and the base
+# image carries a leftover bond0 that sorts before any real NIC — so the address
+# went onto a device with no carrier, hud update could not reach the repository,
+# the unit never printed its marker, and the gate reported 'stage 4 not
+# prepared' rather than a failure. Only real NICs have a device/ symlink.
+ExecStart=/bin/sh -c 'for d in /sys/class/net/*/device; do [ -e "\$d" ] || continue; IF=\$(basename "\$(dirname "\$d")"); break; done; \\
+  [ -n "\$IF" ] || { echo "G4-NET-NONE no interface has a backing device"; exit 1; }; \\
   ip link set "\$IF" up; \\
   ip addr add 10.0.2.15/24 dev "\$IF" 2>/dev/null || true; \\
   ip route add default via 10.0.2.2 2>/dev/null || true; \\
   echo "G4-NET iface=\$IF addr=\$(ip -4 -o addr show "\$IF" | awk "{print \\\$4}")"'
 ExecStart=/bin/sh -c 'hud update 2>&1 | tail -5; echo "G4-UPDATE-DONE"'
 ExecStart=/bin/sh -c 'hud install -y $PKG 2>&1 | tail -20; echo "G4-INSTALL-RAN"'
-ExecStart=/bin/sh -c 'if [ -d /opt/hud/share/hud/info/$PKG ] && ls /opt/hud/lib/lib*yajl* >/dev/null 2>&1 || [ -f /opt/hud/share/hud/info/$PKG/FILES ]; then echo "G4-INSTALL-OK files=\$(wc -l < /opt/hud/share/hud/info/$PKG/FILES 2>/dev/null || echo 0)"; else echo "G4-INSTALL-MISSING"; fi'
+# Verify the FILESYSTEM, and verify it for whatever PKG is — the old check
+# tested for a yajl library by name, so pointing PKG at anything else silently
+# fell through to "a manifest exists", which is the client's own claim rather
+# than evidence. Manifest paths are relative and have no leading slash.
+ExecStart=/bin/sh -c 'F=/opt/hud/share/hud/info/$PKG/FILES; \\
+  if [ ! -s "\$F" ]; then echo "G4-INSTALL-MISSING no manifest for $PKG"; exit 0; fi; \\
+  n=0; hit=0; \\
+  while read -r rel; do \\
+    [ -n "\$rel" ] || continue; n=\$((n+1)); \\
+    [ -e "/\$rel" ] && hit=\$((hit+1)); \\
+  done < "\$F"; \\
+  if [ "\$hit" -gt 0 ] && [ "\$hit" -eq "\$n" ]; then echo "G4-INSTALL-OK files=\$n present=\$hit"; \\
+  else echo "G4-INSTALL-MISSING manifest lists \$n, on disk \$hit"; fi'
 ExecStartPost=/bin/sh -c 'sleep 1; systemctl poweroff --no-block'
 
 [Install]
