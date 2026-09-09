@@ -4,16 +4,19 @@ Package: python3-pyproject-hooks
 Version: 1.2.0
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: pyproject_hooks-1.2.0 - low-level library for calling build-backends
 Source: https://files.pythonhosted.org/packages/source/p/pyproject-hooks/pyproject_hooks-1.2.0.tar.gz
+Source-SHA256:    1e859bd5c40fae9448642dd871adf459e5e2084186e8d2c2a79a824c970da1f8
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user pyproject_hooks
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist pyproject_hooks --break-system-packages
+
 [postinst]
 echo "python3-pyproject-hooks 1.2.0 installed"
-[prerm]
-pip3 uninstall -y pyproject_hooks 2>/dev/null || true
-[postrm]
-# Cleanup if needed

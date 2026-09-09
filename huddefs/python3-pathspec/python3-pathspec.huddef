@@ -4,16 +4,19 @@ Package: python3-pathspec
 Version: 0.12.1
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: Pathspec-0.12.1 - utility library for pattern matching of file paths
 Source: https://files.pythonhosted.org/packages/source/p/pathspec/pathspec-0.12.1.tar.gz
+Source-SHA256:    a482d51503a1ab33b1c67a6c3813a26953dbdc71c31dacaef9a838c4e29f5712
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user pathspec
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist pathspec --break-system-packages
+
 [postinst]
 echo "python3-pathspec 0.12.1 installed"
-[prerm]
-pip3 uninstall -y pathspec 2>/dev/null || true
-[postrm]
-# Cleanup if needed

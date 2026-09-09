@@ -4,17 +4,20 @@ Package: python3-docutils
 Version: 0.21.2
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: docutils-0.21.2 - processing plaintext docs into formats like HTML, XML, LaTeX
 Source: https://files.pythonhosted.org/packages/source/d/docutils/docutils-0.21.2.tar.gz
+Source-SHA256:    3a6b18732edf182daa3cd12775bbb338cf5691468f91eeeb109deff6ebfa986f
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 for f in /usr/bin/rst*.py; do rm -fv /usr/bin/$(basename $f .py) 2>/dev/null || true; done
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user docutils
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist docutils --break-system-packages
+
 [postinst]
 echo "python3-docutils 0.21.2 installed"
-[prerm]
-pip3 uninstall -y docutils 2>/dev/null || true
-[postrm]
-# Cleanup if needed

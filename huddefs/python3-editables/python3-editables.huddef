@@ -4,16 +4,19 @@ Package: python3-editables
 Version: 0.5
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: Editables-0.5 - Python library for creating editable wheels
 Source: https://files.pythonhosted.org/packages/source/e/editables/editables-0.5.tar.gz
+Source-SHA256:    309627d9b5c4adc0e668d8c6fa7bac1ba7c8c5d415c2d27f60f081f8e80d1de2
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user editables
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist editables --break-system-packages
+
 [postinst]
 echo "python3-editables 0.5 installed"
-[prerm]
-pip3 uninstall -y editables 2>/dev/null || true
-[postrm]
-# Cleanup if needed

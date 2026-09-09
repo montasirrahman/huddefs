@@ -4,16 +4,19 @@ Package: python3-sphinxcontrib-qthelp
 Version: 2.0.0
 Architecture: x86_64
 Section: python
-Depends: python3
 Description: sphinxcontrib-qthelp-2.0.0 - Sphinx extension for QtHelp documents
 Source: https://files.pythonhosted.org/packages/source/s/sphinxcontrib-qthelp/sphinxcontrib_qthelp-2.0.0.tar.gz
+Source-SHA256:    4fe7d0ac8fc171045be623aba3e2a8f613f8682731f9153bb2e40ece16b9bbab
+
+Build-Depends:    python3, python3-flit-core
+Depends:          auto
+Provides:         auto
+
 [build]
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+
 [install]
-pip3 install --no-index --find-links dist --no-user sphinxcontrib-qthelp
+pip3 install --no-deps --prefix=/opt/hud --root=$DESTDIR --no-index --find-links dist sphinxcontrib-qthelp --break-system-packages
+
 [postinst]
 echo "python3-sphinxcontrib-qthelp 2.0.0 installed"
-[prerm]
-pip3 uninstall -y sphinxcontrib-qthelp 2>/dev/null || true
-[postrm]
-# Cleanup if needed

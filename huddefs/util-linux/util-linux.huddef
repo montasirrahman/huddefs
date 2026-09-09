@@ -17,7 +17,7 @@ Source-SHA256:    be9ad9a276f4305ab7dd2f5225c8be1ff54352f565ff4dede9628c1aaa7dec
 # so the conversion had nothing to carry over. Verified against both build
 # roots: it fails identically with and without the rootfs debris, so this is a
 # missing dependency and not the shrink.
-Build-Depends:    ncurses
+Build-Depends:    ncurses, readline
 Depends:          auto
 Provides:         auto
 
