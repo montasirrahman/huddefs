@@ -193,6 +193,40 @@ mkdir -p "$ROOT/build" "$ROOT/dest"
 # --- 3. install Build-Depends into the root (network still allowed) -----------
 if [ -n "$BUILD_DEPS" ]; then
     deps=$(echo "$BUILD_DEPS" | tr ',' ' ' | tr -s ' ')
+
+    # Wait for the repository before touching it, and say so when it is the
+    # repository that is wrong.
+    #
+    # `hud update` failing leaves 0 packages available, so every Build-Depends
+    # then "resolves" to nothing and the run dies with "Build-Depends did not
+    # install: <the whole list>" — which names the package and blames the
+    # definition. That has now happened twice for the same reason: bf-build
+    # could not reach bf-repo for a stretch (once while the machines were
+    # shutting down, once for ~25 minutes with nginx healthy and serving other
+    # clients throughout). Both times a transient outage was recorded as four
+    # package defects and cost a diagnosis. postgresql-ha had built a 30 MB
+    # artifact that passed its own test the moment the repository came back.
+    #
+    # Six tries over roughly two minutes, then a message that names the
+    # repository rather than the package.
+    REPO_URL=$(awk '$1=="hud"{print $2; exit}' "$ROOT/etc/hud/sources.list" 2>/dev/null)
+    if [ -n "$REPO_URL" ]; then
+        tries=0
+        until systemd-nspawn -q --machine="$MACHINE" -D "$ROOT" /bin/bash -c \
+                  "curl -fsS --max-time 15 -o /dev/null '$REPO_URL/packages.list'" \
+                  >/dev/null 2>&1; do
+            tries=$((tries + 1))
+            if [ "$tries" -ge 6 ]; then
+                die "the repository is unreachable, so no dependency can install:
+  $REPO_URL/packages.list
+Six attempts over ~2 minutes. This is infrastructure, not $NAME — check nginx on
+bf-repo and the route from this machine before touching the definition."
+            fi
+            warn "repository not reachable (attempt $tries/6); retrying in ${tries}0s"
+            sleep "${tries}0"
+        done
+    fi
+
     info "Installing build deps: $deps"
     systemd-nspawn -q --machine="$MACHINE" -D "$ROOT" \
         /bin/bash -c "hud update >/dev/null && hud install -y $deps" \
