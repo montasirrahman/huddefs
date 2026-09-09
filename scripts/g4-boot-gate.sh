@@ -40,8 +40,20 @@ echo
 
 # -no-reboot so a panic stops instead of looping; the marker unit powers off on
 # success, so a clean run ends well before the timeout.
+#
+# -snapshot because the guest mounts this image as a read-write root. Without
+# it every run writes into the master image, and a run that does not finish
+# cleanly leaves the filesystem dirty. That is not hypothetical: a reboot killed
+# a run mid-flight on 2026-09-09 and the next boot died with
+#   /sbin/init: error while loading shared libraries: libcrypto.so.3: file too short
+# which reads exactly like a broken distribution and was nothing of the kind —
+# e2fsck found orphan inodes and wrong free counts. A gate that corrupts its own
+# fixture cannot be trusted twice.
+#
+# Edits made to the image before boot (g4-install-gate.sh) still apply: the
+# overlay discards only what the GUEST writes.
 timeout "$TIMEOUT" qemu-system-x86_64 \
-    -enable-kvm -m "$MEM" -smp "${SMP:-1}" -nographic -no-reboot \
+    -enable-kvm -m "$MEM" -smp "${SMP:-1}" -nographic -no-reboot -snapshot \
     -kernel "$KERNEL" \
     -drive file="$IMG",format=raw,if=virtio \
     -netdev user,id=n0 -device virtio-net-pci,netdev=n0 \
