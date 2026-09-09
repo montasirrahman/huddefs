@@ -399,6 +399,37 @@ word infrastructure rather than the package. A transient outage should cost a
 wait, not a diagnosis.
 
 
+### G4 passes all four stages, against the clean rootfs — 2026-09-09
+
+    [ OK ] stage 1: kernel booted
+    [ OK ] stage 2: the image mounted as root
+    [ OK ] stage 3a: systemd is PID 1
+    [ OK ] stage 3b: reached multi-user.target — G4-BOOT-OK pid1=systemd
+    [ OK ] image has 9 packages registered
+    [ OK ] stage 4a: the VM reached the repository — 252 packages available
+    [ OK ] stage 4b: installed from unstable — G4-INSTALL-OK files=329 present=329
+
+Stage 4b is the one worth reading twice. A VM booted from the same rootfs the
+builds use fetched `libXt` from the staging repository, resolved and installed
+**eight dependencies** — including the `libSM -> util-linux` edge fixed earlier
+today — and every one of the 329 paths in its `FILES` manifest is present on
+disk. Not "the client said it worked": the filesystem was checked, because this
+client exits 0 on failure.
+
+Three earlier attempts failed for three unrelated reasons, none of them the
+distribution: a corrupt image from a reboot killing a run that had it mounted
+read-write, an interface picked alphabetically so the address landed on a
+carrier-less `bond0`, and a 180 s timeout that killed `hud install` partway
+through — the boot alone takes 55-68 s. All three are fixed and the gate is now
+non-destructive, so it can be re-run at will.
+
+The image registers **9** packages rather than 242, because the builder now
+defaults to the clean rootfs. Three units still fail inside the VM —
+`systemd-logind`, `nginx`, `virtnetworkd` — all of them base-image unit files
+whose binaries are not in a nine-package root. logind wants dbus. The gate warns
+rather than fails on those, correctly.
+
+
 ---
 
 ## Builds moved to the clean rootfs — 2026-09-09
@@ -893,7 +924,7 @@ Verify by format, not by the state file, before declaring E4 finished.
 | E8 | All four patches carried in `patches/`; qemu's `|| true` confirmed — the shipped qemu is unpatched |
 | E9 | `docbook` no longer searches the build host for its own source |
 | G2 | Capability graph + `hud-graph deps/rdeps/why/orphans/missing`, exact joins |
-| G4 | **Boot gate passes all four stages**, including installing from unstable inside the VM |
+| G4 | **Passes all four stages against the clean rootfs** (9 packages, not 242); stage 4b installs libXt and 8 dependencies inside the VM and verifies 329/329 files on disk |
 | — | **Build rootfs regenerated**: 9 packages, 0 dangling links, escaped pip installs removed |
 
 ---
